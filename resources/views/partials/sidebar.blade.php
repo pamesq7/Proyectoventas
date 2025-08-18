@@ -52,6 +52,12 @@
                     📦 Productos
                 </a>
 
+                <!-- Diseños -->
+                <a class="nav-link" href="{{ route('disenos.index') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-palette"></i></div>
+                    🎨 Diseños
+                </a>
+
                 <!-- Configuración de Productos -->
                 <a class="nav-link" href="{{ route('configuracion.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamps();
             $table->integer('idDiseñador', false, true);
             $table->enum('estadoDiseño', ['en proceso', 'terminado'])->default('en proceso');
-            $table->integer('iddetalleVenta', false, true);
+            $table->integer('iddetalleVenta', false, true)->nullable();
             $table->unsignedInteger('idEmpleado');
             
             // $table->foreign('iddetalleVenta')
