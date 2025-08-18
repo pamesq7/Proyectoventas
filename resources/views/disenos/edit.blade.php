@@ -116,47 +116,7 @@
                                 </div>
                             </div>
 
-                            <!-- Archivo actual -->
-                            @if($diseno->archivo)
-                            <div class="col-12">
-                                <div class="form-group">
-                                    <label>Archivo Actual</label>
-                                    <div class="card">
-                                        <div class="card-body">
-                                            @php
-                                                $extension = pathinfo($diseno->archivo, PATHINFO_EXTENSION);
-                                                $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
-                                            @endphp
-                                            
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    @if($isImage)
-                                                        <img src="{{ Storage::url($diseno->archivo) }}" 
-                                                             alt="Diseño actual" 
-                                                             class="img-fluid" 
-                                                             style="max-height: 200px;">
-                                                    @else
-                                                        <div class="text-center">
-                                                            <i class="fas fa-file fa-3x text-muted"></i>
-                                                            <p class="mt-2">{{ basename($diseno->archivo) }}</p>
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <p><strong>Archivo:</strong> {{ basename($diseno->archivo) }}</p>
-                                                    <p><strong>Tipo:</strong> {{ strtoupper($extension) }}</p>
-                                                    <a href="{{ Storage::url($diseno->archivo) }}" 
-                                                       target="_blank" 
-                                                       class="btn btn-sm btn-outline-primary">
-                                                        <i class="fas fa-download"></i> Descargar
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
+
 
                             <!-- Nuevo archivo -->
                             <div class="col-12">
@@ -178,6 +138,25 @@
                                             <br><strong>Nota:</strong> Si selecciona un nuevo archivo, reemplazará el archivo actual.
                                         @endif
                                     </small>
+                                </div>
+                                
+                                <!-- Vista previa del nuevo archivo -->
+                                <div id="preview-container" class="mt-3" style="display: none;">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Vista Previa del Nuevo Archivo</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div id="image-preview" style="display: none;">
+                                                <img id="preview-image" src="" alt="Vista previa" class="img-fluid" style="max-height: 200px;">
+                                            </div>
+                                            <div id="file-preview" style="display: none;">
+                                                <i class="fas fa-file fa-3x text-muted"></i>
+                                                <p class="mt-2 mb-0" id="file-name"></p>
+                                                <small class="text-muted" id="file-type"></small>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -202,10 +181,42 @@
 
 @push('scripts')
 <script>
-// Actualizar el nombre del archivo seleccionado
-$('#archivo').on('change', function() {
-    var fileName = $(this).val().split('\\').pop();
-    $(this).next('.custom-file-label').html(fileName || 'Seleccionar archivo...');
+// Actualizar el nombre del archivo seleccionado y mostrar vista previa
+$(document).ready(function() {
+    $('#archivo').on('change', function() {
+        var file = this.files[0];
+        var fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').html(fileName || 'Seleccionar archivo...');
+        
+        if (file) {
+            var fileType = file.type;
+            var fileExtension = fileName.split('.').pop().toLowerCase();
+            
+            // Mostrar el contenedor de vista previa
+            $('#preview-container').show();
+            
+            // Verificar si es una imagen
+            if (fileType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                // Mostrar vista previa de imagen
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#preview-image').attr('src', e.target.result);
+                    $('#image-preview').show();
+                    $('#file-preview').hide();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Mostrar vista previa de archivo no imagen
+                $('#file-name').text(fileName);
+                $('#file-type').text(fileExtension.toUpperCase());
+                $('#image-preview').hide();
+                $('#file-preview').show();
+            }
+        } else {
+            // Ocultar vista previa si no hay archivo
+            $('#preview-container').hide();
+        }
+    });
 });
 </script>
 @endpush

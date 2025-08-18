@@ -74,13 +74,35 @@
                                                 
                                                 @if($isImage)
                                                     <div class="text-center">
-                                                        <img src="{{ Storage::url($diseno->archivo) }}" 
-                                                             alt="Diseño" 
-                                                             class="img-thumbnail" 
-                                                             style="max-width: 80px; max-height: 80px; cursor: pointer;"
-                                                             onclick="window.open('{{ Storage::url($diseno->archivo) }}', '_blank')">
+                                                        @php
+                                                            $fileName = basename($diseno->archivo);
+                                                            $publicPath = 'disenos/' . $fileName;
+                                                        @endphp
+                                                        @if(file_exists(public_path($publicPath)))
+                                                            <img src="{{ asset($publicPath) }}" 
+                                                                 alt="Diseño" 
+                                                                 class="img-thumbnail" 
+                                                                 style="max-width: 80px; max-height: 80px; cursor: pointer;"
+                                                                 onclick="window.open('{{ asset($publicPath) }}', '_blank')">
+                                                        @elseif(file_exists(storage_path('app/public/' . $diseno->archivo)))
+                                                            <img src="{{ asset('storage/' . $diseno->archivo) }}" 
+                                                                 alt="Diseño" 
+                                                                 class="img-thumbnail" 
+                                                                 style="max-width: 80px; max-height: 80px; cursor: pointer;"
+                                                                 onclick="window.open('{{ asset('storage/' . $diseno->archivo) }}', '_blank')">
+                                                        @else
+                                                            <div class="text-warning">
+                                                                <i class="fas fa-image"></i>
+                                                                <br>
+                                                                <small>No disponible</small>
+                                                            </div>
+                                                        @endif
                                                         <br>
                                                         <small class="text-muted">{{ strtoupper($extension) }}</small>
+                                                        <br>
+                                                        <small class="text-info" title="Archivo: {{ $fileName }}">
+                                                            {{ $fileName }}
+                                                        </small>
                                                     </div>
                                                 @else
                                                     <div class="text-center">
