@@ -21,11 +21,17 @@
                             <div class="col-md-3">
                                 <select name="estadoDiseno" class="form-control">
                                     <option value="">Todos los estados</option>
-                                    @foreach($estadosDiseno as $estado)
-                                        <option value="{{ $estado }}" {{ request('estadoDiseno') == $estado ? 'selected' : '' }}>
-                                            {{ ucfirst($estado) }}
-                                        </option>
-                                    @endforeach
+                                    @if(isset($estadosDiseno) && count($estadosDiseno) > 0)
+                                        @foreach($estadosDiseno as $estado)
+                                            <option value="{{ $estado }}" {{ request('estadoDiseno') == $estado ? 'selected' : '' }}>
+                                                {{ ucwords(str_replace('_', ' ', $estado)) }}
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option value="no realizado">No Realizado</option>
+                                        <option value="en proceso">En Proceso</option>
+                                        <option value="terminado">Terminado</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -56,6 +62,7 @@
                                     <th>Estado Diseño</th>
                                     <th>Empleado</th>
                                     <th>ID Diseñador</th>
+                                    <th>ID Detalle Venta</th>
                                     <th>Estado</th>
                                     <th>Fecha Creación</th>
                                     <th>Acciones</th>
@@ -70,33 +77,22 @@
                                                 @php
                                                     $extension = pathinfo($diseno->archivo, PATHINFO_EXTENSION);
                                                     $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
+                                                    $fileName = basename($diseno->archivo);
                                                 @endphp
                                                 
                                                 @if($isImage)
                                                     <div class="text-center">
-                                                        @php
-                                                            $fileName = basename($diseno->archivo);
-                                                            $publicPath = 'disenos/' . $fileName;
-                                                        @endphp
-                                                        @if(file_exists(public_path($publicPath)))
-                                                            <img src="{{ asset($publicPath) }}" 
-                                                                 alt="Diseño" 
-                                                                 class="img-thumbnail" 
-                                                                 style="max-width: 80px; max-height: 80px; cursor: pointer;"
-                                                                 onclick="window.open('{{ asset($publicPath) }}', '_blank')">
-                                                        @elseif(file_exists(storage_path('app/public/' . $diseno->archivo)))
-                                                            <img src="{{ asset('storage/' . $diseno->archivo) }}" 
-                                                                 alt="Diseño" 
-                                                                 class="img-thumbnail" 
-                                                                 style="max-width: 80px; max-height: 80px; cursor: pointer;"
-                                                                 onclick="window.open('{{ asset('storage/' . $diseno->archivo) }}', '_blank')">
-                                                        @else
-                                                            <div class="text-warning">
-                                                                <i class="fas fa-image"></i>
-                                                                <br>
-                                                                <small>No disponible</small>
-                                                            </div>
-                                                        @endif
+                                                        <img src="{{ asset('storage/' . $diseno->archivo) }}" 
+                                                             alt="Diseño" 
+                                                             class="img-thumbnail" 
+                                                             style="max-width: 80px; max-height: 80px; cursor: pointer;"
+                                                             onclick="window.open('{{ asset('storage/' . $diseno->archivo) }}', '_blank')"
+                                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                                        <div class="text-warning" style="display: none;">
+                                                            <i class="fas fa-image"></i>
+                                                            <br>
+                                                            <small>No disponible</small>
+                                                        </div>
                                                         <br>
                                                         <small class="text-muted">{{ strtoupper($extension) }}</small>
                                                         <br>
@@ -110,7 +106,7 @@
                                                         <br>
                                                         <small class="text-muted">{{ strtoupper($extension) }}</small>
                                                         <br>
-                                                        <a href="{{ Storage::url($diseno->archivo) }}" target="_blank" class="btn btn-xs btn-outline-info">
+                                                        <a href="{{ asset('storage/' . $diseno->archivo) }}" target="_blank" class="btn btn-xs btn-outline-info">
                                                             <i class="fas fa-download"></i>
                                                         </a>
                                                     </div>
@@ -125,14 +121,25 @@
                                         </td>
                                         <td>{{ $diseno->comentario ?? 'Sin comentario' }}</td>
                                         <td>
-                                            <span class="badge badge-{{ $diseno->estadoDiseño == 'terminado' ? 'success' : 'warning' }}">
+                                            @php
+                                                $badgeClass = 'secondary';
+                                                if ($diseno->estadoDiseño == 'terminado') {
+                                                    $badgeClass = 'success';
+                                                } elseif ($diseno->estadoDiseño == 'en proceso') {
+                                                    $badgeClass = 'warning';
+                                                } elseif ($diseno->estadoDiseño == 'no realizado') {
+                                                    $badgeClass = 'secondary';
+                                                }
+                                            @endphp
+                                            <span class="badge badge-{{ $badgeClass }}" style="color: black;">
                                                 {{ ucfirst($diseno->estadoDiseño) }}
                                             </span>
                                         </td>
                                         <td>{{ $diseno->empleado->nombre ?? 'N/A' }}</td>
                                         <td>{{ $diseno->idDiseñador ?? 'N/A' }}</td>
+                                        <td>{{ $diseno->iddetalleVenta ?? 'N/A' }}</td>
                                         <td>
-                                            <span class="badge badge-{{ $diseno->estado ? 'success' : 'danger' }}">
+                                            <span class="badge badge-{{ $diseno->estado ? 'success' : 'danger' }}" style="color: black;">
                                                 {{ $diseno->estado ? 'Activo' : 'Inactivo' }}
                                             </span>
                                         </td>
@@ -157,7 +164,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center">No se encontraron diseños</td>
+                                        <td colspan="10" class="text-center">No se encontraron diseños</td>
                                     </tr>
                                 @endforelse
                             </tbody>

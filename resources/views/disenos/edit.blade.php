@@ -55,6 +55,9 @@
                                     <select class="form-control @error('estadoDiseño') is-invalid @enderror" 
                                             id="estadoDiseño" name="estadoDiseño" required>
                                         <option value="">Seleccione un estado</option>
+                                        <option value="no realizado" {{ old('estadoDiseño', $diseno->estadoDiseño) == 'no realizado' ? 'selected' : '' }}>
+                                            No Realizado
+                                        </option>
                                         <option value="en proceso" {{ old('estadoDiseño', $diseno->estadoDiseño) == 'en proceso' ? 'selected' : '' }}>
                                             En Proceso
                                         </option>

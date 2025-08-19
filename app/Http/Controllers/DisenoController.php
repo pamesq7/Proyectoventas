@@ -36,7 +36,7 @@ class DisenoController extends Controller
         $disenos = $query->orderBy('created_at', 'desc')->paginate(12);
         
         // Estados disponibles para filtro
-        $estadosDiseno = ['en proceso', 'terminado'];
+        $estadosDiseno = ['no realizado', 'en proceso', 'terminado'];
 
         return view('disenos.index', compact('disenos', 'estadosDiseno'));
     }
@@ -59,7 +59,7 @@ class DisenoController extends Controller
             'comentario' => 'nullable|string|max:45',
             'estado' => 'required|integer|in:0,1',
             'idDiseñador' => 'nullable|integer',
-            'estadoDiseño' => 'required|in:en proceso,terminado',
+            'estadoDiseño' => 'required|in:no realizado,en proceso,terminado',
             'idEmpleado' => 'nullable|exists:empleados,idEmpleado',
             'archivo' => 'nullable|file|mimes:svg,ai,psd,pdf,zip,jpg,png|max:10240'
         ], [
@@ -133,7 +133,7 @@ class DisenoController extends Controller
             'comentario' => 'nullable|string|max:45',
             'estado' => 'required|integer|in:0,1',
             'idDiseñador' => 'nullable|integer',
-            'estadoDiseño' => 'required|in:en proceso,terminado',
+            'estadoDiseño' => 'required|in:no realizado,en proceso,terminado',
             'idEmpleado' => 'nullable|exists:empleados,idEmpleado',
             'archivo' => 'nullable|file|mimes:svg,ai,psd,pdf,zip,jpg,png|max:10240'
         ], [
