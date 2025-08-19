@@ -22,13 +22,11 @@ class ProductoController extends Controller
      */
     public function index()
     {
-        // Cargar solo productos activos con categoría, variante y diseño
+        // Cargar productos con categoría y variante (mostrar todos los estados para debug)
         $productos = Producto::with([
             'categoria',
-            'variante',
-            'diseno'
-        ])->where('estado', 1)
-          ->orderBy('nombre', 'asc')
+            'variante'
+        ])->orderBy('nombre', 'asc')
           ->get();
           
         // Log para debug

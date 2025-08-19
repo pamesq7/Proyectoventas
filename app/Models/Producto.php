@@ -26,7 +26,8 @@ class Producto extends Model
         'pedidoMinimo',
         'estado',
         'idCategoria',
-        'idDiseno'
+        'idDiseno',
+        'idVariante'
     ];
 
     protected $casts = [
@@ -48,7 +49,13 @@ class Producto extends Model
         return $this->belongsTo(Diseno::class, 'idDiseno', 'idDiseno');
     }
 
-    // Relación: un producto puede tener muchas variantes
+    // Relación: un producto pertenece a una variante
+    public function variante()
+    {
+        return $this->belongsTo(Variante::class, 'idVariante', 'id');
+    }
+
+    // Relación: un producto puede tener muchas variantes (para casos especiales)
     public function variantes()
     {
         return $this->hasMany(Variante::class, 'idProducto', 'idProducto');

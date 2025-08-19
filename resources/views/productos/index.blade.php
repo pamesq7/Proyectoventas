@@ -59,7 +59,6 @@
                                 <th>Categoría</th>
                                 <th>Variante</th>
                                 <th>Precio Venta</th>
-                                <th>Estado</th>
                                 <th>Fecha Creación</th>
                                 <th>Acciones</th>
                             </tr>
@@ -68,9 +67,22 @@
                             @foreach($productos as $producto)
                                 <tr>
                                     <td>
-                                        @if($producto->foto)
-                                            <img src="{{ asset('storage/' . $producto->foto) }}" 
-                                                 alt="{{ $producto->nombre }}" 
+                                        @php
+                                            $imagenSrc = null;
+                                            $altText = $producto->nombre;
+                                            
+                                            // Solo una imagen: foto del producto O imagen del diseño (no ambas)
+                                            if ($producto->foto) {
+                                                $imagenSrc = asset('storage/' . $producto->foto);
+                                            } elseif ($producto->diseno && $producto->diseno->archivo) {
+                                                $imagenSrc = asset('storage/' . $producto->diseno->archivo);
+                                                $altText = $producto->diseno->comentario ?? $producto->nombre;
+                                            }
+                                        @endphp
+                                        
+                                        @if($imagenSrc)
+                                            <img src="{{ $imagenSrc }}" 
+                                                 alt="{{ $altText }}" 
                                                  class="img-thumbnail" 
                                                  style="width: 50px; height: 50px; object-fit: cover;">
                                         @else
@@ -119,17 +131,6 @@
                                             <small class="text-muted">
                                                 Costo: ${{ number_format($producto->precioProduccion, 0) }}
                                             </small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($producto->estado == 1)
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check me-1"></i>Activo
-                                            </span>
-                                        @else
-                                            <span class="badge bg-danger">
-                                                <i class="fas fa-times me-1"></i>Inactivo
-                                            </span>
                                         @endif
                                     </td>
                                     <td>
