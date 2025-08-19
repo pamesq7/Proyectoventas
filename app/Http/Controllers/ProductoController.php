@@ -134,8 +134,34 @@ class ProductoController extends Controller
                     'nombre' => $producto->nombre
                 ]);
 
+                // Vincular diseños seleccionados
+                if ($request->filled('disenos_vinculados')) {
+                    $disenosIds = explode(',', $request->disenos_vinculados);
+                    $disenosIds = array_filter($disenosIds); // Remover valores vacíos
+                    
+                    if (!empty($disenosIds)) {
+                        Log::info('Vinculando diseños:', $disenosIds);
+                        
+                        // Preparar datos para la tabla pivot
+                        $pivotData = [];
+                        foreach ($disenosIds as $index => $disenoId) {
+                            $pivotData[$disenoId] = [
+                                'es_principal' => $index === 0, // El primer diseño es principal
+                                'precio_personalizado' => null,
+                                'personalizaciones' => null,
+                                'estado' => 1,
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ];
+                        }
+                        
+                        $producto->disenos()->attach($pivotData);
+                        Log::info('Diseños vinculados exitosamente');
+                    }
+                }
+
                 return redirect()->route('productos.index')
-                    ->with('success', 'Producto creado exitosamente.');
+                    ->with('success', 'Producto creado exitosamente con ' . (isset($disenosIds) ? count($disenosIds) : 0) . ' diseños vinculados.');
             } else {
                 Log::error('ERROR: Producto::create() retornó false o null');
                 return redirect()->back()
