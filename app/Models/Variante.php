@@ -9,7 +9,7 @@ class Variante extends Model
 {
     use HasFactory;
     protected $table = 'variantes';
-    protected $primaryKey = 'idVariante';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'nombre',
@@ -35,10 +35,10 @@ class Variante extends Model
         return $this->hasManyThrough(
             Caracteristica::class,
             VarianteCaracteristica::class,
-            'idVariante', // Foreign key en variante_caracteristicas
-            'idCaracteristica', // Foreign key en caracteristicas
-            'idVariante', // Local key en variantes
-            'idCaracteristica' // Local key en variante_caracteristicas
+            'idVariante', // FK en variante_caracteristicas que referencia variantes.id
+            'idCaracteristica', // FK en caracteristicas (usamos PK para enlazar)
+            'id', // clave local en variantes
+            'idCaracteristica' // clave local en pivote hacia caracteristicas
         );
     }
 

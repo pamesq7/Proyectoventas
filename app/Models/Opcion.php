@@ -49,12 +49,6 @@ class Opcion extends Model
         return $this->hasMany(Caracteristica::class, 'idOpcion', 'idOpcion');
     }
 
-    // Relación muchos a muchos con variantes a través de variante_opcion
-    public function varianteOpciones()
-    {
-        return $this->hasMany(VarianteOpcion::class, 'idOpcion', 'idOpcion');
-    }
-
     // Accesor: estado como texto
     public function getEstadoTextoAttribute()
     {

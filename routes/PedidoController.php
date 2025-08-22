@@ -43,6 +43,65 @@ class PedidoController extends Controller
     }
 
     /**
+     * API: Variantes disponibles para un producto
+     */
+    public function apiVariantesPorProducto($idProducto)
+    {
+        $producto = Producto::with(['variante'])
+            ->where('idProducto', $idProducto)
+            ->firstOrFail();
+
+        // Estructura mínima para el front
+        $variantes = Variante::where('idProducto', $idProducto)
+            ->where('estado', 1)
+            ->orderBy('nombre')
+            ->get(['idVariante', 'nombre']);
+
+        return response()->json([
+            'producto' => ['idProducto' => $producto->idProducto, 'nombre' => $producto->nombre],
+            'variantes' => $variantes,
+        ]);
+    }
+
+    /**
+     * API: Características agrupadas por opción para una variante
+     */
+    public function apiCaracteristicasDeVariante($idVariante)
+    {
+        $variante = Variante::with(['varianteCaracteristicas.caracteristica.opcion'])
+            ->findOrFail($idVariante);
+
+        // Mapear a una estructura por opción
+        $grupo = [];
+        foreach ($variante->varianteCaracteristicas as $vc) {
+            $car = $vc->caracteristica; // Caracteristica
+            if (!$car) { continue; }
+            $op = $car->opcion; // Opcion
+            $opKey = $op ? ($op->idOpcion.'|'.$op->nombre) : ('otros|Otros');
+            if (!isset($grupo[$opKey])) {
+                $grupo[$opKey] = [
+                    'idOpcion' => $op->idOpcion ?? null,
+                    'nombreOpcion' => $op->nombre ?? 'Otros',
+                    'caracteristicas' => []
+                ];
+            }
+            $grupo[$opKey]['caracteristicas'][] = [
+                'idCaracteristica' => $car->idCaracteristica,
+                'nombre' => $car->nombre,
+            ];
+        }
+
+        // Reindexar
+        $resultado = array_values($grupo);
+
+        return response()->json([
+            'idVariante' => $variante->idVariante,
+            'nombreVariante' => $variante->nombre,
+            'opciones' => $resultado,
+        ]);
+    }
+
+    /**
      * Configurador de producto - mostrar opciones de personalización
      */
     public function configurarProducto($idProducto)
@@ -90,9 +149,104 @@ class PedidoController extends Controller
         $ruta = $request->file('disenoPersonalizado')->store('disenos_personalizados', 'public');
         session()->put('disenoTemporal', $ruta);
 
-        // Redirigir al catálogo para elegir producto o directamente a donde elijas
-        return redirect()->route('pedidos.catalogo')
-                         ->with('success', 'Diseño cargado. Ahora elige un producto para continuar.');
+        // Redirigir al formulario de nuevo pedido (no se vuelve a pedir imagen)
+        return redirect()->route('pedidos.nuevo')
+                         ->with('success', 'Diseño cargado. Completa los datos de tu pedido.');
+    }
+
+    /**
+     * Mostrar formulario "Nuevo Pedido" usando diseño temporal ya subido.
+     */
+    public function nuevoPedido()
+    {
+        if (!session()->has('disenoTemporal')) {
+            return redirect()->route('pedidos.personalizar')
+                             ->with('error', 'Primero sube tu diseño.');
+        }
+
+        $productos = Producto::where('estado', 1)->orderBy('nombre')->get();
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
+
+        $clientesNaturales = ClienteNatural::where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->get();
+
+        return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos'));
+    }
+
+    /**
+     * Guardar pedido desde formulario único usando diseño temporal.
+     */
+    public function guardarNuevoPedido(Request $request)
+    {
+        if (!session()->has('disenoTemporal')) {
+            return redirect()->route('pedidos.personalizar')
+                             ->with('error', 'No se encontró el diseño subido.');
+        }
+
+        $request->validate([
+            'tipoCliente' => 'required|in:natural,establecimiento',
+            'idCliente' => 'required_if:tipoCliente,natural',
+            'idEstablecimiento' => 'required_if:tipoCliente,establecimiento',
+            'fechaEntrega' => 'required|date|after:today',
+            'lugarEntrega' => 'required|string|max:200',
+            'idProducto' => 'required|exists:productos,idProducto',
+            'idTalla' => 'required|exists:tallas,idTalla',
+            'cantidad' => 'required|integer|min:1',
+            'nombrePersonalizado' => 'nullable|string|max:50',
+            'numeroPersonalizado' => 'nullable|string|max:10',
+            'textoAdicional' => 'nullable|string|max:200',
+        ]);
+
+        $producto = Producto::findOrFail($request->idProducto);
+        $talla = Talla::findOrFail($request->idTalla);
+        $rutaDiseno = session()->get('disenoTemporal');
+
+        DB::beginTransaction();
+        try {
+            $precioUnitario = $producto->precioVenta;
+            $subtotal = $precioUnitario * $request->cantidad;
+
+            $venta = Venta::create([
+                'subtotal' => $subtotal,
+                'total' => $subtotal,
+                'fechaEntrega' => $request->fechaEntrega,
+                'lugarEntrega' => $request->lugarEntrega,
+                'estadoPedido' => '0',
+                'saldo' => $subtotal,
+                'estado' => 1,
+                'idEmpleado' => auth()->user()->empleado->idEmpleado ?? 1,
+                'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
+                'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
+                'idUser' => auth()->id()
+            ]);
+
+            DetalleVenta::create([
+                'cantidad' => $request->cantidad,
+                'nombrePersonalizado' => $request->nombrePersonalizado,
+                'numeroPersonalizado' => $request->numeroPersonalizado,
+                'textoAdicional' => $request->textoAdicional,
+                'observacion' => $request->observaciones,
+                'precioUnitario' => $precioUnitario,
+                'subtotal' => $subtotal,
+                'estado' => 1,
+                'idTalla' => $talla->idTalla,
+                'idVenta' => $venta->idVenta,
+                'idProducto' => $producto->idProducto,
+                'idUser' => auth()->id()
+            ]);
+
+            DB::commit();
+
+            // Limpiar diseño temporal tras guardar
+            session()->forget('disenoTemporal');
+
+            return redirect()->route('pedidos.confirmacion', $venta->idVenta)
+                             ->with('success', 'Pedido creado exitosamente');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al guardar nuevo pedido', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Error al guardar el pedido: '.$e->getMessage())->withInput();
+        }
     }
 
     /**

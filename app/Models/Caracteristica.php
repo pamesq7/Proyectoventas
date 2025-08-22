@@ -48,19 +48,8 @@ class Caracteristica extends Model
         return $this->hasMany(VarianteCaracteristica::class, 'idCaracteristica', 'idCaracteristica');
     }
 
-    // Relación: muchos productos a través de la tabla pivot producto_caracteristicas
-    public function productos()
-    {
-        return $this->belongsToMany(Producto::class, 'producto_caracteristicas', 'idCaracteristica', 'idProducto')
-            ->withPivot('nombre', 'descripcion', 'estado', 'precioAdicional')
-            ->withTimestamps();
-    }
-
-    // Relación: registros directos de la tabla pivot
-    public function productoCaracteristicas()
-    {
-        return $this->hasMany(ProductoCaracteristica::class, 'idCaracteristica', 'idCaracteristica');
-    }
+    // Relación con productos vía producto_caracteristicas eliminada.
+    // Si se requiere en el futuro, definir una nueva pivot o usar VarianteCaracteristica.
 
     // Scope: características activas
     public function scopeActivos($query)

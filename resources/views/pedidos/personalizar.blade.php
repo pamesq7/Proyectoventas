@@ -21,63 +21,26 @@
         <div class="col-lg-8">
             <div class="card mb-4">
                 <div class="card-header">
-                    <i class="fas fa-file-upload me-2"></i>Datos de personalización
+                    <i class="fas fa-file-upload me-2"></i>Sube tu diseño
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('pedidos.agregar-carrito') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('pedidos.personalizar.iniciar') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="idProducto" class="form-label">Producto base</label>
-                                <select name="idProducto" id="idProducto" class="form-select" required>
-                                    <option value="" selected disabled>Seleccione un tipo de prenda</option>
-                                    @foreach($productosBase as $p)
-                                        <option value="{{ $p->idProducto }}">{{ $p->nombre }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        <div class="mb-3">
+                            <label for="disenoPersonalizado" class="form-label">Archivo de diseño</label>
+                            <input type="file" name="disenoPersonalizado" id="disenoPersonalizado" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required>
+                            <small class="text-muted">Formatos permitidos: JPG, PNG, PDF. Tamaño máx. 5MB.</small>
+                        </div>
 
-                            <div class="col-md-3">
-                                <label for="idTalla" class="form-label">Talla</label>
-                                <select name="idTalla" id="idTalla" class="form-select" required>
-                                    <option value="" selected disabled>Seleccione</option>
-                                    @foreach($tallas as $t)
-                                        <option value="{{ $t->idTalla }}">{{ $t->nombre }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-md-3">
-                                <label for="cantidad" class="form-label">Cantidad</label>
-                                <input type="number" min="1" value="1" name="cantidad" id="cantidad" class="form-control" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label for="nombrePersonalizado" class="form-label">Nombre (opcional)</label>
-                                <input type="text" maxlength="50" name="nombrePersonalizado" id="nombrePersonalizado" class="form-control" placeholder="Ej: P. Gómez">
-                            </div>
-
-                            <div class="col-md-6">
-                                <label for="numeroPersonalizado" class="form-label">Número (opcional)</label>
-                                <input type="text" maxlength="10" name="numeroPersonalizado" id="numeroPersonalizado" class="form-control" placeholder="Ej: 10">
-                            </div>
-
-                            <div class="col-12">
-                                <label for="textoAdicional" class="form-label">Texto adicional (opcional)</label>
-                                <textarea name="textoAdicional" id="textoAdicional" rows="2" class="form-control" placeholder="Frase o mensaje adicional (máx. 200 caracteres)"></textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <label for="disenoPersonalizado" class="form-label">Archivo de diseño</label>
-                                <input type="file" name="disenoPersonalizado" id="disenoPersonalizado" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required>
-                                <small class="text-muted">Formatos permitidos: JPG, PNG, PDF. Tamaño máx. 5MB.</small>
-                            </div>
+                        <div id="previewContainer" class="mt-3" style="display:none;">
+                            <img id="previewImagen" class="img-thumbnail" style="max-height:200px; display:none;"/>
+                            <div id="previewPdf" class="alert alert-info" style="display:none;"></div>
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-cart-plus me-2"></i>Agregar al carrito
+                                <i class="fas fa-arrow-right me-2"></i>Hacer mi pedido
                             </button>
                         </div>
                     </form>
@@ -113,4 +76,29 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('disenoPersonalizado');
+    const cont = document.getElementById('previewContainer');
+    const img = document.getElementById('previewImagen');
+    const pdf = document.getElementById('previewPdf');
+
+    input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) { cont.style.display = 'none'; return; }
+        cont.style.display = 'block';
+        if (file.type.startsWith('image/')) {
+            img.src = URL.createObjectURL(file);
+            img.style.display = 'block';
+            pdf.style.display = 'none';
+        } else {
+            img.style.display = 'none';
+            pdf.style.display = 'block';
+            pdf.innerHTML = `<i class="fas fa-file-pdf me-2"></i> Archivo PDF seleccionado: ${file.name}`;
+        }
+    });
+});
+</script>
+@endpush
 @endsection

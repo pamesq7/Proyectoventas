@@ -33,7 +33,7 @@ class VarianteCaracteristica extends Model
     // Relación con variante
     public function variante()
     {
-        return $this->belongsTo(Variante::class, 'idVariante', 'idVariante');
+        return $this->belongsTo(Variante::class, 'idVariante', 'id');
     }
 
     // Relación con característica

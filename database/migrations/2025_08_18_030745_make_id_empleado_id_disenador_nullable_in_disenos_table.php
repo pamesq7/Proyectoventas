@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -11,26 +12,19 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('disenos', function (Blueprint $table) {
-            // Primero eliminar las claves foráneas
-            $table->dropForeign(['idEmpleado']);
-            $table->dropForeign(['idDiseñador']);
-            
-            // Modificar las columnas para permitir NULL
-            $table->bigInteger('idEmpleado', false, true)->nullable()->change();
-            $table->bigInteger('idDiseñador', false, true)->nullable()->change();
-            
-            // Recrear las claves foráneas
-            $table->foreign('idEmpleado')
-                  ->references('idEmpleado')
-                  ->on('empleados')
-                  ->onDelete('set null');
-                  
-            $table->foreign('idDiseñador')
-                  ->references('idEmpleado')
-                  ->on('empleados')
-                  ->onDelete('set null');
-        });
+        // 1) Quitar FK de idEmpleado (si existe) con SQL explícito para evitar error 1832
+        try {
+            DB::statement('ALTER TABLE `disenos` DROP FOREIGN KEY `disenos_idempleado_foreign`');
+        } catch (\Throwable $e) {
+            // Ignorar si no existe
+        }
+
+        // 2) Modificar columnas a NULLABLE con SQL explícito (evita dependencia de doctrine/dbal)
+        DB::statement('ALTER TABLE `disenos` MODIFY `idEmpleado` BIGINT UNSIGNED NULL');
+        DB::statement('ALTER TABLE `disenos` MODIFY `idDiseñador` BIGINT UNSIGNED NULL');
+
+        // 3) Recrear FK de idEmpleado con ON DELETE SET NULL
+        DB::statement('ALTER TABLE `disenos` ADD CONSTRAINT `disenos_idempleado_foreign` FOREIGN KEY (`idEmpleado`) REFERENCES `empleados`(`idEmpleado`) ON DELETE SET NULL ON UPDATE NO ACTION');
     }
 
     /**
@@ -38,9 +32,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('disenos', function (Blueprint $table) {
-            $table->unsignedBigInteger('idEmpleado')->nullable(false)->change();
-            $table->unsignedBigInteger('idDiseñador')->nullable(false)->change();
-        });
+        // Quitar FK para poder revertir a NOT NULL
+        try {
+            DB::statement('ALTER TABLE `disenos` DROP FOREIGN KEY `disenos_idempleado_foreign`');
+        } catch (\Throwable $e) {
+        }
+
+        DB::statement('ALTER TABLE `disenos` MODIFY `idEmpleado` BIGINT UNSIGNED NOT NULL');
+        DB::statement('ALTER TABLE `disenos` MODIFY `idDiseñador` BIGINT UNSIGNED NOT NULL');
+
+        // Recrear FK como en la creación inicial (NO ACTION)
+        DB::statement('ALTER TABLE `disenos` ADD CONSTRAINT `disenos_idempleado_foreign` FOREIGN KEY (`idEmpleado`) REFERENCES `empleados`(`idEmpleado`) ON DELETE NO ACTION ON UPDATE NO ACTION');
     }
 };

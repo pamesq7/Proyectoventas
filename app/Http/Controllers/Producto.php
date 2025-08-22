@@ -52,7 +52,7 @@ class Producto extends Model
     // Relación: un producto pertenece a una variante
     public function variante()
     {
-        return $this->belongsTo(Variante::class, 'idVariante', 'id');
+        return $this->belongsTo(Variante::class, 'idVariante', 'idVariante');
     }
 
     // Relación: un producto puede tener muchas variantes (para casos especiales)
@@ -61,8 +61,7 @@ class Producto extends Model
         return $this->hasMany(Variante::class, 'idProducto', 'idProducto');
     }
 
-    // Relación: un producto puede tener muchas características (eliminada tabla producto_caracteristicas)
-    // Si en el futuro se requiere, usar relación vía VarianteCaracteristica o una nueva pivot consistente.
+    // Relación de características eliminada (tabla producto_caracteristicas eliminada)
 
     // Un producto puede tener muchas tallas
     public function productoTallas()
