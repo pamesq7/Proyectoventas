@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DisenoController;
+use App\Http\Controllers\PedidoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,3 +22,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Rutas API para diseños
 Route::get('/disenos/terminados', [DisenoController::class, 'getDisenosTerminados']);
+
+// Precios por talla para un producto
+Route::get('/producto/{idProducto}/tallas-precios', [PedidoController::class, 'apiTallasPreciosPorProducto']);
+
+// Búsqueda unificada de clientes (naturales y establecimientos)
+Route::get('/clientes/search', [PedidoController::class, 'apiBuscarClientes']);

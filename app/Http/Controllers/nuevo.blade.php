@@ -166,64 +166,98 @@
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
                                 <div class="mb-2">
-                                    <label class="form-label">Documento *</label>
-                                    <select class="form-select" id="docTipo">
-                                        <option value="">seleccione</option>
-                                        <option value="boleta">Boleta</option>
-                                        <option value="factura">Factura</option>
-                                    </select>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label">Cliente (buscable) *</label>
+                                    <label class="form-label">Cliente *</label>
                                     @php($oldClienteSel = old('clienteSeleccionado'))
-                                    <input type="text" id="clienteSearch" class="form-control" list="clientesList" placeholder="Escribe para buscar..." autocomplete="off" required>
-                                    <datalist id="clientesList">
-                                        <optgroup label="Clientes naturales"></optgroup>
-                                        @foreach($clientesNaturales as $c)
-                                            @php($val = 'natural:' . $c->idCliente)
-                                            <option value="{{ $c->nombre }}" data-value="{{ $val }}">{{ $c->nombre }}</option>
-                                        @endforeach
-                                        <optgroup label="Establecimientos"></optgroup>
-                                        @foreach($clientesEstablecimientos as $e)
-                                            @php($val = 'establecimiento:' . $e->idEstablecimiento)
-                                            <option value="{{ $e->nombreEstablecimiento }}" data-value="{{ $val }}">{{ $e->nombreEstablecimiento }}</option>
-                                        @endforeach
-                                    </datalist>
-                                    <input type="hidden" name="clienteSeleccionado" id="clienteSeleccionado" value="{{ $oldClienteSel }}">
+                                    <div class="input-group">
+                                        <button type="button" class="btn btn-success" title="Agregar nuevo cliente">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <div class="flex-grow-1">
+                                            <input type="text" id="clienteFilter" class="form-control mb-1" placeholder="Buscar por CI, nombre o teléfono...">
+                                            <select class="form-select" name="clienteSeleccionado" id="clienteSelect" required>
+                                                <option value="">Seleccione un cliente</option>
+                                                <optgroup label="Clientes naturales"></optgroup>
+                                                @foreach($clientesNaturales as $c)
+                                                    @php($val = 'natural:' . $c->idCliente)
+                                                    @php($doc = $c->user->ci ?? ($c->nit ?? ''))
+                                                    @php($tel = $c->user->telefono ?? '')
+                                                    @php($nom = $c->user->name ?? 'Cliente')
+                                                    @php($label = trim(($doc ? 'CI: '.$doc.' - ' : '') . $nom . ($tel ? ' - Tel: '.$tel : '')))
+                                                    <option value="{{ $val }}" data-ci="{{ $doc }}" data-telefono="{{ $tel }}" {{ $oldClienteSel === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                                @endforeach
+                                                <optgroup label="Establecimientos"></optgroup>
+                                                @foreach($clientesEstablecimientos as $e)
+                                                    @php($val = 'establecimiento:' . $e->idEstablecimiento)
+                                                    @php($doc = $e->nit ?? '')
+                                                    @php($tel = $e->representante->telefono ?? '')
+                                                    @php($nom = $e->nombreEstablecimiento ?? ($e->razonSocial ?? 'Establecimiento'))
+                                                    @php($label = trim(($doc ? 'NIT: '.$doc.' - ' : '') . $nom . ($tel ? ' - Tel: '.$tel : '')))
+                                                    <option value="{{ $val }}" data-ci="{{ $doc }}" data-telefono="{{ $tel }}" {{ $oldClienteSel === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label">Tipo Pago *</label>
-                                    <select class="form-select" id="tipoPago">
-                                        <option value="">Seleccione Tipo Pago</option>
-                                        <option value="efectivo">Efectivo</option>
-                                        <option value="yape">Yape/Plin</option>
-                                        <option value="tarjeta">Tarjeta</option>
+                                    <select class="form-select" id="tipoPago" name="tipoTransaccion">
+                                        <option value="efectivo" selected>Efectivo</option>
+                                        <option value="qr">QR</option>
+                                        <option value="cheque">Cheque</option>
+                                        <option value="transferencia">Transferencia bancaria</option>
                                     </select>
                                 </div>
-                                <div class="row g-2 mb-2">
-                                    <div class="col">
-                                        <label class="form-label">Serie</label>
-                                        <input type="text" class="form-control" id="serie" placeholder="nro Serie">
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label">Correlativo</label>
-                                        <input type="text" class="form-control" id="correlativo" placeholder="Nro Venta">
-                                    </div>
-                                </div>
-                                <div class="mb-1">
+                                
+                                <div class="mb-1" id="efectivoGroup">
                                     <label class="form-label">Efectivo recibido</label>
                                     <input type="number" class="form-control" id="efectivoRecibido" placeholder="Cantidad de efectivo recibida" step="0.01" min="0">
                                 </div>
-                                <div class="form-check mb-2">
+                                <div class="form-check mb-2" id="efectivoExactoGroup">
                                     <input class="form-check-input" type="checkbox" id="efectivoExacto">
                                     <label class="form-check-label" for="efectivoExacto">Efectivo Exacto</label>
                                 </div>
                                 <hr/>
                                 <div class="d-flex justify-content-between"><small>Cantidad total</small><small id="uiCantTotal">0</small></div>
+                                <div class="mt-1">
+                                    <small class="text-muted d-block">Desglose por talla</small>
+                                    <div id="uiBreakdownTallas" class="small"></div>
+                                </div>
                                 <div class="d-flex justify-content-between"><small>Precio unitario</small><small id="uiPrecioUnit">S/ 0.00</small></div>
                                 <div class="d-flex justify-content-between"><small>SUBTOTAL</small><small id="uiSubtotal">S/ 0.00</small></div>
                                 <div class="d-flex justify-content-between"><small>IGV (18%)</small><small id="uiIgv">S/ 0.00</small></div>
                                 <div class="d-flex justify-content-between"><strong>TOTAL</strong><strong id="uiTotal">S/ 0.00</strong></div>
+                                <div class="mt-3 p-2 border rounded">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Letras (XS-S-M-L-XL)</label>
+                                            <input type="number" id="precioGrupoLetras" class="form-control form-control-sm" step="0.01" min="0" placeholder="Precio por unidad">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">2XL o más (2XL, 3XL, XXL...)</label>
+                                            <input type="number" id="precioGrupo2xl" class="form-control form-control-sm" step="0.01" min="0" placeholder="Precio por unidad">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label small">Tallas 14-12</label>
+                                            <input type="number" id="precioGrupo14_12" class="form-control form-control-sm" step="0.01" min="0" placeholder="Precio por unidad">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label small">Tallas 10-8</label>
+                                            <input type="number" id="precioGrupo10_8" class="form-control form-control-sm" step="0.01" min="0" placeholder="Precio por unidad">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label small">Tallas 6-4</label>
+                                            <input type="number" id="precioGrupo6_4" class="form-control form-control-sm" step="0.01" min="0" placeholder="Precio por unidad">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2" id="uiTablaTallas"></div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Adelanto</label>
+                                    <input type="number" class="form-control" id="montoAdelanto" name="montoAdelanto" placeholder="Monto de adelanto" step="0.01" min="0">
+                                </div>
+                                <div class="d-flex justify-content-between"><small>Adelanto</small><small id="uiAdelanto">S/ 0.00</small></div>
+                                <div class="d-flex justify-content-between"><small><strong>Saldo</strong></small><small id="uiSaldo"><strong>S/ 0.00</strong></small></div>
+                                <hr/>
                                 <div class="d-flex justify-content-between text-success"><small>Monto Efectivo</small><small id="uiEfectivo">S/ 0.00</small></div>
                                 <div class="d-flex justify-content-between text-danger"><small>Vuelto</small><small id="uiVuelto">S/ 0.00</small></div>
                             </div>
@@ -319,10 +353,30 @@
         }
     }
 
+    // Mapa de precios por talla del producto actual: { idTalla: precioUnitario }
+    let tallaPriceMap = new Map();
+
+    async function loadTallaPrecios(idProducto) {
+        tallaPriceMap = new Map();
+        if (!idProducto) return;
+        try {
+            const url = `{{ url('api/producto') }}/${idProducto}/tallas-precios`;
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) { console.error('Error tallas-precios', await res.text()); return; }
+            const data = await res.json();
+            (data.precios || []).forEach(p => {
+                tallaPriceMap.set(String(p.idTalla), Number(p.precioUnitario || 0));
+            });
+        } catch (e) {
+            console.error('fetch tallas-precios', e);
+        }
+    }
+
     document.getElementById('idProducto').addEventListener('change', async (e) => {
         const idProd = e.target.value;
         toggleNumeroByProducto();
         await onProductoChange(idProd);
+        await loadTallaPrecios(idProd);
         recalcTotales();
     });
 
@@ -330,15 +384,29 @@
     (function initOnLoad(){
         const sel = document.getElementById('idProducto');
         toggleNumeroByProducto();
-        if (sel && sel.value) { onProductoChange(sel.value); }
-        // Restaurar cliente seleccionado (si viene de old())
-        const hiddenCli = document.getElementById('clienteSeleccionado');
-        const inputCli = document.getElementById('clienteSearch');
-        if (hiddenCli && hiddenCli.value) {
-            const opt = findOptionByDataValue(hiddenCli.value);
-            if (opt) inputCli.value = opt.value;
-        }
+        if (sel && sel.value) { onProductoChange(sel.value); loadTallaPrecios(sel.value); }
+        // Inicializar UI de pago
+        updatePagoUI();
         recalcTotales();
+    })();
+
+    // --- Filtro de clientes por CI / nombre / teléfono ---
+    (function initClienteFilter(){
+        const input = document.getElementById('clienteFilter');
+        const select = document.getElementById('clienteSelect');
+        if (!input || !select) return;
+        input.addEventListener('input', () => {
+            const q = input.value.trim().toLowerCase();
+            Array.from(select.options).forEach(opt => {
+                // Mantener visibles placeholder y optgroups (no son option reales)
+                if (!opt.value) { opt.hidden = false; return; }
+                const text = (opt.textContent || '').toLowerCase();
+                const ci = (opt.getAttribute('data-ci') || '').toLowerCase();
+                const tel = (opt.getAttribute('data-telefono') || '').toLowerCase();
+                const match = !q || text.includes(q) || ci.includes(q) || tel.includes(q);
+                opt.hidden = !match;
+            });
+        });
     })();
 
     // Mostrar/ocultar campo Número según producto seleccionado
@@ -373,6 +441,10 @@
                 recalcTotales();
             }
         }
+    });
+    // Recalcular al cambiar tallas en cualquier fila
+    tbody.addEventListener('change', (e) => {
+        if (e.target.classList.contains('sel-talla')) { recalcTotales(); }
     });
 
     function addRow() {
@@ -409,41 +481,66 @@
         toggleNumeroByProducto();
         recalcTotales();
     }
-    // --- Búsqueda cliente con datalist ---
-    function findOptionByDataValue(dataVal) {
-        const opts = document.querySelectorAll('#clientesList option');
-        for (const o of opts) { if (o.dataset.value === dataVal) return o; }
-        return null;
-    }
-    function findOptionByLabel(label) {
-        const opts = document.querySelectorAll('#clientesList option');
-        for (const o of opts) { if (o.value === label) return o; }
-        return null;
-    }
-    const inputCli = document.getElementById('clienteSearch');
-    const hiddenCli = document.getElementById('clienteSeleccionado');
-    inputCli.addEventListener('input', () => {
-        const match = findOptionByLabel(inputCli.value);
-        hiddenCli.value = match ? (match.dataset.value || '') : '';
-    });
-    // Validar antes de enviar: debe haber coincidencia
+    // Validación con select de cliente
     document.getElementById('formNuevoPedido').addEventListener('submit', (e) => {
-        const match = findOptionByLabel(inputCli.value);
-        if (!match) {
+        const selCli = document.getElementById('clienteSelect');
+        if (!selCli || !selCli.value) {
             e.preventDefault();
-            alert('Por favor, selecciona un cliente válido de la lista.');
-            inputCli.focus();
+            alert('Selecciona un cliente.');
+            if (selCli) selCli.focus();
         }
     });
-    // Eliminado: toggleClientes, ahora hay un solo selector combinado de clientes
 
     // --- Cálculo de totales y vuelto (sin afectar backend) ---
-    function getPrecioUnitario() {
+    function getPrecioUnitarioBase() {
         const sel = document.getElementById('idProducto');
         if (!sel || !sel.value) return 0;
         const opt = sel.options[sel.selectedIndex];
         const p = parseFloat(opt?.dataset?.precio || '0');
         return isNaN(p) ? 0 : p;
+    }
+
+    function normalizarTalla(nombre) {
+        return String(nombre || '').trim().toLowerCase();
+    }
+
+    function grupoDeTalla(nombre) {
+        const t = normalizarTalla(nombre);
+        // Númericas primero
+        if (/(^|\D)(14|12)($|\D)/.test(t)) return '14_12';
+        if (/(^|\D)(10|8)($|\D)/.test(t)) return '10_8';
+        if (/(^|\D)(6|4)($|\D)/.test(t)) return '6_4';
+        // 2XL o más: 2xl, xxl, 3xl, xxxl
+        if (/(^|\W)(2xl|xxl|3xl|xxxl)($|\W)/.test(t)) return '2xl_plus';
+        // Letras estándar
+        if (/(^|\W)(xs|s|m|l|xl)($|\W)/.test(t)) return 'letras';
+        // Desconocido -> letras por defecto
+        return 'letras';
+    }
+
+    function precioPorGrupo(grupo) {
+        const base = getPrecioUnitarioBase();
+        const map = {
+            'letras': parseFloat(document.getElementById('precioGrupoLetras')?.value || '0'),
+            '2xl_plus': parseFloat(document.getElementById('precioGrupo2xl')?.value || '0'),
+            '14_12': parseFloat(document.getElementById('precioGrupo14_12')?.value || '0'),
+            '10_8': parseFloat(document.getElementById('precioGrupo10_8')?.value || '0'),
+            '6_4': parseFloat(document.getElementById('precioGrupo6_4')?.value || '0'),
+        };
+        const v = map[grupo];
+        return (v && !isNaN(v) && v > 0) ? v : base;
+    }
+
+    // Precio unitario efectivo para una fila según la talla elegida.
+    // Prioridad: precio específico por talla (BD) -> precio por grupo -> precio base.
+    function precioUnitarioPorTalla(idTalla, nombreTalla) {
+        const key = String(idTalla || '');
+        if (key && tallaPriceMap.has(key)) {
+            const v = Number(tallaPriceMap.get(key));
+            if (!isNaN(v) && v > 0) return v;
+        }
+        const g = grupoDeTalla(nombreTalla);
+        return precioPorGrupo(g);
     }
     function getTotalCantidad() {
         const inputs = document.querySelectorAll('#tbodyItems .inp-cantidad');
@@ -451,22 +548,173 @@
         inputs.forEach(i => { const v = parseInt(i.value || '0'); if (!isNaN(v)) total += v; });
         return total;
     }
+    function getBreakdownPorTalla() {
+        const rows = document.querySelectorAll('#tbodyItems tr.item-row');
+        const map = {};
+        rows.forEach(tr => {
+            const sel = tr.querySelector('.sel-talla');
+            const cantInp = tr.querySelector('.inp-cantidad');
+            if (!sel || !cantInp) return;
+            const nombreTalla = (sel.options[sel.selectedIndex]?.text || '').trim();
+            if (!nombreTalla) return;
+            const cant = parseInt(cantInp.value || '0');
+            if (isNaN(cant) || cant <= 0) return;
+            map[nombreTalla] = (map[nombreTalla] || 0) + cant;
+        });
+        return map;
+    }
+
+    // Construye detalle por talla con cantidad, precio unitario y subtotal a partir de filas.
+    function getDetallePorTalla() {
+        const rows = document.querySelectorAll('#tbodyItems tr.item-row');
+        const map = new Map(); // key: nombreTalla, val: { nombre, cant, unit }
+        rows.forEach(tr => {
+            const sel = tr.querySelector('.sel-talla');
+            const cantInp = tr.querySelector('.inp-cantidad');
+            if (!sel || !cantInp) return;
+            const optSel = sel.options[sel.selectedIndex];
+            const nombreTalla = (optSel?.text || '').trim();
+            const idTalla = optSel?.value || '';
+            if (!nombreTalla || !idTalla) return;
+            const cant = parseInt(cantInp.value || '0');
+            if (isNaN(cant) || cant <= 0) return;
+            const unit = precioUnitarioPorTalla(idTalla, nombreTalla);
+            if (!map.has(nombreTalla)) {
+                map.set(nombreTalla, { nombre: nombreTalla, cant: 0, unit });
+            }
+            const agg = map.get(nombreTalla);
+            agg.cant += cant;
+            // En caso de múltiples filas de la misma talla con distinto unit (no debería), usar el último calculado
+            agg.unit = unit;
+        });
+        // Orden por talla (letras más comunes primero, luego alfabético)
+        const pref = ['XXXL','XXL','XL','L','M','S','XS'];
+        const arr = Array.from(map.values());
+        arr.sort((a,b)=>{
+            const ia = pref.indexOf(a.nombre.toUpperCase());
+            const ib = pref.indexOf(b.nombre.toUpperCase());
+            if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+            return a.nombre.localeCompare(b.nombre);
+        });
+        return arr.map(it => ({ ...it, subtotal: it.unit * it.cant }));
+    }
+    function renderBreakdown(map) {
+        const cont = document.getElementById('uiBreakdownTallas');
+        if (!cont) return;
+        const nombres = Object.keys(map);
+        if (nombres.length === 0) { cont.innerHTML = '<span class="text-muted">—</span>'; return; }
+        // Orden opcional: XS,S,M,L,XL,XXL,XXXL al inicio si existen, luego el resto alfabético
+        const pref = ['XXXL','XXL','XL','L','M','S','XS'];
+        nombres.sort((a,b)=>{
+            const ia = pref.indexOf(a.toUpperCase());
+            const ib = pref.indexOf(b.toUpperCase());
+            if (ia !== -1 || ib !== -1) {
+                return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+            }
+            return a.localeCompare(b);
+        });
+        cont.innerHTML = nombres.map(n => `
+            <div class="d-flex justify-content-between">
+                <span>${n}</span><span>${map[n]}</span>
+            </div>
+        `).join('');
+    }
     function formatear(n) { return 'S/ ' + (Number(n).toFixed(2)); }
     function recalcTotales() {
-        const precio = getPrecioUnitario();
-        const cant = getTotalCantidad();
-        const subtotal = precio * cant;
-        // Mantener IGV en 0 para no desalinear backend (total=subtotal)
-        const igv = 0; // Si luego deseas IGV real: const igv = subtotal * 0.18;
+        // Recorrer filas para calcular por grupo
+        const rows = document.querySelectorAll('#tbodyItems tr.item-row');
+        const grupos = { letras: {cant:0, unit:0, total:0}, '2xl_plus': {cant:0, unit:0, total:0}, '14_12': {cant:0, unit:0, total:0}, '10_8': {cant:0, unit:0, total:0}, '6_4': {cant:0, unit:0, total:0} };
+        let cantTotal = 0;
+        rows.forEach(tr => {
+            const sel = tr.querySelector('.sel-talla');
+            const cantInp = tr.querySelector('.inp-cantidad');
+            if (!sel || !cantInp) return;
+            const optSel = sel.options[sel.selectedIndex];
+            const nombreTalla = (optSel?.text || '').trim();
+            const idTalla = optSel?.value || '';
+            let c = parseInt(cantInp.value || '0');
+            if (isNaN(c) || c <= 0) return;
+            const g = grupoDeTalla(nombreTalla);
+            const unit = precioUnitarioPorTalla(idTalla, nombreTalla);
+            grupos[g].cant += c;
+            grupos[g].unit = unit; // mostrar en desglose
+            grupos[g].total += unit * c;
+            cantTotal += c;
+        });
+
+        const subtotal = Object.values(grupos).reduce((acc, g) => acc + g.total, 0);
+        const igv = 0; // Mantener 0 (frontend)
         const total = subtotal + igv;
-        // UI adicionales
+
+        // UI: cantidad total y desglose por talla específica
         const uiCant = document.getElementById('uiCantTotal');
+        if (uiCant) uiCant.textContent = String(cantTotal);
+        renderBreakdown(getBreakdownPorTalla());
+
+        // Precio unitario: si hay un solo grupo con cantidad, mostrar su unit. Si hay varios, "Mixto".
+        const gruposConCant = Object.values(grupos).filter(g => g.cant > 0);
         const uiPrecio = document.getElementById('uiPrecioUnit');
-        if (uiCant) uiCant.textContent = String(cant);
-        if (uiPrecio) uiPrecio.textContent = formatear(precio);
+        if (gruposConCant.length === 1) {
+            if (uiPrecio) uiPrecio.textContent = formatear(gruposConCant[0].unit);
+        } else {
+            if (uiPrecio) uiPrecio.textContent = 'Mixto';
+        }
+
+        // Tabla por talla (Talla, Cantidad, P. Unit, Subtotal) y total general
+        const uiTabla = document.getElementById('uiTablaTallas');
+        if (uiTabla) {
+            const detalle = getDetallePorTalla();
+            const totalTabla = detalle.reduce((acc, d) => acc + d.subtotal, 0);
+            if (!detalle.length) {
+                uiTabla.innerHTML = '<span class="text-muted">—</span>';
+            } else {
+                const rowsHtml = detalle.map(d => `
+                    <tr>
+                        <td>${d.nombre}</td>
+                        <td class="text-end">${d.cant}</td>
+                        <td class="text-end">${formatear(d.unit)}</td>
+                        <td class="text-end">${formatear(d.subtotal)}</td>
+                    </tr>
+                `).join('');
+                uiTabla.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Talla</th>
+                                    <th class="text-end">Cantidad</th>
+                                    <th class="text-end">P. Unit</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3" class="text-end">Total de todo lo pedido</th>
+                                    <th class="text-end">${formatear(totalTabla)}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+
+        // Subtotales y totales
         document.getElementById('uiSubtotal').textContent = formatear(subtotal);
         document.getElementById('uiIgv').textContent = formatear(igv);
         document.getElementById('uiTotal').textContent = formatear(total);
+
+        // Adelanto y saldo
+        const inpAd = document.getElementById('montoAdelanto');
+        let adelanto = parseFloat(inpAd?.value || '0');
+        if (isNaN(adelanto) || adelanto < 0) adelanto = 0;
+        document.getElementById('uiAdelanto').textContent = formatear(adelanto);
+        const saldo = Math.max(total - adelanto, 0);
+        document.getElementById('uiSaldo').textContent = formatear(saldo);
+
         // Efectivo y vuelto
         const chkExacto = document.getElementById('efectivoExacto');
         const inpEfec = document.getElementById('efectivoRecibido');
@@ -490,5 +738,34 @@
     });
     document.getElementById('efectivoRecibido').addEventListener('input', recalcTotales);
     document.getElementById('efectivoExacto').addEventListener('change', recalcTotales);
+    document.getElementById('tipoPago').addEventListener('change', () => {
+        updatePagoUI();
+        recalcTotales();
+    });
+    // Cambios de precios por grupo y adelanto
+    ['precioGrupoLetras','precioGrupo2xl','precioGrupo14_12','precioGrupo10_8','precioGrupo6_4','montoAdelanto']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', recalcTotales); });
+
+    function updatePagoUI() {
+        const tipo = (document.getElementById('tipoPago')?.value || '').toLowerCase();
+        const grpEfec = document.getElementById('efectivoGroup');
+        const grpExacto = document.getElementById('efectivoExactoGroup');
+        const inpEfec = document.getElementById('efectivoRecibido');
+        const chkExacto = document.getElementById('efectivoExacto');
+        const isEfec = tipo === 'efectivo';
+        if (grpEfec) grpEfec.style.display = isEfec ? '' : 'none';
+        if (grpExacto) grpExacto.style.display = isEfec ? '' : 'none';
+        if (!isEfec) {
+            if (chkExacto) chkExacto.checked = false;
+            if (inpEfec) {
+                inpEfec.value = '';
+                inpEfec.readOnly = true;
+            }
+        } else {
+            if (inpEfec) inpEfec.readOnly = false;
+        }
+    }
+
+    // Eliminado: dropdown personalizado de clientes (ahora se usa <select>)
 </script>
 @endpush

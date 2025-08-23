@@ -7,13 +7,12 @@ use App\Models\DetalleVenta;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Talla;
+use App\Models\ProductoTalla;
 use App\Models\Variante;
-use App\Models\ProductoVariante;
 use App\Models\Caracteristica;
 use App\Models\ClienteNatural;
 use App\Models\ClienteEstablecimiento;
-use App\Models\ProductoOpcion;
-use App\Models\Opcion;
+use App\Models\Transaccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -46,102 +45,42 @@ class PedidoController extends Controller
     }
 
     /**
-     * API: Opciones y características por producto (sin selector de variante)
-     * Origen: tabla producto_opcions (ProductoOpcion) + Caracteristica por idOpcion
+     * API: Precios por talla para un producto
+     * Retorna para cada talla activa el precio unitario final calculado como:
+     * precioUnitario = producto.precioVenta + (producto_tallas.precioAdicional || 0)
      */
-    public function apiOpcionesPorProducto($idProducto)
+    public function apiTallasPreciosPorProducto($idProducto)
     {
-        try {
-            // Opciones configuradas para el producto
-            $productoOpciones = ProductoOpcion::with(['opcion'])
-                ->where('idProducto', $idProducto)
-                ->where('estado', 1)
-                ->get();
+        $producto = Producto::findOrFail($idProducto);
 
-            $resultado = [];
+        // Todas las tallas activas del sistema
+        $tallas = Talla::where('estado', 1)
+            ->orderBy('nombre')
+            ->get(['idTalla', 'nombre']);
 
-            foreach ($productoOpciones as $po) {
-                $op = $po->opcion; // instancia de Opcion
-                if (!$op || (int)($op->estado) !== 1) { continue; }
+        // Relación producto_tallas (puede no existir registro para alguna talla)
+        $pt = ProductoTalla::where('idProducto', $idProducto)
+            ->get()
+            ->keyBy('idTalla');
 
-                // Características activas de esta opción
-                $caracteristicas = Caracteristica::where('idOpcion', $op->idOpcion)
-                    ->where('estado', 1)
-                    ->orderBy('nombre')
-                    ->get(['idCaracteristica','nombre']);
+        $base = (float) ($producto->precioVenta ?? 0);
 
-                $resultado[] = [
-                    'idOpcion' => $op->idOpcion,
-                    'nombreOpcion' => $op->nombre,
-                    'caracteristicas' => $caracteristicas->map(fn($c)=>[
-                        'idCaracteristica' => $c->idCaracteristica,
-                        'nombre' => $c->nombre,
-                    ])->values(),
-                ];
-            }
-
-            return response()->json(['opciones' => array_values($resultado)]);
-        } catch (\Throwable $e) {
-            Log::error('apiOpcionesPorProducto error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return response()->json(['error' => 'Error obteniendo opciones del producto', 'detail' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * API: Listar variantes activas (para UI sin selector de producto)
-     */
-    public function apiVariantesActivas()
-    {
-        try {
-            $variantes = Variante::where('estado', 1)
-                ->orderBy('nombre')
-                ->get(['id','nombre'])
-                ->map(function($v){
-                    return [
-                        'idVariante' => $v->id,
-                        'nombre' => $v->nombre,
-                    ];
-                })
-                ->values();
-            return response()->json(['variantes' => $variantes]);
-        } catch (\Throwable $e) {
-            Log::error('apiVariantesActivas error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return response()->json(['error' => 'Error obteniendo variantes', 'detail' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * API: Productos asociados a una variante (vía pivote producto_variantes o campo directo)
-     */
-    public function apiProductosPorVariante($idVariante)
-    {
-        // Buscar por pivote
-        $pivotes = ProductoVariante::with('producto')
-            ->where('idVariante', $idVariante)
-            ->activo()
-            ->whereHas('producto', function($q){
-                $q->whereIn('idProducto', [1,2,3,4]);
-            })
-            ->get();
-
-        $productos = $pivotes->map(function ($pv) {
+        $resp = $tallas->map(function ($t) use ($pt, $base) {
+            $row = $pt->get($t->idTalla);
+            $precioAdicional = (float) ($row->precioAdicional ?? 0);
             return [
-                'idProducto' => $pv->producto->idProducto ?? null,
-                'nombre' => $pv->producto->nombre ?? null,
+                'idTalla' => $t->idTalla,
+                'nombreTalla' => $t->nombre,
+                'precioBase' => $base,
+                'precioAdicional' => $precioAdicional,
+                'precioUnitario' => $base + $precioAdicional,
             ];
-        })->filter(fn($p) => !is_null($p['idProducto']))->values();
+        })->values();
 
-        // Fallback: productos que apuntan directamente a la variante
-        if ($productos->isEmpty()) {
-            $directos = Producto::where('idVariante', $idVariante)
-                ->where('estado', 1)
-                ->whereIn('idProducto', [1,2,3,4])
-                ->orderBy('nombre')
-                ->get(['idProducto','nombre']);
-            $productos = $directos->map(fn($p) => ['idProducto'=>$p->idProducto,'nombre'=>$p->nombre]);
-        }
-
-        return response()->json(['productos' => $productos]);
+        return response()->json([
+            'idProducto' => $producto->idProducto,
+            'precios' => $resp,
+        ]);
     }
 
     /**
@@ -149,34 +88,15 @@ class PedidoController extends Controller
      */
     public function apiVariantesPorProducto($idProducto)
     {
-        $producto = Producto::where('idProducto', $idProducto)->firstOrFail();
-
-        // Obtener variantes vía pivote producto_variantes
-        $pivotes = ProductoVariante::with('variante')
+        $producto = Producto::with(['variante'])
             ->where('idProducto', $idProducto)
-            ->activo()
-            ->get();
+            ->firstOrFail();
 
-        $variantes = $pivotes
-            ->map(function ($pv) {
-                return [
-                    'idVariante' => $pv->variante->id ?? null,
-                    'nombre' => $pv->variante->nombre ?? 'Variante',
-                ];
-            })
-            ->filter(fn($v) => !is_null($v['idVariante']))
-            ->values();
-
-        // Fallback: si el producto tiene una variante directa asociada
-        if ($variantes->isEmpty() && !empty($producto->idVariante)) {
-            $v = Variante::find($producto->idVariante);
-            if ($v && (int)($v->estado) === 1) {
-                $variantes = collect([[
-                    'idVariante' => $v->id,
-                    'nombre' => $v->nombre,
-                ]]);
-            }
-        }
+        // Estructura mínima para el front
+        $variantes = Variante::where('idProducto', $idProducto)
+            ->where('estado', 1)
+            ->orderBy('nombre')
+            ->get(['idVariante', 'nombre']);
 
         return response()->json([
             'producto' => ['idProducto' => $producto->idProducto, 'nombre' => $producto->nombre],
@@ -185,56 +105,81 @@ class PedidoController extends Controller
     }
 
     /**
+     * API: Opciones de personalización por producto con sus características activas
+     */
+    public function apiOpcionesPorProducto($idProducto)
+    {
+        $producto = Producto::with(['opciones.caracteristicas' => function ($q) {
+            $q->where('estado', 1)->orderBy('nombre');
+        }])->where('idProducto', $idProducto)->firstOrFail();
+
+        // Solo opciones activas asociadas al producto
+        $opciones = $producto->opciones()
+            ->where('opcions.estado', 1)
+            ->orderBy('opcions.nombre')
+            ->get()
+            ->map(function ($op) {
+                return [
+                    'idOpcion' => $op->idOpcion,
+                    'nombreOpcion' => $op->nombre,
+                    'caracteristicas' => $op->caracteristicas
+                        ->where('estado', 1)
+                        ->sortBy('nombre')
+                        ->values()
+                        ->map(function ($c) {
+                            return [
+                                'idCaracteristica' => $c->idCaracteristica,
+                                'nombre' => $c->nombre,
+                            ];
+                        })->all(),
+                ];
+            });
+
+        return response()->json([
+            'producto' => [
+                'idProducto' => $producto->idProducto,
+                'nombre' => $producto->nombre,
+            ],
+            'opciones' => $opciones,
+        ]);
+    }
+
+    /**
      * API: Características agrupadas por opción para una variante
      */
     public function apiCaracteristicasDeVariante($idVariante)
     {
-        try {
-            $variante = Variante::with([
-                    'varianteCaracteristicas' => function ($q) {
-                        $q->where('estado', 1);
-                    },
-                    'varianteCaracteristicas.caracteristica' => function ($q) {
-                        $q->where('estado', 1);
-                    },
-                    'varianteCaracteristicas.caracteristica.opcion' => function ($q) {
-                        $q->where('estado', 1);
-                    }
-                ])
-                ->findOrFail($idVariante);
+        $variante = Variante::with(['varianteCaracteristicas.caracteristica.opcion'])
+            ->findOrFail($idVariante);
 
-            // Mapear a una estructura por opción
-            $grupo = [];
-            foreach ($variante->varianteCaracteristicas as $vc) {
-                $car = $vc->caracteristica; // Caracteristica
-                if (!$car) { continue; }
-                $op = $car->opcion; // Opcion
-                $opKey = $op ? ($op->idOpcion.'|'.$op->nombre) : ('otros|Otros');
-                if (!isset($grupo[$opKey])) {
-                    $grupo[$opKey] = [
-                        'idOpcion' => $op->idOpcion ?? null,
-                        'nombreOpcion' => $op->nombre ?? 'Otros',
-                        'caracteristicas' => []
-                    ];
-                }
-                $grupo[$opKey]['caracteristicas'][] = [
-                    'idCaracteristica' => $car->idCaracteristica,
-                    'nombre' => $car->nombre,
+        // Mapear a una estructura por opción
+        $grupo = [];
+        foreach ($variante->varianteCaracteristicas as $vc) {
+            $car = $vc->caracteristica; // Caracteristica
+            if (!$car) { continue; }
+            $op = $car->opcion; // Opcion
+            $opKey = $op ? ($op->idOpcion.'|'.$op->nombre) : ('otros|Otros');
+            if (!isset($grupo[$opKey])) {
+                $grupo[$opKey] = [
+                    'idOpcion' => $op->idOpcion ?? null,
+                    'nombreOpcion' => $op->nombre ?? 'Otros',
+                    'caracteristicas' => []
                 ];
             }
-
-            // Reindexar
-            $resultado = array_values($grupo);
-
-            return response()->json([
-                'idVariante' => $variante->id,
-                'nombreVariante' => $variante->nombre,
-                'opciones' => $resultado,
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('apiCaracteristicasDeVariante error: '.$e->getMessage());
-            return response()->json(['error' => 'Error obteniendo características', 'detail' => $e->getMessage()], 500);
+            $grupo[$opKey]['caracteristicas'][] = [
+                'idCaracteristica' => $car->idCaracteristica,
+                'nombre' => $car->nombre,
+            ];
         }
+
+        // Reindexar
+        $resultado = array_values($grupo);
+
+        return response()->json([
+            'idVariante' => $variante->idVariante,
+            'nombreVariante' => $variante->nombre,
+            'opciones' => $resultado,
+        ]);
     }
 
     /**
@@ -250,7 +195,7 @@ class PedidoController extends Controller
         ])->findOrFail($idProducto);
 
         // Obtener todas las tallas disponibles para el producto
-        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
 
         return view('pedidos.configurar', compact('producto', 'tallas'));
     }
@@ -263,16 +208,15 @@ class PedidoController extends Controller
     {
         // Productos base activos. Puedes filtrar por una categoría específica si lo deseas.
         $productosBase = Producto::where('estado', 1)
-                                ->whereIn('idProducto', [1,2,3,4])
                                 ->orderBy('nombre')
                                 ->get(['idProducto', 'nombre']);
 
-        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
 
         return view('pedidos.personalizar', compact('productosBase', 'tallas'));
     }
 
-    /**
+    /**()
      * Guardar temporalmente el diseño y avanzar al flujo de pedido.
      * No solicita talla/nombre/número todavía.
      */
@@ -301,15 +245,13 @@ class PedidoController extends Controller
                              ->with('error', 'Primero sube tu diseño.');
         }
 
-        $productos = Producto::where('estado', 1)
-                             ->whereIn('idProducto', [1,2,3,4])
-                             ->orderBy('nombre')
-                             ->get();
-        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
+        $productos = Producto::where('estado', 1)->orderBy('nombre')->get();
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
 
         $clientesNaturales = ClienteNatural::where('estado', 1)->get();
         $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->get();
 
+        // Sin depender de la BD para métodos de pago
         return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos'));
     }
 
@@ -324,91 +266,79 @@ class PedidoController extends Controller
         }
 
         $request->validate([
-            'clienteSeleccionado' => 'required|string', // formato esperado: natural:ID o establecimiento:ID
+            'tipoCliente' => 'required|in:natural,establecimiento',
+            'idCliente' => 'required_if:tipoCliente,natural',
+            'idEstablecimiento' => 'required_if:tipoCliente,establecimiento',
             'fechaEntrega' => 'required|date|after:today',
             'lugarEntrega' => 'required|string|max:200',
             'idProducto' => 'required|exists:productos,idProducto',
-            // Arrays de items
-            'idTalla' => 'required|array',
-            'idTalla.*' => 'required|exists:tallas,idTalla',
-            'cantidad' => 'required|array',
-            'cantidad.*' => 'required|integer|min:1',
-            'nombrePersonalizado' => 'array',
-            'nombrePersonalizado.*' => 'nullable|string|max:50',
-            'numeroPersonalizado' => 'array',
-            'numeroPersonalizado.*' => 'nullable|string|max:10',
-            'observaciones' => 'array',
-            'observaciones.*' => 'nullable|string|max:200',
+            'idTalla' => 'required|exists:tallas,idTalla',
+            'cantidad' => 'required|integer|min:1',
+            'nombrePersonalizado' => 'nullable|string|max:50',
+            'numeroPersonalizado' => 'nullable|string|max:10',
             'textoAdicional' => 'nullable|string|max:200',
+            // Pago
+            'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
+            'montoAdelanto' => 'nullable|numeric|min:0',
         ]);
 
         $producto = Producto::findOrFail($request->idProducto);
+        $talla = Talla::findOrFail($request->idTalla);
         $rutaDiseno = session()->get('disenoTemporal');
-
-        // Parsear cliente seleccionado
-        $clienteSel = $request->input('clienteSeleccionado');
-        $tipo = null; $idSel = null;
-        if (strpos($clienteSel, ':') !== false) {
-            [$tipo, $idSel] = explode(':', $clienteSel, 2);
-        }
-        $tipo = $tipo === 'establecimiento' ? 'establecimiento' : 'natural';
-        $idSel = (int) $idSel;
 
         DB::beginTransaction();
         try {
             $precioUnitario = $producto->precioVenta;
-            $cantidades = $request->input('cantidad', []);
-            $tallasReq = $request->input('idTalla', []);
-            $nombres = $request->input('nombrePersonalizado', []);
-            $numeros = $request->input('numeroPersonalizado', []);
-            $observs = $request->input('observaciones', []);
-
-            // Calcular total del pedido sumando todas las filas
-            $subtotalTotal = 0;
-            foreach ($cantidades as $c) {
-                $subtotalTotal += ((int)$c) * $precioUnitario;
-            }
+            $subtotal = $precioUnitario * $request->cantidad;
 
             $venta = Venta::create([
-                'subtotal' => $subtotalTotal,
-                'total' => $subtotalTotal,
+                'subtotal' => $subtotal,
+                'total' => $subtotal,
                 'fechaEntrega' => $request->fechaEntrega,
                 'lugarEntrega' => $request->lugarEntrega,
                 'estadoPedido' => '0',
-                'saldo' => $subtotalTotal,
+                'saldo' => $subtotal,
                 'estado' => 1,
                 'idEmpleado' => auth()->user()->empleado->idEmpleado ?? 1,
-                'idCliente' => $tipo === 'natural' ? $idSel : null,
-                'idEstablecimiento' => $tipo === 'establecimiento' ? $idSel : null,
+                'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
+                'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
                 'idUser' => auth()->id()
             ]);
 
-            // Crear un detalle por cada fila enviada
-            $numItems = count($tallasReq);
-            for ($i = 0; $i < $numItems; $i++) {
-                $idTallaItem = (int) ($tallasReq[$i] ?? 0);
-                $cantidadItem = (int) ($cantidades[$i] ?? 0);
-                if ($idTallaItem <= 0 || $cantidadItem <= 0) { continue; }
+            DetalleVenta::create([
+                'cantidad' => $request->cantidad,
+                'nombrePersonalizado' => $request->nombrePersonalizado,
+                'numeroPersonalizado' => $request->numeroPersonalizado,
+                'textoAdicional' => $request->textoAdicional,
+                'observacion' => $request->observaciones,
+                'precioUnitario' => $precioUnitario,
+                'subtotal' => $subtotal,
+                'estado' => 1,
+                'idTalla' => $talla->idTalla,
+                'idVenta' => $venta->idVenta,
+                'idProducto' => $producto->idProducto,
+                'idUser' => auth()->id()
+            ]);
 
-                $tallaItem = Talla::findOrFail($idTallaItem);
-                $nombreItem = $nombres[$i] ?? null;
-                $numeroItem = $numeros[$i] ?? null;
-                $obsItem = $observs[$i] ?? null;
-
-                DetalleVenta::create([
-                    'cantidad' => $cantidadItem,
-                    'nombrePersonalizado' => $nombreItem,
-                    'numeroPersonalizado' => $numeroItem,
-                    'textoAdicional' => $request->textoAdicional,
-                    'observacion' => $obsItem,
-                    'precioUnitario' => $precioUnitario,
-                    'subtotal' => $precioUnitario * $cantidadItem,
+            // Registrar transacción de adelanto si corresponde
+            $adelanto = (float) ($request->montoAdelanto ?? 0);
+            if ($adelanto > 0) {
+                if ($adelanto > $subtotal) {
+                    throw new \Exception('El adelanto no puede ser mayor que el total.');
+                }
+                Transaccion::create([
+                    'tipoTransaccion' => $request->tipoTransaccion ?? 'efectivo',
+                    'monto' => $adelanto,
+                    'metodoPago' => $request->tipoTransaccion ?? 'efectivo',
+                    'observaciones' => $request->observaciones,
                     'estado' => 1,
-                    'idTalla' => $tallaItem->idTalla,
                     'idVenta' => $venta->idVenta,
-                    'idProducto' => $producto->idProducto,
-                    'idUser' => auth()->id()
+                    'idUser' => auth()->id(),
                 ]);
+
+                // Actualizar saldo de la venta
+                $venta->saldo = max($subtotal - $adelanto, 0);
+                $venta->save();
             }
 
             DB::commit();
@@ -667,6 +597,83 @@ class PedidoController extends Controller
         ])->findOrFail($idVenta);
 
         return view('pedidos.show', compact('pedido'));
+    }
+
+    /**
+     * API: Búsqueda unificada de clientes por CI/NIT, nombre y teléfono
+     */
+    public function apiBuscarClientes(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        if ($q === '') {
+            return response()->json(['results' => []]);
+        }
+
+        $qLike = '%'.$q.'%';
+
+        // Clientes naturales (join con users)
+        $naturales = ClienteNatural::query()
+            ->where('cliente_naturals.estado', 1)
+            ->leftJoin('users', 'cliente_naturals.idCliente', '=', 'users.idUser')
+            ->where(function ($w) use ($qLike) {
+                $w->where('users.ci', 'like', $qLike)
+                  ->orWhere('users.name', 'like', $qLike)
+                  ->orWhere('users.telefono', 'like', $qLike)
+                  ->orWhere('cliente_naturals.nit', 'like', $qLike);
+            })
+            ->orderBy('users.name')
+            ->limit(15)
+            ->get([
+                'cliente_naturals.idCliente',
+                'cliente_naturals.nit',
+                'users.ci',
+                'users.name',
+                'users.telefono',
+            ])
+            ->map(function ($row) {
+                $doc = $row->ci ?: $row->nit;
+                $label = trim(($doc ? 'CI: '.$doc.' - ' : '').($row->name ?: 'Cliente').($row->telefono ? ' - Tel: '.$row->telefono : ''));
+                return [
+                    'type' => 'natural',
+                    'value' => 'natural:'.$row->idCliente,
+                    'label' => $label,
+                ];
+            });
+
+        // Establecimientos (join con representante users)
+        $establecimientos = ClienteEstablecimiento::query()
+            ->where('cliente_establecimientos.estado', 1)
+            ->leftJoin('users', 'cliente_establecimientos.idRepresentante', '=', 'users.idUser')
+            ->where(function ($w) use ($qLike) {
+                $w->where('cliente_establecimientos.nit', 'like', $qLike)
+                  ->orWhere('cliente_establecimientos.razonSocial', 'like', $qLike)
+                  ->orWhere('users.name', 'like', $qLike)
+                  ->orWhere('users.telefono', 'like', $qLike);
+            })
+            ->orderBy('cliente_establecimientos.razonSocial')
+            ->limit(15)
+            ->get([
+                'cliente_establecimientos.idEstablecimiento',
+                'cliente_establecimientos.nit',
+                'cliente_establecimientos.razonSocial',
+                'users.telefono',
+                'users.name as representante',
+            ])
+            ->map(function ($row) {
+                $doc = $row->nit ?: '';
+                $nom = $row->razonSocial ?: 'Establecimiento';
+                $tel = $row->telefono ?: '';
+                $label = trim(($doc ? 'NIT: '.$doc.' - ' : '').$nom.($tel ? ' - Tel: '.$tel : ''));
+                return [
+                    'type' => 'establecimiento',
+                    'value' => 'establecimiento:'.$row->idEstablecimiento,
+                    'label' => $label,
+                ];
+            });
+
+        $results = $naturales->concat($establecimientos)->values();
+
+        return response()->json(['results' => $results]);
     }
 
     /**

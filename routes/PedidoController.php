@@ -11,6 +11,7 @@ use App\Models\Variante;
 use App\Models\Caracteristica;
 use App\Models\ClienteNatural;
 use App\Models\ClienteEstablecimiento;
+use App\Models\MetodoPago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -170,7 +171,10 @@ class PedidoController extends Controller
         $clientesNaturales = ClienteNatural::where('estado', 1)->get();
         $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->get();
 
-        return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos'));
+        // Métodos de pago desde BD (activos)
+        $metodosPago = MetodoPago::where('estado', 1)->orderBy('nombre')->get(['id', 'nombre', 'codigo']);
+
+        return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos', 'metodosPago'));
     }
 
     /**
