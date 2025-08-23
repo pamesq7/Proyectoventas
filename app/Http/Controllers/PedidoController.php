@@ -279,7 +279,7 @@ class PedidoController extends Controller
             'textoAdicional' => 'nullable|string|max:200',
             // Pago
             'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
-            'montoAdelanto' => 'nullable|numeric|min:0',
+            'pagoInicial' => 'nullable|numeric|min:0',
         ]);
 
         $producto = Producto::findOrFail($request->idProducto);
@@ -320,15 +320,15 @@ class PedidoController extends Controller
                 'idUser' => auth()->id()
             ]);
 
-            // Registrar transacción de adelanto si corresponde
-            $adelanto = (float) ($request->montoAdelanto ?? 0);
-            if ($adelanto > 0) {
-                if ($adelanto > $subtotal) {
-                    throw new \Exception('El adelanto no puede ser mayor que el total.');
+            // Registrar transacción de pago inicial si corresponde (Opción B)
+            $pagoInicial = (float) ($request->pagoInicial ?? 0);
+            if ($pagoInicial > 0) {
+                if ($pagoInicial > $subtotal) {
+                    throw new \Exception('El pago inicial no puede ser mayor que el total.');
                 }
                 Transaccion::create([
                     'tipoTransaccion' => $request->tipoTransaccion ?? 'efectivo',
-                    'monto' => $adelanto,
+                    'monto' => $pagoInicial,
                     'metodoPago' => $request->tipoTransaccion ?? 'efectivo',
                     'observaciones' => $request->observaciones,
                     'estado' => 1,
@@ -337,7 +337,7 @@ class PedidoController extends Controller
                 ]);
 
                 // Actualizar saldo de la venta
-                $venta->saldo = max($subtotal - $adelanto, 0);
+                $venta->saldo = max($subtotal - $pagoInicial, 0);
                 $venta->save();
             }
 

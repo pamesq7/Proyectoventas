@@ -172,9 +172,9 @@
                                     <label class="form-label">Cliente *</label>
                                     @php($oldClienteSel = old('clienteSeleccionado'))
                                     <div class="input-group">
-                                        <button type="button" class="btn btn-success" title="Agregar nuevo cliente">
+                                        <a href="{{ url('users/create') }}" class="btn btn-success" title="Agregar nuevo usuario" target="_blank" rel="noopener">
                                             <i class="fas fa-plus"></i>
-                                        </button>
+                                        </a>
                                         <div class="flex-grow-1">
                                             <input type="text" id="clienteFilter" class="form-control mb-1" placeholder="Buscar por CI, nombre o teléfono...">
                                             <select class="form-select" name="clienteSeleccionado" id="clienteSelect" required>
@@ -210,14 +210,9 @@
                                         <option value="transferencia">Transferencia bancaria</option>
                                     </select>
                                 </div>
-                                
                                 <div class="mb-1" id="efectivoGroup">
-                                    <label class="form-label">Efectivo recibido</label>
-                                    <input type="number" class="form-control" id="efectivoRecibido" placeholder="Cantidad de efectivo recibida" step="0.01" min="0">
-                                </div>
-                                <div class="form-check mb-2" id="efectivoExactoGroup">
-                                    <input class="form-check-input" type="checkbox" id="efectivoExacto">
-                                    <label class="form-check-label" for="efectivoExacto">Efectivo Exacto</label>
+                                    <label class="form-label">Monto entregado (Bs)</label>
+                                    <input type="number" class="form-control" id="montoEntregado" placeholder="Monto entregado por el cliente" step="0.01" min="0">
                                 </div>
                                 <hr/>
                                 <div class="d-flex justify-content-between"><small>Cantidad total</small><small id="uiCantTotal">0</small></div>
@@ -233,10 +228,10 @@
                                     <div id="uiTablaTallas"></div>
                                 </div>
                                 <div class="mb-2">
-                                    <label class="form-label">Adelanto</label>
-                                    <input type="number" class="form-control" id="montoAdelanto" name="montoAdelanto" placeholder="Monto de adelanto" step="0.01" min="0">
+                                    <label class="form-label">Pago inicial (Bs)</label>
+                                    <input type="number" class="form-control" id="pagoInicial" name="pagoInicial" placeholder="Monto del pago inicial" step="0.01" min="0">
                                 </div>
-                                <div class="d-flex justify-content-between"><small>Adelanto</small><small id="uiAdelanto">Bs 0.00</small></div>
+                                <div class="d-flex justify-content-between"><small>Pago inicial</small><small id="uiAdelanto">Bs 0.00</small></div>
                                 <div class="d-flex justify-content-between"><small><strong>Saldo</strong></small><small id="uiSaldo"><strong>Bs 0.00</strong></small></div>
                                 <hr/>
                                 <div class="d-flex justify-content-between text-success"><small>Monto Efectivo</small><small id="uiEfectivo">Bs 0.00</small></div>
@@ -725,62 +720,45 @@
         document.getElementById('uiIgv').textContent = formatear(igv);
         document.getElementById('uiTotal').textContent = formatear(total);
 
-        // Adelanto y saldo
-        const inpAd = document.getElementById('montoAdelanto');
+        // Pago inicial y saldo
+        const inpAd = document.getElementById('pagoInicial');
         let adelanto = parseFloat(inpAd?.value || '0');
         if (isNaN(adelanto) || adelanto < 0) adelanto = 0;
         document.getElementById('uiAdelanto').textContent = formatear(adelanto);
         const saldo = Math.max(total - adelanto, 0);
         document.getElementById('uiSaldo').textContent = formatear(saldo);
 
-        // Efectivo y vuelto
-        const chkExacto = document.getElementById('efectivoExacto');
-        const inpEfec = document.getElementById('efectivoRecibido');
-        let efectivo = 0;
-        if (chkExacto.checked) {
-            efectivo = total;
-            inpEfec.value = total.toFixed(2);
-            inpEfec.readOnly = true;
-        } else {
-            inpEfec.readOnly = false;
-            efectivo = parseFloat(inpEfec.value || '0');
-            if (isNaN(efectivo)) efectivo = 0;
-        }
+        // Efectivo y vuelto (Opción B): contra pago inicial
+        const inpEfec = document.getElementById('montoEntregado');
+        const tipoPago = (document.getElementById('tipoPago')?.value || '').toLowerCase();
+        let efectivo = parseFloat(inpEfec?.value || '0');
+        if (isNaN(efectivo) || tipoPago !== 'efectivo') efectivo = 0;
         document.getElementById('uiEfectivo').textContent = formatear(efectivo);
-        const vuelto = Math.max(efectivo - total, 0);
+        const vuelto = Math.max(efectivo - adelanto, 0);
         document.getElementById('uiVuelto').textContent = formatear(vuelto);
     }
     // Delegar cambios en cantidades
     document.getElementById('tbodyItems').addEventListener('input', (e) => {
         if (e.target.classList.contains('inp-cantidad')) { recalcTotales(); }
     });
-    document.getElementById('efectivoRecibido').addEventListener('input', recalcTotales);
-    document.getElementById('efectivoExacto').addEventListener('change', recalcTotales);
+    const inpMontoEntregado = document.getElementById('montoEntregado');
+    if (inpMontoEntregado) inpMontoEntregado.addEventListener('input', recalcTotales);
     document.getElementById('tipoPago').addEventListener('change', () => {
         updatePagoUI();
         recalcTotales();
     });
     // Cambios de adelanto
-    ['montoAdelanto']
+    ['pagoInicial']
         .forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', recalcTotales); });
 
     function updatePagoUI() {
         const tipo = (document.getElementById('tipoPago')?.value || '').toLowerCase();
         const grpEfec = document.getElementById('efectivoGroup');
-        const grpExacto = document.getElementById('efectivoExactoGroup');
-        const inpEfec = document.getElementById('efectivoRecibido');
-        const chkExacto = document.getElementById('efectivoExacto');
+        const inpEfec = document.getElementById('montoEntregado');
         const isEfec = tipo === 'efectivo';
         if (grpEfec) grpEfec.style.display = isEfec ? '' : 'none';
-        if (grpExacto) grpExacto.style.display = isEfec ? '' : 'none';
-        if (!isEfec) {
-            if (chkExacto) chkExacto.checked = false;
-            if (inpEfec) {
-                inpEfec.value = '';
-                inpEfec.readOnly = true;
-            }
-        } else {
-            if (inpEfec) inpEfec.readOnly = false;
+        if (!isEfec && inpEfec) {
+            inpEfec.value = '';
         }
     }
 
