@@ -92,6 +92,18 @@
                                                title="Ver detalles">
                                                 <i class="fas fa-eye"></i>
                                             </a>
+                                            <a href="{{ route('pedidos.edit', $pedido->idVenta) }}"
+                                               class="btn btn-warning btn-sm"
+                                               title="Editar pedido">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('pedidos.destroy', $pedido->idVenta) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('¿Seguro que deseas eliminar el pedido #{{ $pedido->idVenta }}? Esta acción no se puede deshacer.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Eliminar pedido">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>

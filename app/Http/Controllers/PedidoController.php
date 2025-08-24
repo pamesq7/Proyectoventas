@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class PedidoController extends Controller
 {
@@ -204,8 +205,17 @@ class PedidoController extends Controller
      * Página para "Personalizar mi diseño" (flujo B)
      * Permite elegir un producto base, talla, cantidad y subir archivo de diseño.
      */
-    public function personalizarDiseno()
+    public function personalizarDiseno(Request $request)
     {
+        // Si llega ?venta=ID, guardamos la venta destino en sesión para anexar los detalles luego
+        $ventaParam = $request->query('venta');
+        if ($ventaParam) {
+            $ventaExiste = Venta::where('idVenta', $ventaParam)->exists();
+            if ($ventaExiste) {
+                session()->put('ventaDestino', (int) $ventaParam);
+            }
+        }
+
         // Productos base activos. Puedes filtrar por una categoría específica si lo deseas.
         $productosBase = Producto::where('estado', 1)
                                 ->orderBy('nombre')
@@ -296,7 +306,7 @@ class PedidoController extends Controller
 
         DB::beginTransaction();
         try {
-            $total = 0.0;
+            $subtotal = 0.0;
             $itemsCalculados = [];
 
             // Obtener un idEmpleado válido (evitar FK inválida)
@@ -317,7 +327,7 @@ class PedidoController extends Controller
                     ->value('precioAdicional') ?? 0);
                 $precioUnit = (float) ($producto->precioVenta ?? 0) + $precioAdicional;
                 $sub = $precioUnit * $cant;
-                $total += $sub;
+                $subtotal += $sub;
                 $itemsCalculados[] = [
                     'idTalla' => $idTalla,
                     'cantidad' => $cant,
@@ -333,19 +343,28 @@ class PedidoController extends Controller
                 throw new \Exception('Debes agregar al menos una fila válida (talla y cantidad).');
             }
 
-            // Crear la venta
-            $venta = Venta::create([
-                'subtotal' => $total,
-                'total' => $total,
-                'fechaEntrega' => $request->fechaEntrega,
-                'lugarEntrega' => $request->lugarEntrega,
-                'estadoPedido' => '0',
-                'saldo' => $total,
-                'estado' => 1,
-                'idEmpleado' => $idEmpleadoSeguro,
-                'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
-                'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
-            ]);
+            // Determinar si anexamos a una venta existente o creamos una nueva
+            $ventaDestinoId = session()->get('ventaDestino');
+            if ($ventaDestinoId) {
+                // Anexar a venta existente
+                $venta = Venta::with('transacciones')->findOrFail($ventaDestinoId);
+            } else {
+                // Crear la venta
+                $igv = round($subtotal * 0.18, 2);
+                $total = $subtotal + $igv;
+                $venta = Venta::create([
+                    'subtotal' => $subtotal,
+                    'total' => $total,
+                    'fechaEntrega' => $request->fechaEntrega,
+                    'lugarEntrega' => $request->lugarEntrega,
+                    'estadoPedido' => '0',
+                    'saldo' => $total,
+                    'estado' => 1,
+                    'idEmpleado' => $idEmpleadoSeguro,
+                    'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
+                    'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
+                ]);
+            }
 
             // Crear detalles por cada fila
             foreach ($itemsCalculados as $it) {
@@ -363,27 +382,47 @@ class PedidoController extends Controller
                 ]);
             }
 
-            // Registrar adelanto como pago (si corresponde)
-            $montoAdelanto = (float) ($request->montoAdelanto ?? 0);
-            if ($montoAdelanto > 0) {
-                if ($montoAdelanto > $total) {
-                    throw new \Exception('El adelanto no puede ser mayor que el total.');
-                }
-                Transaccion::create([
-                    'tipoTransaccion' => 'pago',
-                    'monto' => $montoAdelanto,
-                    'metodoPago' => $request->tipoTransaccion ?? 'efectivo',
-                    'observaciones' => null,
-                    'estado' => 1,
-                    'idVenta' => $venta->idVenta,
-                ]);
-                $venta->saldo = max($total - $montoAdelanto, 0);
+            // Si estamos anexando a una venta existente, recalcular subtotal/total/saldo sumando los nuevos ítems
+            if ($ventaDestinoId) {
+                $nuevoSubtotal = DetalleVenta::where('idVenta', $venta->idVenta)
+                    ->selectRaw('COALESCE(SUM(cantidad * precioUnitario),0) as s')
+                    ->value('s');
+                $venta->subtotal = $nuevoSubtotal;
+                $igv = round($nuevoSubtotal * 0.18, 2);
+                $venta->total = $nuevoSubtotal + $igv; // ajustar si hay recargos/descuentos
+
+                $pagos = $venta->transacciones
+                    ->where('tipoTransaccion', 'pago')
+                    ->sum('monto');
+                $venta->saldo = max($venta->total - (float) $pagos, 0);
                 $venta->save();
+            } else {
+                // Registrar adelanto como pago (si corresponde) SOLO cuando se crea la venta
+                $montoAdelanto = (float) ($request->montoAdelanto ?? 0);
+                if ($montoAdelanto > 0) {
+                    if ($montoAdelanto > $total) {
+                        throw new \Exception('El adelanto no puede ser mayor que el total.');
+                    }
+                    Transaccion::create([
+                        'tipoTransaccion' => 'pago',
+                        'monto' => $montoAdelanto,
+                        'metodoPago' => $request->tipoTransaccion ?? 'efectivo',
+                        'observaciones' => null,
+                        'estado' => 1,
+                        'idVenta' => $venta->idVenta,
+                    ]);
+                    $venta->saldo = max($total - $montoAdelanto, 0);
+                    $venta->save();
+                }
             }
 
             DB::commit();
             // Limpiar diseño temporal tras guardar
             session()->forget('disenoTemporal');
+            // Si anexamos, limpiar el destino
+            if ($ventaDestinoId) {
+                session()->forget('ventaDestino');
+            }
 
             return redirect()->route('pedidos.confirmacion', $venta->idVenta)
                              ->with('success', 'Pedido creado exitosamente');
@@ -528,7 +567,7 @@ class PedidoController extends Controller
         DB::beginTransaction();
         
         try {
-            $total = collect($carrito)->sum('subtotal');
+            $subtotal = collect($carrito)->sum('subtotal');
 
             // Obtener un idEmpleado válido (evitar FK inválida)
             $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
@@ -540,8 +579,10 @@ class PedidoController extends Controller
             }
 
             // Crear la venta/pedido
+            $igv = round($subtotal * 0.18, 2);
+            $total = $subtotal + $igv;
             $venta = Venta::create([
-                'subtotal' => $total,
+                'subtotal' => $subtotal,
                 'total' => $total,
                 'fechaEntrega' => $request->fechaEntrega,
                 'lugarEntrega' => $request->lugarEntrega,
@@ -559,7 +600,7 @@ class PedidoController extends Controller
                     'cantidad' => $item['cantidad'],
                     'nombrePersonalizado' => $item['nombrePersonalizado'] ?? null,
                     'numeroPersonalizado' => $item['numeroPersonalizado'] ?? null,
-                    'textoAdicional' => $item['textoAdicional'] ?? null,
+                    'textoAdicional' => null,
                     'observacion' => $request->observaciones,
                     'precioUnitario' => $item['precioUnitario'],
                     'estado' => 1,
@@ -637,6 +678,10 @@ class PedidoController extends Controller
             'textoAdicional' => 'nullable|string|max:200',
             'observacion' => 'nullable|string|max:500',
             'descripcion' => 'nullable|string|max:200',
+            // Pago opcional
+            'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
+            'montoAdelanto' => 'nullable|numeric|min:0',
+            // delete_ids puede venir como array o como CSV string
         ]);
 
         DB::beginTransaction();
@@ -652,28 +697,94 @@ class PedidoController extends Controller
                 return back()->with('error', 'No existe ningún empleado registrado para asociar el detalle.');
             }
 
-            // Crear el detalle
-            DetalleVenta::create([
-                'cantidad' => (int) $request->cantidad,
-                'nombrePersonalizado' => $request->nombrePersonalizado,
-                'numeroPersonalizado' => $request->numeroPersonalizado,
-                'textoAdicional' => $request->textoAdicional,
-                'observacion' => $request->observacion,
-                'descripcion' => $request->descripcion,
-                'precioUnitario' => (float) $request->precioUnitario,
-                'estado' => 1,
-                'idTalla' => (int) $request->idTalla,
-                'idVenta' => $venta->idVenta,
-                'idEmpleado' => $idEmpleadoSeguro,
-            ]);
+            // Eliminar filas marcadas (acepta array o CSV)
+            $rawDelete = $request->input('delete_ids');
+            $deleteIds = collect([]);
+            if (is_array($rawDelete)) {
+                $deleteIds = collect($rawDelete);
+            } elseif (is_string($rawDelete) && trim($rawDelete) !== '') {
+                $deleteIds = collect(explode(',', $rawDelete));
+            }
+            $deleteIds = $deleteIds->map(fn($v) => (int) $v)->filter();
+            if ($deleteIds->isNotEmpty()) {
+                DetalleVenta::where('idVenta', $venta->idVenta)
+                    ->whereIn('iddetalleVenta', $deleteIds->all())
+                    ->delete();
+            }
 
-            // Recalcular subtotal/total y saldo
+            $ids = $request->input('row_id', []);
+            $tallas = $request->input('idTalla', []);
+            $cantidades = $request->input('cantidad', []);
+            $precios = $request->input('precioUnitario', []);
+            $nombres = $request->input('nombrePersonalizado', []);
+            $numeros = $request->input('numeroPersonalizado', []);
+            $observs = $request->input('observacion', []);
+            $descrs = $request->input('descripcion', []);
+
+            // Obtener un idEmpleado válido
+            $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
+            if (!$idEmpleadoSeguro) {
+                $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
+            }
+            if (!$idEmpleadoSeguro) {
+                return back()->with('error', 'No existe ningún empleado registrado para asociar los detalles.');
+            }
+
+            foreach ($ids as $i => $rowId) {
+                $dataDet = [
+                    'cantidad' => (int) ($cantidades[$i] ?? 0),
+                    'nombrePersonalizado' => $nombres[$i] ?? null,
+                    'numeroPersonalizado' => $numeros[$i] ?? null,
+                    'textoAdicional' => null,
+                    'observacion' => $observs[$i] ?? null,
+                    'descripcion' => $descrs[$i] ?? null,
+                    'precioUnitario' => (float) ($precios[$i] ?? 0),
+                    'estado' => 1,
+                    'idTalla' => (int) ($tallas[$i] ?? 0),
+                    'idVenta' => $venta->idVenta,
+                    'idEmpleado' => $idEmpleadoSeguro,
+                ];
+
+                if ($dataDet['cantidad'] <= 0) { continue; }
+
+                if ($rowId) {
+                    // actualizar existente
+                    $det = DetalleVenta::where('idVenta', $venta->idVenta)
+                        ->where('iddetalleVenta', $rowId)
+                        ->first();
+                    if ($det) {
+                        $det->update($dataDet);
+                    }
+                } else {
+                    // crear nuevo
+                    DetalleVenta::create($dataDet);
+                }
+            }
+
+            // Recalcular totales
             $nuevoSubtotal = DetalleVenta::where('idVenta', $venta->idVenta)
                 ->selectRaw('COALESCE(SUM(cantidad * precioUnitario),0) as s')
                 ->value('s');
-
             $venta->subtotal = $nuevoSubtotal;
-            $venta->total = $nuevoSubtotal; // ajustar si hay recargos/descuentos
+            $igv = round($nuevoSubtotal * 0.18, 2);
+            $venta->total = $nuevoSubtotal + $igv; // ajustar si hay recargos/descuentos
+
+            // Registrar adelanto opcional
+            $montoAd = (float) ($request->montoAdelanto ?? 0);
+            $tipoPago = $request->tipoTransaccion;
+            if ($montoAd > 0) {
+                if ($montoAd > $venta->total) {
+                    throw new \Exception('El adelanto no puede ser mayor que el total.');
+                }
+                Transaccion::create([
+                    'tipoTransaccion' => 'pago',
+                    'monto' => $montoAd,
+                    'metodoPago' => $tipoPago ?? 'efectivo',
+                    'observaciones' => null,
+                    'estado' => 1,
+                    'idVenta' => $venta->idVenta,
+                ]);
+            }
 
             $pagos = $venta->transacciones
                 ->where('tipoTransaccion', 'pago')
@@ -701,7 +812,8 @@ class PedidoController extends Controller
             'clienteEstablecimiento',
             'empleado',
             'detalleVentas'
-        ])->orderBy('created_at', 'desc')
+        ])->where('estado', 1)
+          ->orderBy('created_at', 'desc')
           ->paginate(20);
 
         return view('pedidos.index', compact('pedidos'));
@@ -720,6 +832,195 @@ class PedidoController extends Controller
          ])->findOrFail($idVenta);
 
         return view('pedidos.show', compact('pedido'));
+    }
+
+    /**
+     * Editar pedido (datos básicos)
+     */
+    public function edit($idVenta)
+    {
+        $pedido = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla'])
+            ->findOrFail($idVenta);
+
+        // Estados posibles para select
+        $estados = [
+            '0' => 'Solicitado',
+            '1' => 'En proceso',
+            '2' => 'Listo',
+            '3' => 'Entregado',
+        ];
+
+        // Tallas activas para la edición de detalles
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTalla','nombre']);
+
+        // Productos activos para precargar precios por talla (Opción A)
+        $productos = Producto::where('estado', 1)
+            ->orderBy('nombre')
+            ->get(['idProducto','nombre']);
+
+        // Métodos de pago fijos
+        $metodosPago = collect([
+            ['id' => null, 'nombre' => 'Efectivo', 'codigo' => 'efectivo'],
+            ['id' => null, 'nombre' => 'QR', 'codigo' => 'qr'],
+            ['id' => null, 'nombre' => 'Cheque', 'codigo' => 'cheque'],
+            ['id' => null, 'nombre' => 'Transferencia bancaria', 'codigo' => 'transferencia'],
+        ]);
+
+        return view('pedidos.edit', compact('pedido', 'estados', 'tallas', 'productos', 'metodosPago'));
+    }
+
+    /**
+     * Actualizar pedido
+     */
+    public function update(Request $request, $idVenta)
+    {
+        $request->validate([
+            'fechaEntrega' => 'required|date|after:today',
+            'lugarEntrega' => 'required|string|max:200',
+            'estadoPedido' => 'required|in:0,1,2,3',
+        ]);
+
+        $pedido = Venta::findOrFail($idVenta);
+
+        $pedido->fechaEntrega = $request->fechaEntrega;
+        $pedido->lugarEntrega = $request->lugarEntrega;
+        $pedido->estadoPedido = (string) $request->estadoPedido;
+        $pedido->save();
+
+        return redirect()->route('pedidos.index')->with('success', 'Pedido actualizado correctamente.');
+    }
+
+    /**
+     * Actualizar detalles del pedido (crear/actualizar/eliminar en lote)
+     */
+    public function updateDetalles(Request $request, $idVenta)
+    {
+        $pedido = Venta::with('transacciones')->findOrFail($idVenta);
+
+        $request->validate([
+            'row_id' => 'required|array|min:1',
+            'row_id.*' => 'nullable|integer',
+            'idTalla' => 'required|array|min:1',
+            'idTalla.*' => 'required|exists:tallas,idTalla',
+            'cantidad' => 'required|array|min:1',
+            'cantidad.*' => 'required|integer|min:1',
+            'precioUnitario' => 'required|array|min:1',
+            'precioUnitario.*' => 'required|numeric|min:0',
+            'nombrePersonalizado' => 'nullable|array',
+            'numeroPersonalizado' => 'nullable|array',
+            'observacion' => 'nullable|array',
+            'descripcion' => 'nullable|array',
+            // Pago opcional
+            'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
+            'montoAdelanto' => 'nullable|numeric|min:0',
+            // delete_ids puede venir como array o como CSV string
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Eliminar filas marcadas (acepta array o CSV)
+            $rawDelete = $request->input('delete_ids');
+            $deleteIds = collect([]);
+            if (is_array($rawDelete)) {
+                $deleteIds = collect($rawDelete);
+            } elseif (is_string($rawDelete) && trim($rawDelete) !== '') {
+                $deleteIds = collect(explode(',', $rawDelete));
+            }
+            $deleteIds = $deleteIds->map(fn($v) => (int) $v)->filter();
+            if ($deleteIds->isNotEmpty()) {
+                DetalleVenta::where('idVenta', $pedido->idVenta)
+                    ->whereIn('iddetalleVenta', $deleteIds->all())
+                    ->delete();
+            }
+
+            $ids = $request->input('row_id', []);
+            $tallas = $request->input('idTalla', []);
+            $cantidades = $request->input('cantidad', []);
+            $precios = $request->input('precioUnitario', []);
+            $nombres = $request->input('nombrePersonalizado', []);
+            $numeros = $request->input('numeroPersonalizado', []);
+            $observs = $request->input('observacion', []);
+            $descrs = $request->input('descripcion', []);
+
+            // Obtener un idEmpleado válido
+            $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
+            if (!$idEmpleadoSeguro) {
+                $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
+            }
+            if (!$idEmpleadoSeguro) {
+                return back()->with('error', 'No existe ningún empleado registrado para asociar los detalles.');
+            }
+
+            foreach ($ids as $i => $rowId) {
+                $dataDet = [
+                    'cantidad' => (int) ($cantidades[$i] ?? 0),
+                    'nombrePersonalizado' => $nombres[$i] ?? null,
+                    'numeroPersonalizado' => $numeros[$i] ?? null,
+                    'textoAdicional' => null,
+                    'observacion' => $observs[$i] ?? null,
+                    'descripcion' => $descrs[$i] ?? null,
+                    'precioUnitario' => (float) ($precios[$i] ?? 0),
+                    'estado' => 1,
+                    'idTalla' => (int) ($tallas[$i] ?? 0),
+                    'idVenta' => $pedido->idVenta,
+                    'idEmpleado' => $idEmpleadoSeguro,
+                ];
+
+                if ($dataDet['cantidad'] <= 0) { continue; }
+
+                if ($rowId) {
+                    // actualizar existente
+                    $det = DetalleVenta::where('idVenta', $pedido->idVenta)
+                        ->where('iddetalleVenta', $rowId)
+                        ->first();
+                    if ($det) {
+                        $det->update($dataDet);
+                    }
+                } else {
+                    // crear nuevo
+                    DetalleVenta::create($dataDet);
+                }
+            }
+
+            // Recalcular totales
+            $nuevoSubtotal = DetalleVenta::where('idVenta', $pedido->idVenta)
+                ->selectRaw('COALESCE(SUM(cantidad * precioUnitario),0) as s')
+                ->value('s');
+            $pedido->subtotal = $nuevoSubtotal;
+            $igv = round($nuevoSubtotal * 0.18, 2);
+            $pedido->total = $nuevoSubtotal + $igv; // total incluye IGV
+
+            // Registrar adelanto opcional
+            $montoAd = (float) ($request->montoAdelanto ?? 0);
+            $tipoPago = $request->tipoTransaccion;
+            if ($montoAd > 0) {
+                if ($montoAd > $pedido->total) {
+                    throw new \Exception('El adelanto no puede ser mayor que el total.');
+                }
+                Transaccion::create([
+                    'tipoTransaccion' => 'pago',
+                    'monto' => $montoAd,
+                    'metodoPago' => $tipoPago ?? 'efectivo',
+                    'observaciones' => null,
+                    'estado' => 1,
+                    'idVenta' => $pedido->idVenta,
+                ]);
+            }
+
+            $pagos = $pedido->transacciones
+                ->where('tipoTransaccion', 'pago')
+                ->sum('monto');
+            $pedido->saldo = max($pedido->total - (float) $pagos, 0);
+            $pedido->save();
+
+            DB::commit();
+            return redirect()->route('pedidos.edit', $pedido->idVenta)
+                             ->with('success', 'Detalles actualizados correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al actualizar detalles', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'No se pudo actualizar los detalles: '.$e->getMessage());
+        }
     }
 
     /**
@@ -865,6 +1166,28 @@ class PedidoController extends Controller
             DB::rollBack();
             Log::error('Error al registrar pago', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Error al registrar el pago: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Eliminar un pedido y sus dependencias (detalles, transacciones y pivotes de diseños)
+     */
+    public function destroy($idVenta)
+    {
+        DB::beginTransaction();
+        try {
+            $venta = Venta::findOrFail($idVenta);
+
+            // Borrado lógico: marcar como inactivo
+            $venta->estado = 0;
+            $venta->save();
+
+            DB::commit();
+            return redirect()->route('pedidos.index')->with('successdelete', 'Pedido eliminado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al eliminar (lógico) pedido', ['idVenta' => $idVenta, 'error' => $e->getMessage()]);
+            return redirect()->route('pedidos.index')->with('error', 'No se pudo eliminar el pedido: ' . $e->getMessage());
         }
     }
 }

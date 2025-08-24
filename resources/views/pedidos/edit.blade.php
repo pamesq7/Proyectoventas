@@ -2,281 +2,408 @@
 
 @section('content')
 <div class="container-fluid px-4">
-    <h1 class="mt-4">Gestión de Producto</h1>
+    <h1 class="mt-4">Editar Pedido #{{ $pedido->idVenta }}</h1>
     <ol class="breadcrumb mb-4">
         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ route('productos.index') }}">Productos</a></li>
-        <li class="breadcrumb-item active">{{ $producto->nombre }}</li>
+        <li class="breadcrumb-item"><a href="{{ route('pedidos.index') }}">Pedidos</a></li>
+        <li class="breadcrumb-item active">Editar</li>
     </ol>
 
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <h6 class="mb-1"><i class="fas fa-exclamation-circle me-1"></i>Errores de validación:</h6>
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="fas fa-cogs me-2"></i>
-                Gestión Avanzada: {{ $producto->nombre }}
-            </h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Datos del pedido</h5>
+            <div>
+                <a href="{{ route('pedidos.show', $pedido->idVenta) }}" class="btn btn-info btn-sm">
+                    <i class="fas fa-eye me-1"></i> Ver
+                </a>
+                <a href="{{ route('pedidos.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
         </div>
         <div class="card-body">
-            <!-- Pestañas de Navegación -->
-            <ul class="nav nav-tabs" id="productTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="datos-basicos-tab" data-bs-toggle="tab" data-bs-target="#datos-basicos" type="button" role="tab">
-                        <i class="fas fa-info-circle me-1"></i>Datos Básicos
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded h-100">
+                        <h6 class="text-muted mb-2">Cliente</h6>
+                        @php
+                            $nombreCliente = $pedido->clienteNatural->nombre ?? $pedido->clienteEstablecimiento->nombreEstablecimiento ?? '—';
+                        @endphp
+                        <div class="fw-semibold">{{ $nombreCliente }}</div>
+                        <div class="text-muted small">Creado: {{ $pedido->created_at->format('d/m/Y H:i') }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded h-100">
+                        <h6 class="text-muted mb-2">Resumen</h6>
+                        <div><strong>Total:</strong> ${{ number_format($pedido->total, 2) }}</div>
+                        <div><strong>Saldo:</strong> ${{ number_format($pedido->saldo, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{{ route('pedidos.update', $pedido->idVenta) }}" method="POST" class="row g-3">
+                @csrf
+                @method('PUT')
+
+                <div class="col-md-4">
+                    <label for="fechaEntrega" class="form-label">Fecha de entrega *</label>
+                    <input type="date" id="fechaEntrega" name="fechaEntrega" class="form-control" value="{{ old('fechaEntrega', optional($pedido->fechaEntrega)->format('Y-m-d')) }}" required>
+                </div>
+
+                <div class="col-md-5">
+                    <label for="lugarEntrega" class="form-label">Lugar de entrega *</label>
+                    <input type="text" id="lugarEntrega" name="lugarEntrega" class="form-control" maxlength="200" value="{{ old('lugarEntrega', $pedido->lugarEntrega) }}" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="estadoPedido" class="form-label">Estado *</label>
+                    <select id="estadoPedido" name="estadoPedido" class="form-select" required>
+                        @foreach($estados as $k => $label)
+                            <option value="{{ $k }}" {{ old('estadoPedido', (string)$pedido->estadoPedido) === (string)$k ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-12 d-flex justify-content-end mt-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Guardar cambios
                     </button>
-                </li>
-                
-            </ul>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            <!-- Contenido de las Pestañas -->
-            <div class="tab-content" id="productTabsContent">
-                <!-- PESTAÑA 1: DATOS BÁSICOS -->
-                <div class="tab-pane fade show active" id="datos-basicos" role="tabpanel">
-                    <div class="row mt-4">
-                        <div class="col-md-8">
-                            <form action="{{ route('productos.update', $producto->idProducto) }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                @method('PUT')
-                                
-                                {{-- Mostrar errores de validación --}}
-                                @if($errors->any())
-                                    <div class="alert alert-danger">
-                                        <h6><i class="fas fa-exclamation-triangle me-1"></i>Errores de validación:</h6>
-                                        <ul class="mb-0">
-                                            @foreach($errors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                @endif
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="SKU" class="form-label">SKU *</label>
-                                            <input type="text" class="form-control" id="SKU" name="SKU" value="{{ old('SKU', $producto->SKU) }}" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="idCategoria" class="form-label">Categoría *</label>
-                                            <select class="form-select" id="idCategoria" name="idCategoria" required>
-                                                @foreach($categorias as $categoria)
-                                                    <option value="{{ $categoria->idCategoria }}" {{ old('idCategoria', $producto->idCategoria) == $categoria->idCategoria ? 'selected' : '' }}>
-                                                        {{ $categoria->nombreCategoria }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+    <!-- Edición completa de detalles -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Detalles del pedido</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ route('pedidos.update-detalles', $pedido->idVenta) }}" method="POST" id="form-detalles">
+                @csrf
+                @method('PUT')
 
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="idVariante" class="form-label">Variante</label>
-                                            <select class="form-select @error('idVariante') is-invalid @enderror" 
-                                                    id="idVariante" name="idVariante">
-                                                <option value="">Sin variante</option>
-                                                @foreach($variantes as $variante)
-                                                    <option value="{{ $variante->idVariante }}" 
-                                                            {{ old('idVariante', $producto->idVariante) == $variante->idVariante ? 'selected' : '' }}>
-                                                        {{ $variante->nombre }}
-                                                        @if($variante->varianteCaracteristicas->count() > 0)
-                                                            ({{ $variante->varianteCaracteristicas->count() }} características)
-                                                        @endif
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('idVariante')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="estado" class="form-label">Estado *</label>
-                                            <select class="form-select" id="estado" name="estado" required>
-                                                <option value="1" {{ old('estado', $producto->estado) == 1 ? 'selected' : '' }}>Activo</option>
-                                                <option value="0" {{ old('estado', $producto->estado) == 0 ? 'selected' : '' }}>Inactivo</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="nombre" class="form-label">Nombre del Producto *</label>
-                                    <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', $producto->nombre) }}" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="descripcion" class="form-label">Descripción</label>
-                                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ old('descripcion', $producto->descripcion) }}</textarea>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="precioVenta" class="form-label">Precio de Venta *</label>
-                                            <input type="number" class="form-control" id="precioVenta" name="precioVenta" value="{{ old('precioVenta', $producto->precioVenta) }}" step="0.01" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="precioProduccion" class="form-label">Precio de Producción</label>
-                                            <input type="number" class="form-control" id="precioProduccion" name="precioProduccion" value="{{ old('precioProduccion', $producto->precioProduccion) }}" step="0.01">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="foto" class="form-label">Foto Principal</label>
-                                    @if($producto->foto && file_exists(public_path('storage/' . $producto->foto)))
-                                        <div class="mb-2">
-                                            <img src="{{ asset('storage/' . $producto->foto) }}" alt="{{ $producto->nombre }}" class="img-thumbnail" style="max-width: 200px;">
-                                        </div>
-                                    @elseif($producto->foto)
-                                        <div class="mb-2">
-                                            <div class="alert alert-warning">
-                                                <i class="fas fa-exclamation-triangle me-1"></i>
-                                                Imagen no encontrada: {{ $producto->foto }}
-                                            </div>
-                                        </div>
-                                    @endif
-                                    <input type="file" class="form-control" id="foto" name="foto" accept="image/*">
-                                </div>
-
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-1"></i>Guardar Cambios
-                                </button>
-                            </form>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-title">Información del Sistema</h6>
-                                    <p><strong>ID:</strong> #{{ $producto->idProducto }}</p>
-                                    <p><strong>Creado:</strong> {{ $producto->created_at->format('d/m/Y H:i') }}</p>
-                                    <p><strong>Actualizado:</strong> {{ $producto->updated_at->format('d/m/Y H:i') }}</p>
-                                    <p><strong>Estado:</strong> 
-                                        <span class="badge {{ $producto->estado ? 'bg-success' : 'bg-danger' }}">
-                                            {{ $producto->estado ? 'Activo' : 'Inactivo' }}
-                                        </span>
-                                    </p>
-                                </div>
+                <div id="detalles-bloques">
+                    <!-- Bloque 0: detalles existentes -->
+                    <div class="bloque-detalle" data-index="0">
+                        <!-- Selector de producto por bloque -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Producto (precarga precio por talla en filas nuevas)</label>
+                                <select class="form-select form-select-sm productoSelector">
+                                    <option value="">Seleccionar producto</option>
+                                    @foreach(($productos ?? []) as $p)
+                                        <option value="{{ $p->idProducto }}">[#{{ $p->idProducto }}] {{ $p->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">No cambia el historial del pedido; solo ayuda a rellenar precios de nuevas filas.</div>
                             </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle tabla-detalles">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 12rem">Talla</th>
+                                        <th style="width: 7rem">Cant.</th>
+                                        <th style="width: 9rem">Precio</th>
+                                        <th style="width: 14rem">Nombre</th>
+                                        <th style="width: 10rem">Número</th>
+                                        <th>Descripción</th>
+                                        <th>Observación</th>
+                                        <th style="width: 6rem" class="text-end">Subtotal</th>
+                                        <th style="width: 3rem"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach(($pedido->detalleVentas ?? []) as $det)
+                                        <tr>
+                                            <input type="hidden" name="row_id[]" value="{{ $det->iddetalleVenta }}">
+                                            <td>
+                                                <select name="idTalla[]" class="form-select form-select-sm tallaSel" required>
+                                                    @foreach(($tallas ?? []) as $t)
+                                                        <option value="{{ $t->idTalla }}" {{ $det->idTalla == $t->idTalla ? 'selected' : '' }}>{{ $t->nombre }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="cantidad[]" class="form-control form-control-sm cantidad" min="1" value="{{ $det->cantidad }}" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" step="0.01" name="precioUnitario[]" class="form-control form-control-sm precio" min="0" value="{{ number_format($det->precioUnitario, 2, '.', '') }}" required>
+                                            </td>
+                                            <td>
+                                                <input type="text" name="nombrePersonalizado[]" class="form-control form-control-sm" value="{{ $det->nombrePersonalizado }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="numeroPersonalizado[]" class="form-control form-control-sm" value="{{ $det->numeroPersonalizado }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="descripcion[]" class="form-control form-control-sm" value="{{ $det->descripcion }}">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="observacion[]" class="form-control form-control-sm" value="{{ $det->observacion }}">
+                                            </td>
+                                            <td class="text-end subtotal">{{ number_format($det->cantidad * $det->precioUnitario, 2) }}</td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-outline-danger btn-sm btn-del" data-id="{{ $det->iddetalleVenta }}"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="9">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-agregar-fila">
+                                                <i class="fas fa-plus me-1"></i>Agregar fila
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-            </div>
-        </div>
-    </div>
-</div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-agregar-bloque">
+                        <i class="fas fa-layer-group me-1"></i> Agregar otro pedido
+                    </button>
+                </div>
 
-<!-- Modal Nueva Variante -->
-<div class="modal fade" id="modalNuevaVariante" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Nueva Variante</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formNuevaVariante">
-                    <input type="hidden" name="producto_id" value="{{ $producto->idProducto }}">
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="variante_nombre" class="form-label">Nombre *</label>
-                                <input type="text" class="form-control" id="variante_nombre" name="nombre" required>
-                            </div>
+                <div class="row g-3 mt-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Tipo Pago</label>
+                        <select name="tipoTransaccion" class="form-select form-select-sm">
+                            <option value="">Sin registrar pago</option>
+                            @foreach(($metodosPago ?? []) as $mp)
+                                <option value="{{ $mp['codigo'] }}">{{ $mp['nombre'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Adelanto</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Bs</span>
+                            <input type="number" step="0.01" min="0" name="montoAdelanto" class="form-control" placeholder="0.00">
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="variante_descripcion" class="form-label">Descripción *</label>
-                                <input type="text" class="form-control" id="variante_descripcion" name="descripcion" required>
-                            </div>
+                        <div class="form-text">Se registrará como pago y ajustará el saldo.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 bg-light rounded border">
+                            <div class="d-flex justify-content-between"><span>Subtotal</span><strong id="sum-subtotal">0.00</strong></div>
+                            <div class="d-flex justify-content-between"><span>IGV (18%)</span><strong id="sum-igv">0.00</strong></div>
+                            <div class="d-flex justify-content-between"><span>Total</span><strong id="sum-total">0.00</strong></div>
+                            <div class="d-flex justify-content-between"><span>Saldo actual</span><strong>{{ number_format($pedido->saldo, 2) }}</strong></div>
                         </div>
                     </div>
+                </div>
 
-
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="guardarVariante()">Guardar Variante</button>
-            </div>
+                <input type="hidden" name="delete_ids" id="delete_ids_holder">
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Guardar detalles</button>
+                </div>
+            </form>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        (function(){
+            const bloquesContainer = document.getElementById('detalles-bloques');
+            const deleteIdsHolder = document.getElementById('delete_ids_holder');
+            const btnAgregarBloque = document.getElementById('btn-agregar-bloque');
+            let deleteIds = [];
+            let bloqueCount = 1; // ya existe el bloque 0
+
+            // Precios por talla por bloque
+            const preciosPorTallaByBlock = {}; // { index: { idTalla: precio } }
+
+            function initBloqueEvents(bloque){
+                // Producto selector por bloque
+                const sel = bloque.querySelector('.productoSelector');
+                if (sel){
+                    sel.addEventListener('change', async function(){
+                        const idProd = this.value;
+                        const idx = bloque.dataset.index;
+                        preciosPorTallaByBlock[idx] = {};
+                        if (!idProd) return;
+                        try {
+                            const url = '{{ route('api.producto.tallas-precios', ['idProducto' => ':id']) }}'.replace(':id', idProd);
+                            const res = await fetch(url);
+                            const data = await res.json();
+                            if (data && Array.isArray(data.precios)) {
+                                data.precios.forEach(p => {
+                                    preciosPorTallaByBlock[idx][String(p.idTalla)] = parseFloat(p.precioUnitario);
+                                });
+                            }
+                        } catch (e) { console.error(e); }
+                    });
+                }
+
+                const tbody = bloque.querySelector('.tabla-detalles tbody');
+                // Inputs cantidad/precio
+                tbody.addEventListener('input', function(e){
+                    const tr = e.target.closest('tr');
+                    if (tr) calcRowSubtotal(tr);
+                });
+                // Cambio de talla: solo filas nuevas
+                tbody.addEventListener('change', function(e){
+                    if (e.target.classList.contains('tallaSel')){
+                        const tr = e.target.closest('tr');
+                        const rowId = tr.querySelector('input[name="row_id[]"]').value;
+                        if (!rowId) {
+                            const idx = bloque.dataset.index;
+                            const idT = String(e.target.value);
+                            const mapa = preciosPorTallaByBlock[idx] || {};
+                            if (mapa[idT] != null) {
+                                const precioInput = tr.querySelector('.precio');
+                                precioInput.value = mapa[idT].toFixed(2);
+                                calcRowSubtotal(tr);
+                            }
+                        }
+                    }
+                });
+
+                // Agregar fila
+                const btnAdd = bloque.querySelector('.btn-agregar-fila');
+                btnAdd.addEventListener('click', function(){
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <input type=\"hidden\" name=\"row_id[]\" value=\"\">
+                        <td>
+                            <select name=\"idTalla[]\" class=\"form-select form-select-sm tallaSel\" required>
+                                @foreach(($tallas ?? []) as $t)
+                                    <option value=\"{{ $t->idTalla }}\">{{ $t->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td><input type=\"number\" name=\"cantidad[]\" class=\"form-control form-control-sm cantidad\" min=\"1\" value=\"1\" required></td>
+                        <td><input type=\"number\" step=\"0.01\" name=\"precioUnitario[]\" class=\"form-control form-control-sm precio\" min=\"0\" value=\"0.00\" required></td>
+                        <td><input type=\"text\" name=\"nombrePersonalizado[]\" class=\"form-control form-control-sm\"></td>
+                        <td><input type=\"text\" name=\"numeroPersonalizado[]\" class=\"form-control form-control-sm\"></td>
+                        <td><input type=\"text\" name=\"descripcion[]\" class=\"form-control form-control-sm\"></td>
+                        <td><input type=\"text\" name=\"observacion[]\" class=\"form-control form-control-sm\"></td>
+                        <td class=\"text-end subtotal\">0.00</td>
+                        <td class=\"text-center\"><button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-del\"><i class=\"fas fa-trash\"></i></button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Eliminar fila
+                tbody.addEventListener('click', function(e){
+                    if (e.target.closest('.btn-del')){
+                        const tr = e.target.closest('tr');
+                        const id = tr.querySelector('input[name=\"row_id[]\"]').value;
+                        if (id) {
+                            deleteIds.push(id);
+                            deleteIdsHolder.value = deleteIds.join(',');
+                            // Evitar que se envíe esta fila al backend
+                            tr.querySelectorAll('input,select').forEach(el => { el.name = el.name + '_ignored'; });
+                        }
+                        tr.remove();
+                        calcTotalsGlobal();
+                    }
+                });
+            }
+
+            function calcRowSubtotal(tr){
+                const q = parseFloat(tr.querySelector('.cantidad')?.value || '0');
+                const p = parseFloat(tr.querySelector('.precio')?.value || '0');
+                tr.querySelector('.subtotal').textContent = (q * p).toFixed(2);
+                calcTotalsGlobal();
+            }
+
+            function calcTotalsGlobal(){
+                let sum = 0;
+                bloquesContainer.querySelectorAll('.tabla-detalles tbody tr').forEach(tr => {
+                    const c = parseFloat(tr.querySelector('.cantidad')?.value || '0');
+                    const p = parseFloat(tr.querySelector('.precio')?.value || '0');
+                    sum += (c * p);
+                });
+                const igv = sum * 0.18;
+                document.getElementById('sum-subtotal').textContent = sum.toFixed(2);
+                document.getElementById('sum-igv').textContent = igv.toFixed(2);
+                document.getElementById('sum-total').textContent = (sum + igv).toFixed(2);
+            }
+
+            // Inicializar bloque 0
+            initBloqueEvents(bloquesContainer.querySelector('.bloque-detalle[data-index="0"]'));
+            // Inicializar subtotales existentes
+            bloquesContainer.querySelectorAll('.tabla-detalles tbody tr').forEach(tr => calcRowSubtotal(tr));
+            calcTotalsGlobal();
+
+            // Agregar nuevo bloque
+            btnAgregarBloque.addEventListener('click', function(){
+                const idx = bloqueCount++;
+                const bloque = document.createElement('div');
+                bloque.className = 'bloque-detalle';
+                bloque.dataset.index = String(idx);
+                bloque.innerHTML = `
+                    <hr class=\"my-3\">
+                    <div class=\"row g-3 mb-3\">
+                        <div class=\"col-md-6\">
+                            <label class=\"form-label\">Producto (precarga precio por talla en filas nuevas)</label>
+                            <select class=\"form-select form-select-sm productoSelector\">
+                                <option value=\"\">Seleccionar producto</option>
+                                @foreach(($productos ?? []) as $p)
+                                    <option value=\"{{ $p->idProducto }}\">[#{{ $p->idProducto }}] {{ $p->nombre }}</option>
+                                @endforeach
+                            </select>
+                            <div class=\"form-text\">Este bloque crea filas nuevas independientes del resto.</div>
+                        </div>
+                    </div>
+                    <div class=\"table-responsive\"> 
+                        <table class=\"table table-sm align-middle tabla-detalles\">
+                            <thead class=\"table-light\">
+                                <tr>
+                                    <th style=\"width: 12rem\">Talla</th>
+                                    <th style=\"width: 7rem\">Cant.</th>
+                                    <th style=\"width: 9rem\">Precio</th>
+                                    <th style=\"width: 14rem\">Nombre</th>
+                                    <th style=\"width: 10rem\">Número</th>
+                                    <th>Descripción</th>
+                                    <th>Observación</th>
+                                    <th style=\"width: 6rem\" class=\"text-end\">Subtotal</th>
+                                    <th style=\"width: 3rem\"></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan=\"9\">
+                                        <button type=\"button\" class=\"btn btn-sm btn-outline-primary btn-agregar-fila\"><i class=\"fas fa-plus me-1\"></i>Agregar fila</button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+                bloquesContainer.appendChild(bloque);
+                initBloqueEvents(bloque);
+            });
+        })();
+    </script>
+    @endpush
 </div>
 @endsection
-
-@push('scripts')
-<script>
-// Habilitar/deshabilitar input de precio según checkbox
-document.querySelectorAll('.caracteristica-check').forEach(function(checkbox) {
-    checkbox.addEventListener('change', function() {
-        const precioInput = this.closest('.form-check').querySelector('.precio-adicional');
-        precioInput.disabled = !this.checked;
-        if (!this.checked) {
-            precioInput.value = '0';
-        }
-    });
-});
-
-// Guardar nueva variante
-function guardarVariante() {
-    const form = document.getElementById('formNuevaVariante');
-    const formData = new FormData(form);
-    
-    // Convertir a objeto para envío JSON
-    const data = {
-        producto_id: formData.get('producto_id'),
-        nombre: formData.get('nombre'),
-        descripcion: formData.get('descripcion'),
-        caracteristicas: []
-    };
-    
-    // Recopilar características seleccionadas
-    document.querySelectorAll('.caracteristica-check:checked').forEach(function(checkbox) {
-        const caracteristicaId = checkbox.value;
-        const precioInput = checkbox.closest('.form-check').querySelector('.precio-adicional');
-        
-        data.caracteristicas.push({
-            id: caracteristicaId,
-            precio_adicional: parseFloat(precioInput.value) || 0
-        });
-    });
-    
-    if (data.caracteristicas.length === 0) {
-        alert('Debe seleccionar al menos una característica');
-        return;
-    }
-    
-    // Enviar datos
-    fetch('{{ route("productos.storeVariante") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al guardar la variante');
-    });
-}
-
-
-</script>
-@endpush

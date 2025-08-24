@@ -153,3 +153,7 @@ Route::post('pedido/{idVenta}/pagos', [PedidoController::class, 'registrarPago']
 Route::get('pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
 Route::get('pedidos/{idVenta}', [PedidoController::class, 'show'])->name('pedidos.show');
 Route::patch('pedidos/{idVenta}/estado', [PedidoController::class, 'actualizarEstado'])->name('pedidos.actualizar-estado');
+Route::get('pedidos/{idVenta}/edit', [PedidoController::class, 'edit'])->name('pedidos.edit');
+Route::put('pedidos/{idVenta}', [PedidoController::class, 'update'])->name('pedidos.update');
+Route::put('pedidos/{idVenta}/detalles', [PedidoController::class, 'updateDetalles'])->name('pedidos.update-detalles');
+Route::delete('pedidos/{idVenta}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
