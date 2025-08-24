@@ -23,46 +23,45 @@ class Venta extends Model
         'idEmpleado',
         'idCliente',
         'idEstablecimiento',
-        'idUser',
     ];
 
-    // 🔸 Relación: pertenece a un empleado
+    // Relación: pertenece a un empleado
     public function empleado()
     {
         return $this->belongsTo(Empleado::class, 'idEmpleado');
     }
 
-    // 🔸 Relación: pertenece a un cliente natural (opcional)
+    // Relación: pertenece a un cliente natural (opcional)
     public function clienteNatural()
     {
         return $this->belongsTo(ClienteNatural::class, 'idCliente');
     }
 
-    // 🔸 Relación: pertenece a un establecimiento (opcional)
+    // Relación: pertenece a un establecimiento (opcional)
     public function clienteEstablecimiento()
     {
         return $this->belongsTo(ClienteEstablecimiento::class, 'idEstablecimiento');
     }
 
-    // 🔸 Relación: detalles de venta
+    // Relación: detalles de venta
     public function detalleVentas()
     {
         return $this->hasMany(DetalleVenta::class, 'idVenta');
     }
 
-    // 🔸 Relación: transacciones asociadas
+    // Relación: transacciones asociadas
     public function transacciones()
     {
         return $this->hasMany(Transaccion::class, 'idVenta');
     }
 
-    // 🔸 Relación: diseños vinculados (muchos a muchos con tabla intermedia)
+    // Relación: diseños vinculados (muchos a muchos con tabla intermedia)
     public function disenos()
     {
         return $this->belongsToMany(Diseno::class, 'venta_disenos', 'idventa', 'idDiseno');
     }
 
-    // 🔸 Relación: intermedia con datos adicionales
+    // Relación: intermedia con datos adicionales
     public function ventaDisenos()
     {
         return $this->hasMany(VentaDiseno::class, 'idventa');

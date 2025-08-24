@@ -133,6 +133,8 @@ Route::get('api/producto/{idProducto}/opciones', [PedidoController::class, 'apiO
 Route::get('api/variante/{idVariante}/caracteristicas', [PedidoController::class, 'apiCaracteristicasDeVariante'])->name('api.variante.caracteristicas');
 Route::get('api/variantes', [PedidoController::class, 'apiVariantesActivas'])->name('api.variantes.activas');
 Route::get('api/variante/{idVariante}/productos', [PedidoController::class, 'apiProductosPorVariante'])->name('api.variante.productos');
+Route::get('api/producto/{idProducto}/tallas-precios', [PedidoController::class, 'apiTallasPreciosPorProducto'])->name('api.producto.tallas-precios');
+Route::get('api/clientes/search', [PedidoController::class, 'apiBuscarClientes'])->name('api.clientes.search');
 
 // Rutas del carrito de compras
 Route::post('carrito/agregar', [PedidoController::class, 'agregarAlCarrito'])->name('pedidos.agregar-carrito');
@@ -143,6 +145,7 @@ Route::delete('carrito/{itemId}', [PedidoController::class, 'eliminarDelCarrito'
 Route::get('checkout', [PedidoController::class, 'checkout'])->name('pedidos.checkout');
 Route::post('procesar-pedido', [PedidoController::class, 'procesarPedido'])->name('pedidos.procesar');
 Route::get('pedido/{idVenta}/confirmacion', [PedidoController::class, 'confirmacion'])->name('pedidos.confirmacion');
+Route::post('pedidos/{idVenta}/detalle', [PedidoController::class, 'agregarDetalle'])->name('pedidos.detalle.agregar');
 // Registro de pagos para una venta (sin modificar base de datos)
 Route::post('pedido/{idVenta}/pagos', [PedidoController::class, 'registrarPago'])->name('pedidos.registrar-pago');
 

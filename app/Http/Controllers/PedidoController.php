@@ -272,77 +272,116 @@ class PedidoController extends Controller
             'fechaEntrega' => 'required|date|after:today',
             'lugarEntrega' => 'required|string|max:200',
             'idProducto' => 'required|exists:productos,idProducto',
-            'idTalla' => 'required|exists:tallas,idTalla',
-            'cantidad' => 'required|integer|min:1',
-            'nombrePersonalizado' => 'nullable|string|max:50',
-            'numeroPersonalizado' => 'nullable|string|max:10',
-            'textoAdicional' => 'nullable|string|max:200',
+            // Arrays de items
+            'idTalla' => 'required|array|min:1',
+            'idTalla.*' => 'required|exists:tallas,idTalla',
+            'cantidad' => 'required|array|min:1',
+            'cantidad.*' => 'required|integer|min:1',
+            'nombrePersonalizado' => 'nullable|array',
+            'numeroPersonalizado' => 'nullable|array',
+            'observaciones' => 'nullable|array',
             // Pago
             'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
-            'pagoInicial' => 'nullable|numeric|min:0',
+            'montoAdelanto' => 'nullable|numeric|min:0',
         ]);
 
         $producto = Producto::findOrFail($request->idProducto);
-        $talla = Talla::findOrFail($request->idTalla);
         $rutaDiseno = session()->get('disenoTemporal');
+
+        $idsTalla = $request->input('idTalla', []);
+        $cantidades = $request->input('cantidad', []);
+        $nombres = $request->input('nombrePersonalizado', []);
+        $numeros = $request->input('numeroPersonalizado', []);
+        $observs = $request->input('observaciones', []);
 
         DB::beginTransaction();
         try {
-            $precioUnitario = $producto->precioVenta;
-            $subtotal = $precioUnitario * $request->cantidad;
+            $total = 0.0;
+            $itemsCalculados = [];
 
+            // Obtener un idEmpleado válido (evitar FK inválida)
+            $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
+            if (!$idEmpleadoSeguro) {
+                $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
+            }
+            if (!$idEmpleadoSeguro) {
+                return back()->with('error', 'No existe ningún empleado registrado para asociar la venta. Cree un empleado o asocie uno al usuario actual.');
+            }
+
+            foreach ($idsTalla as $i => $idTalla) {
+                $cant = (int)($cantidades[$i] ?? 0);
+                if ($cant <= 0) { continue; }
+                // Precio unitario = precio base del producto + adicional por talla (si existe)
+                $precioAdicional = (float) (ProductoTalla::where('idProducto', $producto->idProducto)
+                    ->where('idTalla', $idTalla)
+                    ->value('precioAdicional') ?? 0);
+                $precioUnit = (float) ($producto->precioVenta ?? 0) + $precioAdicional;
+                $sub = $precioUnit * $cant;
+                $total += $sub;
+                $itemsCalculados[] = [
+                    'idTalla' => $idTalla,
+                    'cantidad' => $cant,
+                    'precioUnitario' => $precioUnit,
+                    'subtotal' => $sub,
+                    'nombre' => $nombres[$i] ?? null,
+                    'numero' => $numeros[$i] ?? null,
+                    'observacion' => $observs[$i] ?? null,
+                ];
+            }
+
+            if (empty($itemsCalculados)) {
+                throw new \Exception('Debes agregar al menos una fila válida (talla y cantidad).');
+            }
+
+            // Crear la venta
             $venta = Venta::create([
-                'subtotal' => $subtotal,
-                'total' => $subtotal,
+                'subtotal' => $total,
+                'total' => $total,
                 'fechaEntrega' => $request->fechaEntrega,
                 'lugarEntrega' => $request->lugarEntrega,
                 'estadoPedido' => '0',
-                'saldo' => $subtotal,
+                'saldo' => $total,
                 'estado' => 1,
-                'idEmpleado' => auth()->user()->empleado->idEmpleado ?? 1,
+                'idEmpleado' => $idEmpleadoSeguro,
                 'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
                 'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
-                'idUser' => auth()->id()
             ]);
 
-            DetalleVenta::create([
-                'cantidad' => $request->cantidad,
-                'nombrePersonalizado' => $request->nombrePersonalizado,
-                'numeroPersonalizado' => $request->numeroPersonalizado,
-                'textoAdicional' => $request->textoAdicional,
-                'observacion' => $request->observaciones,
-                'precioUnitario' => $precioUnitario,
-                'subtotal' => $subtotal,
-                'estado' => 1,
-                'idTalla' => $talla->idTalla,
-                'idVenta' => $venta->idVenta,
-                'idProducto' => $producto->idProducto,
-                'idUser' => auth()->id()
-            ]);
+            // Crear detalles por cada fila
+            foreach ($itemsCalculados as $it) {
+                DetalleVenta::create([
+                    'cantidad' => $it['cantidad'],
+                    'nombrePersonalizado' => $it['nombre'],
+                    'numeroPersonalizado' => $it['numero'],
+                    'textoAdicional' => null,
+                    'observacion' => $it['observacion'],
+                    'precioUnitario' => $it['precioUnitario'],
+                    'estado' => 1,
+                    'idTalla' => $it['idTalla'],
+                    'idVenta' => $venta->idVenta,
+                    'idEmpleado' => $idEmpleadoSeguro,
+                ]);
+            }
 
-            // Registrar transacción de pago inicial si corresponde (Opción B)
-            $pagoInicial = (float) ($request->pagoInicial ?? 0);
-            if ($pagoInicial > 0) {
-                if ($pagoInicial > $subtotal) {
-                    throw new \Exception('El pago inicial no puede ser mayor que el total.');
+            // Registrar adelanto como pago (si corresponde)
+            $montoAdelanto = (float) ($request->montoAdelanto ?? 0);
+            if ($montoAdelanto > 0) {
+                if ($montoAdelanto > $total) {
+                    throw new \Exception('El adelanto no puede ser mayor que el total.');
                 }
                 Transaccion::create([
-                    'tipoTransaccion' => $request->tipoTransaccion ?? 'efectivo',
-                    'monto' => $pagoInicial,
+                    'tipoTransaccion' => 'pago',
+                    'monto' => $montoAdelanto,
                     'metodoPago' => $request->tipoTransaccion ?? 'efectivo',
-                    'observaciones' => $request->observaciones,
+                    'observaciones' => null,
                     'estado' => 1,
                     'idVenta' => $venta->idVenta,
-                    'idUser' => auth()->id(),
                 ]);
-
-                // Actualizar saldo de la venta
-                $venta->saldo = max($subtotal - $pagoInicial, 0);
+                $venta->saldo = max($total - $montoAdelanto, 0);
                 $venta->save();
             }
 
             DB::commit();
-
             // Limpiar diseño temporal tras guardar
             session()->forget('disenoTemporal');
 
@@ -491,6 +530,15 @@ class PedidoController extends Controller
         try {
             $total = collect($carrito)->sum('subtotal');
 
+            // Obtener un idEmpleado válido (evitar FK inválida)
+            $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
+            if (!$idEmpleadoSeguro) {
+                $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
+            }
+            if (!$idEmpleadoSeguro) {
+                return back()->with('error', 'No existe ningún empleado registrado para asociar la venta. Cree un empleado o asocie uno al usuario actual.');
+            }
+
             // Crear la venta/pedido
             $venta = Venta::create([
                 'subtotal' => $total,
@@ -500,27 +548,24 @@ class PedidoController extends Controller
                 'estadoPedido' => '0', // Solicitado
                 'saldo' => $total,
                 'estado' => 1,
-                'idEmpleado' => auth()->user()->empleado->idEmpleado ?? 1, // Usuario actual o default
+                'idEmpleado' => $idEmpleadoSeguro,
                 'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
                 'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
-                'idUser' => auth()->id()
             ]);
 
             // Crear detalles de venta para cada item del carrito
             foreach ($carrito as $item) {
                 DetalleVenta::create([
                     'cantidad' => $item['cantidad'],
-                    'nombrePersonalizado' => $item['nombrePersonalizado'],
-                    'numeroPersonalizado' => $item['numeroPersonalizado'],
-                    'textoAdicional' => $item['textoAdicional'],
+                    'nombrePersonalizado' => $item['nombrePersonalizado'] ?? null,
+                    'numeroPersonalizado' => $item['numeroPersonalizado'] ?? null,
+                    'textoAdicional' => $item['textoAdicional'] ?? null,
                     'observacion' => $request->observaciones,
                     'precioUnitario' => $item['precioUnitario'],
-                    'subtotal' => $item['subtotal'],
                     'estado' => 1,
                     'idTalla' => $item['idTalla'],
                     'idVenta' => $venta->idVenta,
-                    'idProducto' => $item['idProducto'],
-                    'idUser' => auth()->id()
+                    'idEmpleado' => $idEmpleadoSeguro,
                 ]);
             }
 
@@ -558,12 +603,14 @@ class PedidoController extends Controller
     public function confirmacion($idVenta)
     {
         $venta = Venta::with([
-            'detalleVentas.producto',
-            'detalleVentas.talla',
-            'clienteNatural',
-            'clienteEstablecimiento',
-            'transacciones'
-        ])->findOrFail($idVenta);
+             'detalleVentas.talla',
+             'clienteNatural',
+             'clienteEstablecimiento',
+             'transacciones'
+         ])->findOrFail($idVenta);
+
+        // Tallas activas para el formulario de agregar detalle
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTalla','nombre']);
 
         // Lista fija de métodos de pago (no depende de tabla)
         $metodosPago = collect([
@@ -573,7 +620,75 @@ class PedidoController extends Controller
             ['id' => null, 'nombre' => 'Transferencia bancaria', 'codigo' => 'transferencia'],
         ]);
 
-        return view('pedidos.confirmacion', compact('venta', 'metodosPago'));
+        return view('pedidos.confirmacion', compact('venta', 'metodosPago', 'tallas'));
+    }
+
+    /**
+     * Agregar un detalle de venta desde la confirmación y recalcular totales/saldo
+     */
+    public function agregarDetalle(Request $request, $idVenta)
+    {
+        $request->validate([
+            'idTalla' => 'required|exists:tallas,idTalla',
+            'cantidad' => 'required|integer|min:1',
+            'precioUnitario' => 'required|numeric|min:0',
+            'nombrePersonalizado' => 'nullable|string|max:50',
+            'numeroPersonalizado' => 'nullable|string|max:10',
+            'textoAdicional' => 'nullable|string|max:200',
+            'observacion' => 'nullable|string|max:500',
+            'descripcion' => 'nullable|string|max:200',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $venta = Venta::with('transacciones')->findOrFail($idVenta);
+
+            // Obtener un idEmpleado válido
+            $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
+            if (!$idEmpleadoSeguro) {
+                $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
+            }
+            if (!$idEmpleadoSeguro) {
+                return back()->with('error', 'No existe ningún empleado registrado para asociar el detalle.');
+            }
+
+            // Crear el detalle
+            DetalleVenta::create([
+                'cantidad' => (int) $request->cantidad,
+                'nombrePersonalizado' => $request->nombrePersonalizado,
+                'numeroPersonalizado' => $request->numeroPersonalizado,
+                'textoAdicional' => $request->textoAdicional,
+                'observacion' => $request->observacion,
+                'descripcion' => $request->descripcion,
+                'precioUnitario' => (float) $request->precioUnitario,
+                'estado' => 1,
+                'idTalla' => (int) $request->idTalla,
+                'idVenta' => $venta->idVenta,
+                'idEmpleado' => $idEmpleadoSeguro,
+            ]);
+
+            // Recalcular subtotal/total y saldo
+            $nuevoSubtotal = DetalleVenta::where('idVenta', $venta->idVenta)
+                ->selectRaw('COALESCE(SUM(cantidad * precioUnitario),0) as s')
+                ->value('s');
+
+            $venta->subtotal = $nuevoSubtotal;
+            $venta->total = $nuevoSubtotal; // ajustar si hay recargos/descuentos
+
+            $pagos = $venta->transacciones
+                ->where('tipoTransaccion', 'pago')
+                ->sum('monto');
+            $venta->saldo = max($venta->total - (float) $pagos, 0);
+            $venta->save();
+
+            DB::commit();
+            return redirect()->route('pedidos.confirmacion', $venta->idVenta)
+                             ->with('success', 'Detalle agregado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al agregar detalle', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'No se pudo agregar el detalle: '.$e->getMessage());
+        }
     }
 
     /**
@@ -598,12 +713,11 @@ class PedidoController extends Controller
     public function show($idVenta)
     {
         $pedido = Venta::with([
-            'detalleVentas.producto.categoria',
-            'detalleVentas.talla',
-            'clienteNatural',
-            'clienteEstablecimiento',
-            'empleado'
-        ])->findOrFail($idVenta);
+             'detalleVentas.talla',
+             'clienteNatural',
+             'clienteEstablecimiento',
+             'empleado'
+         ])->findOrFail($idVenta);
 
         return view('pedidos.show', compact('pedido'));
     }
@@ -737,11 +851,10 @@ class PedidoController extends Controller
                 'observaciones' => $request->observaciones,
                 'estado' => 1,
                 'idVenta' => $venta->idVenta,
-                'idUser' => auth()->id(),
             ]);
 
             // Actualizar saldo persistido tomando en cuenta el nuevo pago
-            $nuevoSaldo = max(0, $saldoActual - $monto);
+            $nuevoSaldo = max($saldoActual - $monto, 0);
             $venta->saldo = $nuevoSaldo;
             $venta->save();
 

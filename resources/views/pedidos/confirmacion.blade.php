@@ -70,16 +70,49 @@
                             <tbody>
                                 @foreach($venta->detalleVentas as $det)
                                     <tr>
-                                        <td>{{ $det->producto->nombre ?? 'Producto' }}</td>
+                                        <td>{{ $det->descripcion ?? 'Producto' }}</td>
                                         <td class="text-center">{{ $det->talla->nombre ?? '-' }}</td>
                                         <td class="text-center">{{ $det->cantidad }}</td>
                                         <td class="text-end">${{ number_format($det->precioUnitario, 2) }}</td>
-                                        <td class="text-end">${{ number_format($det->subtotal, 2) }}</td>
+                                        <td class="text-end">${{ number_format((float)$det->cantidad * (float)$det->precioUnitario, 2) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><i class="fas fa-plus me-1"></i> Agregar detalle</div>
+                <div class="card-body">
+                    <form method="POST" action="{{ route('pedidos.detalle.agregar', $venta->idVenta) }}" class="row g-2">
+                        @csrf
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Talla</label>
+                            <select name="idTalla" class="form-select" required>
+                                <option value="">Seleccione...</option>
+                                @foreach($tallas as $t)
+                                    <option value="{{ $t->idTalla }}">{{ $t->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label">Cantidad</label>
+                            <input type="number" name="cantidad" min="1" class="form-control" required>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label">P. Unit</label>
+                            <input type="number" step="0.01" min="0" name="precioUnitario" class="form-control" required>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" name="descripcion" class="form-control" placeholder="Ej: Polo personalizado">
+                        </div>
+                        <div class="col-12 col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100"><i class="fas fa-plus-circle me-1"></i> Agregar</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -145,7 +178,7 @@
                             <input list="metodos" name="metodoPago" class="form-control" placeholder="Efectivo, Yape, Transferencia, ..." required>
                             <datalist id="metodos">
                                 @foreach($metodosPago as $mp)
-                                    <option value="{{ $mp->nombre }}">{{ $mp->nombre }}</option>
+                                    <option value="{{ $mp['nombre'] }}">{{ $mp['nombre'] }}</option>
                                 @endforeach
                             </datalist>
                             <small class="text-muted">Puedes elegir de la lista o escribir uno personalizado.</small>
