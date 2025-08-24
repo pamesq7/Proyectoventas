@@ -29,26 +29,26 @@ class Empleado extends Model
         'estado_texto',
     ];
 
-    // 🔸 Relación: pertenece a un usuario
+    // Relación: pertenece a un usuario
     public function user()
     {
         return $this->belongsTo(User::class, 'idEmpleado', 'idUser')
                    ->withDefault();
     }
 
-    // 🔸 Relación: puede tener muchas ventas
+    // Relación: puede tener muchas ventas
     public function ventas()
     {
         return $this->hasMany(Venta::class, 'idEmpleado');
     }
 
-    // 🔸 Relación: puede tener muchos diseños
+    // Relación: puede tener muchos diseños
     public function disenos()
     {
-        return $this->hasMany(Diseno::class, 'idDiseñador');
+        return $this->hasMany(Diseno::class, 'idEmpleado', 'idEmpleado');
     }
 
-    // 🔸 Relación: puede aparecer en venta_disenos (como diseñador)
+    // Relación: puede aparecer en venta_disenos (como diseñador)
     public function ventaDisenos()
     {
         return $this->hasMany(VentaDiseno::class, 'idDiseñador');

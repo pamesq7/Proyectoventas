@@ -16,7 +16,6 @@ class Diseno extends Model
         'archivo',
         'comentario',
         'estado',
-        'idDiseñador',
         'estadoDiseño',
         'iddetalleVenta',
         'idEmpleado'

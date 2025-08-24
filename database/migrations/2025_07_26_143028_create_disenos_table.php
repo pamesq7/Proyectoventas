@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('comentario', 45)->nullable();
             $table->tinyInteger('estado');
             $table->timestamps();
-            $table->integer('idDiseñador', false, true);
             $table->enum('estadoDiseño', ['en proceso', 'terminado'])->default('en proceso');
             $table->integer('iddetalleVenta', false, true)->nullable();
             $table->unsignedInteger('idEmpleado');

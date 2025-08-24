@@ -35,19 +35,6 @@
                                 </div>
                             </div>
 
-                            <!-- ID Diseñador -->
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="idDiseñador">ID Diseñador</label>
-                                    <input type="number" class="form-control @error('idDiseñador') is-invalid @enderror" 
-                                           id="idDiseñador" name="idDiseñador" value="{{ old('idDiseñador', $diseno->idDiseñador) }}" 
-                                           min="1">
-                                    @error('idDiseñador')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
                             <!-- Estado del Diseño -->
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -55,9 +42,6 @@
                                     <select class="form-control @error('estadoDiseño') is-invalid @enderror" 
                                             id="estadoDiseño" name="estadoDiseño" required>
                                         <option value="">Seleccione un estado</option>
-                                        <option value="no realizado" {{ old('estadoDiseño', $diseno->estadoDiseño) == 'no realizado' ? 'selected' : '' }}>
-                                            No Realizado
-                                        </option>
                                         <option value="en proceso" {{ old('estadoDiseño', $diseno->estadoDiseño) == 'en proceso' ? 'selected' : '' }}>
                                             En Proceso
                                         </option>
@@ -118,8 +102,6 @@
                                     <small class="form-text text-muted">Opcional: vincular con un detalle de venta específico</small>
                                 </div>
                             </div>
-
-
 
                             <!-- Nuevo archivo -->
                             <div class="col-12">

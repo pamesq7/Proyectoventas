@@ -153,6 +153,8 @@ Route::delete('carrito/{itemId}', [PedidoController::class, 'eliminarDelCarrito'
 Route::get('checkout', [PedidoController::class, 'checkout'])->name('pedidos.checkout');
 Route::post('procesar-pedido', [PedidoController::class, 'procesarPedido'])->name('pedidos.procesar');
 Route::get('pedido/{idVenta}/confirmacion', [PedidoController::class, 'confirmacion'])->name('pedidos.confirmacion');
+// Registro de pagos para una venta (sin modificar base de datos)
+Route::post('pedido/{idVenta}/pagos', [PedidoController::class, 'registrarPago'])->name('pedidos.registrar-pago');
 
 // Rutas de administración de pedidos
 Route::get('pedidos', [PedidoController::class, 'index'])->name('pedidos.index');

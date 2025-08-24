@@ -561,10 +561,19 @@ class PedidoController extends Controller
             'detalleVentas.producto',
             'detalleVentas.talla',
             'clienteNatural',
-            'clienteEstablecimiento'
+            'clienteEstablecimiento',
+            'transacciones'
         ])->findOrFail($idVenta);
 
-        return view('pedidos.confirmacion', compact('venta'));
+        // Lista fija de métodos de pago (no depende de tabla)
+        $metodosPago = collect([
+            ['id' => null, 'nombre' => 'Efectivo', 'codigo' => 'efectivo'],
+            ['id' => null, 'nombre' => 'QR', 'codigo' => 'qr'],
+            ['id' => null, 'nombre' => 'Cheque', 'codigo' => 'cheque'],
+            ['id' => null, 'nombre' => 'Transferencia bancaria', 'codigo' => 'transferencia'],
+        ]);
+
+        return view('pedidos.confirmacion', compact('venta', 'metodosPago'));
     }
 
     /**
@@ -690,5 +699,59 @@ class PedidoController extends Controller
 
         return redirect()->back()
                         ->with('success', 'Estado del pedido actualizado exitosamente');
+    }
+
+    /**
+     * Registrar un pago para una venta (sin modificar el esquema de BD)
+     */
+    public function registrarPago(Request $request, $idVenta)
+    {
+        $request->validate([
+            'monto' => 'required|numeric|min:0.01',
+            'metodoPago' => 'required|string|max:100',
+            'observaciones' => 'nullable|string|max:500',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Bloqueo pesimista para evitar condiciones de carrera al calcular saldo
+            $venta = Venta::where('idVenta', $idVenta)->lockForUpdate()->firstOrFail();
+
+            $monto = (float) $request->monto;
+
+            // Recalcular saldo en base a pagos ya registrados
+            $pagosAcumulados = Transaccion::where('idVenta', $venta->idVenta)
+                ->where('tipoTransaccion', 'pago')
+                ->sum('monto');
+            $saldoActual = max(0, ((float) $venta->total) - (float) $pagosAcumulados);
+
+            if ($monto > $saldoActual) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'El monto del pago no puede superar el saldo pendiente.');
+            }
+
+            Transaccion::create([
+                'tipoTransaccion' => 'pago',
+                'monto' => $monto,
+                'metodoPago' => $request->metodoPago,
+                'observaciones' => $request->observaciones,
+                'estado' => 1,
+                'idVenta' => $venta->idVenta,
+                'idUser' => auth()->id(),
+            ]);
+
+            // Actualizar saldo persistido tomando en cuenta el nuevo pago
+            $nuevoSaldo = max(0, $saldoActual - $monto);
+            $venta->saldo = $nuevoSaldo;
+            $venta->save();
+
+            DB::commit();
+            return redirect()->route('pedidos.confirmacion', $venta->idVenta)
+                             ->with('success', 'Pago registrado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al registrar pago', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Error al registrar el pago: ' . $e->getMessage());
+        }
     }
 }
