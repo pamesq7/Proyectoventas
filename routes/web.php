@@ -33,16 +33,6 @@ Route::get('/', function () {
 // Dashboard
 Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
-// Ruta temporal para debug
-Route::post('/debug-user-creation', function(\Illuminate\Http\Request $request) {
-    \Log::info('DEBUG: Datos recibidos en formulario:', $request->all());
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Datos recibidos correctamente',
-        'data' => $request->except(['password', 'password_confirmation'])
-    ]);
-});
 
 /*
 |--------------------------------------------------------------------------
