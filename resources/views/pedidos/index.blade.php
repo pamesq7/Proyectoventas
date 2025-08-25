@@ -56,6 +56,7 @@
                                 <th>ID</th>
                                 <th>Cliente</th>
                                 <th>Total</th>
+                                <th>Pago</th>
                                 <th>Fecha Entrega</th>
                                 <th>Estado</th>
                                 <th>Creado</th>
@@ -74,6 +75,10 @@
                                     </td>
                                     <td>
                                         <span class="fw-bold text-success">${{ number_format($pedido->total, 0) }}</span>
+                                    </td>
+                                    <td>
+                                        @php $pagado = (float)($pedido->saldo ?? 0) <= 0; @endphp
+                                        <span class="badge bg-{{ $pagado ? 'success' : 'danger' }}">{{ $pagado ? 'Pago completado' : 'Debe' }}</span>
                                     </td>
                                     <td>{{ $pedido->fechaEntrega ? \Carbon\Carbon::parse($pedido->fechaEntrega)->format('d/m/Y') : '—' }}</td>
                                     <td>

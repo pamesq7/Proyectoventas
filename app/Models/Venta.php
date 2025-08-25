@@ -61,11 +61,6 @@ class Venta extends Model
         return $this->belongsToMany(Diseno::class, 'venta_disenos', 'idventa', 'idDiseno');
     }
 
-    // Relación: intermedia con datos adicionales
-    public function ventaDisenos()
-    {
-        return $this->hasMany(VentaDiseno::class, 'idventa');
-    }
 
     // Accessor: estado textual
     public function getEstadoTextoAttribute()

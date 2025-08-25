@@ -55,8 +55,14 @@
                 <div class="col-md-6">
                     <div class="p-3 bg-light rounded h-100">
                         <h6 class="text-muted mb-2">Resumen</h6>
-                        <div><strong>Total:</strong> ${{ number_format($pedido->total, 2) }}</div>
-                        <div><strong>Saldo:</strong> ${{ number_format($pedido->saldo, 2) }}</div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <strong>Total:</strong> ${{ number_format($pedido->total, 2) }}
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <strong>Saldo:</strong> ${{ number_format($pedido->saldo, 2) }}
+                            @php $pagado = (float)($pedido->saldo ?? 0) <= 0; @endphp
+                            <span class="badge bg-{{ $pagado ? 'success' : 'danger' }}">{{ $pagado ? 'Pago completado' : 'Debe' }}</span>
+                        </div>
                     </div>
                 </div>
             </div>

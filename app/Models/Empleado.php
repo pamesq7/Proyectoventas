@@ -48,11 +48,7 @@ class Empleado extends Model
         return $this->hasMany(Diseno::class, 'idEmpleado', 'idEmpleado');
     }
 
-    // Relación: puede aparecer en venta_disenos (como diseñador)
-    public function ventaDisenos()
-    {
-        return $this->hasMany(VentaDiseno::class, 'idDiseñador');
-    }
+
 
     // Accessor para estado como texto
     public function getEstadoTextoAttribute()
