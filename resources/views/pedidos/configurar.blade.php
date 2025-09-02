@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const inputCantidad = document.getElementById('inputCantidad');
     const resumenCantidad = document.getElementById('resumenCantidad');
     const resumenTotal = document.getElementById('resumenTotal');
-    const precioUnitario = {{ $producto->precioVenta }};
+    const precioUnitario = {{ number_format($producto->precioVenta, 2, '.', '') }};
     const inputDisenoPersonalizado = document.getElementById('inputDisenoPersonalizado');
     const previewDisenoPersonalizado = document.getElementById('previewDisenoPersonalizado');
     const imagenPreview = document.getElementById('imagenPreview');

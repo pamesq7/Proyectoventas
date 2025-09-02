@@ -255,7 +255,7 @@
                         preciosPorTallaByBlock[idx] = {};
                         if (!idProd) return;
                         try {
-                            const url = '{{ route('api.producto.tallas-precios', ['idProducto' => ':id']) }}'.replace(':id', idProd);
+                            const url = "{{ route('api.producto.tallas-precios', ['idProducto' => ':id']) }}".replace(':id', idProd);
                             const res = await fetch(url);
                             const data = await res.json();
                             if (data && Array.isArray(data.precios)) {
