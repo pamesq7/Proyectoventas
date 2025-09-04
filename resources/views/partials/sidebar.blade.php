@@ -110,6 +110,18 @@
                         <a class="nav-link" href="{{ route('ventas.morosos') }}">⚠️ Clientes Morosos</a>
                     </nav>
                 </div>
+
+                <hr class="sidebar-divider">
+
+                <!-- 📊 REPORTES -->
+                <div class="sb-sidenav-menu-heading">📊 REPORTES</div>
+
+                <!-- Reportes -->
+                <a class="nav-link" href="{{ route('reportes.index') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
+                    📈 Reportes
+                </a>
+
             </div>
         </div>
         <div class="sb-sidenav-footer">

@@ -15,6 +15,7 @@ use App\Http\Controllers\DisenoController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\ReporteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +51,13 @@ Route::get('ventas/{venta}', [VentaController::class, 'show'])->name('ventas.sho
 
 // Actualizar estado de pedido
 Route::post('ventas/{venta}/estado', [VentaController::class, 'actualizarEstado'])->name('ventas.actualizar-estado');
+
+/*
+|--------------------------------------------------------------------------
+| Rutas de Reportes
+|--------------------------------------------------------------------------
+*/
+Route::get('reportes', [ReporteController::class, 'index'])->name('reportes.index');
 
 /*
 |--------------------------------------------------------------------------
