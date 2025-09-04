@@ -16,6 +16,7 @@ use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\EmpleadoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -180,3 +181,12 @@ Route::get('pedidos/{idVenta}/edit', [PedidoController::class, 'edit'])->name('p
 Route::put('pedidos/{idVenta}', [PedidoController::class, 'update'])->name('pedidos.update');
 Route::put('pedidos/{idVenta}/detalles', [PedidoController::class, 'updateDetalles'])->name('pedidos.update-detalles');
 Route::delete('pedidos/{idVenta}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
+
+/*
+|--------------------------------------------------------------------------
+| Rutas de Gestión de Empleados
+|--------------------------------------------------------------------------
+*/
+Route::resource('empleados', EmpleadoController::class);
+Route::patch('/empleados/{empleado}/toggle-estado', [EmpleadoController::class, 'toggleEstado'])->name('empleados.toggleEstado');
+Route::get('/empleados/{empleado}/estadisticas', [EmpleadoController::class, 'estadisticas'])->name('empleados.estadisticas');

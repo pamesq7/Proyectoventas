@@ -22,7 +22,7 @@
                 </a>
 
                 <!-- Empleados -->
-                <a class="nav-link" href="#">
+                <a class="nav-link {{ request()->routeIs('empleados.*') ? 'active' : '' }}" href="{{ route('empleados.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-user-tie"></i></div>
                     👔 Empleados
                 </a>
@@ -117,7 +117,7 @@
                 <div class="sb-sidenav-menu-heading">📊 REPORTES</div>
 
                 <!-- Reportes -->
-                <a class="nav-link" href="{{ route('reportes.index') }}">
+                <a class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}" href="{{ route('reportes.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
                     📈 Reportes
                 </a>
