@@ -133,10 +133,20 @@
                     <i class="fas fa-table me-1"></i>
                     Lista de Clientes Establecimientos
                 </div>
-                <a href="{{ route('clienteEstablecimiento.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i>
-                    Nuevo Cliente Establecimiento
-                </a>
+                <div>
+                    <a href="{{ route('clienteEstablecimiento.create') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-plus me-1"></i>
+                        Nuevo Cliente Establecimiento
+                    </a>
+                    <a href="{{ route('export.clientes-establecimientos.pdf') }}" class="btn btn-success me-2" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        Exportar PDF
+                    </a>
+                    <a href="{{ route('export.clientes-consolidado.pdf') }}" class="btn btn-info" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        Reporte Consolidado
+                    </a>
+                </div>
             </div>
         </div>
         <div class="card-body">

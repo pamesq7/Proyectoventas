@@ -234,5 +234,83 @@
             </div>
         </div>
     </div>
+
+    <!-- Reportes PDF Consolidados -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-file-pdf me-2 text-danger"></i>
+                    Reportes PDF Consolidados
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                    <h6 class="card-title">Usuarios</h6>
+                                    <p class="card-text small text-muted">Lista completa de usuarios del sistema</p>
+                                    <a href="{{ route('export.usuarios.pdf') }}" class="btn btn-primary btn-sm" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user-tie fa-2x text-success mb-2"></i>
+                                    <h6 class="card-title">Empleados</h6>
+                                    <p class="card-text small text-muted">Reporte de empleados y roles</p>
+                                    <a href="{{ route('export.empleados.pdf') }}" class="btn btn-success btn-sm" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user-friends fa-2x text-warning mb-2"></i>
+                                    <h6 class="card-title">Clientes Naturales</h6>
+                                    <p class="card-text small text-muted">Solo clientes naturales</p>
+                                    <a href="{{ route('export.clientes-naturales.pdf') }}" class="btn btn-warning btn-sm" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-building fa-2x text-info mb-2"></i>
+                                    <h6 class="card-title">Establecimientos</h6>
+                                    <p class="card-text small text-muted">Solo clientes establecimientos</p>
+                                    <a href="{{ route('export.clientes-establecimientos.pdf') }}" class="btn btn-info btn-sm" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mx-auto">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-chart-pie fa-2x text-danger mb-2"></i>
+                                    <h6 class="card-title">Reporte Consolidado de Clientes</h6>
+                                    <p class="card-text small text-muted">Todos los clientes (naturales + establecimientos) con estadísticas completas</p>
+                                    <a href="{{ route('export.clientes-consolidado.pdf') }}" class="btn btn-danger btn-sm" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar Reporte Completo
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

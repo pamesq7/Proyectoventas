@@ -17,6 +17,7 @@ use App\Http\Controllers\VentaController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\EmpleadoController;
+use App\Http\Controllers\ExportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -190,3 +191,19 @@ Route::delete('pedidos/{idVenta}', [PedidoController::class, 'destroy'])->name('
 Route::resource('empleados', EmpleadoController::class);
 Route::patch('/empleados/{empleado}/toggle-estado', [EmpleadoController::class, 'toggleEstado'])->name('empleados.toggleEstado');
 Route::get('/empleados/{empleado}/estadisticas', [EmpleadoController::class, 'estadisticas'])->name('empleados.estadisticas');
+
+/*
+|--------------------------------------------------------------------------
+| Rutas de Exportación PDF
+|--------------------------------------------------------------------------
+*/
+// Exportación de Usuarios
+Route::get('/export/usuarios/pdf', [ExportController::class, 'exportarUsuarios'])->name('export.usuarios.pdf');
+
+// Exportación de Empleados
+Route::get('/export/empleados/pdf', [ExportController::class, 'exportarEmpleados'])->name('export.empleados.pdf');
+
+// Exportación de Clientes
+Route::get('/export/clientes-naturales/pdf', [ExportController::class, 'exportarClientesNaturales'])->name('export.clientes-naturales.pdf');
+Route::get('/export/clientes-establecimientos/pdf', [ExportController::class, 'exportarClientesEstablecimientos'])->name('export.clientes-establecimientos.pdf');
+Route::get('/export/clientes-consolidado/pdf', [ExportController::class, 'exportarClientesConsolidado'])->name('export.clientes-consolidado.pdf');
