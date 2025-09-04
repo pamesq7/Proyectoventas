@@ -270,6 +270,44 @@
                             </div>
                         </div>
                         <div class="col-md-3 mb-3">
+                            <div class="card border-secondary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-boxes fa-2x text-secondary mb-2"></i>
+                                    <h6 class="card-title">Productos</h6>
+                                    <p class="card-text small text-muted">Catálogo completo de productos</p>
+                                    <a href="{{ route('export.productos.pdf') }}" class="btn btn-secondary btn-sm" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-dark">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-palette fa-2x text-dark mb-2"></i>
+                                    <h6 class="card-title">Diseños</h6>
+                                    <p class="card-text small text-muted">Lista completa de diseños</p>
+                                    <a href="{{ route('export.disenos.pdf') }}" class="btn btn-dark btn-sm" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-clipboard-list fa-2x text-primary mb-2"></i>
+                                    <h6 class="card-title">Pedidos</h6>
+                                    <p class="card-text small text-muted">Historial completo de pedidos</p>
+                                    <a href="{{ route('export.pedidos.pdf') }}" class="btn btn-primary btn-sm" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Descargar PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
                             <div class="card border-warning">
                                 <div class="card-body text-center">
                                     <i class="fas fa-user-friends fa-2x text-warning mb-2"></i>
@@ -281,20 +319,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="card border-info">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-building fa-2x text-info mb-2"></i>
-                                    <h6 class="card-title">Establecimientos</h6>
-                                    <p class="card-text small text-muted">Solo clientes establecimientos</p>
-                                    <a href="{{ route('export.clientes-establecimientos.pdf') }}" class="btn btn-info btn-sm" target="_blank">
-                                        <i class="fas fa-download me-1"></i> Descargar PDF
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
                         <div class="col-md-6 mx-auto">
                             <div class="card border-danger">
                                 <div class="card-body text-center">

@@ -110,13 +110,9 @@
                         <i class="fas fa-plus me-1"></i>
                         Nuevo Cliente Natural
                     </a>
-                    <a href="{{ route('export.clientes-naturales.pdf') }}" class="btn btn-success me-2" target="_blank">
+                    <a href="{{ route('export.clientes-naturales.pdf') }}" class="btn btn-success" target="_blank">
                         <i class="fas fa-file-pdf me-1"></i>
                         Exportar PDF
-                    </a>
-                    <a href="{{ route('export.clientes-consolidado.pdf') }}" class="btn btn-info" target="_blank">
-                        <i class="fas fa-file-pdf me-1"></i>
-                        Reporte Consolidado
                     </a>
                 </div>
             </div>

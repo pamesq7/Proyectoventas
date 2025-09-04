@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Empleado;
 use App\Models\ClienteNatural;
 use App\Models\ClienteEstablecimiento;
+use App\Models\Venta;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
@@ -180,26 +181,192 @@ class ExportController extends Controller
      */
     public function exportarClientesConsolidado(Request $request)
     {
-        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
-        $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->get();
-
+        $clientes_naturales = ClienteNatural::with('user')->where('estado', true)->get();
+        $clientes_establecimientos = ClienteEstablecimiento::where('estado', true)->get();
+        
         $estadisticas = [
-            'total_naturales' => $clientesNaturales->count(),
-            'total_establecimientos' => $clientesEstablecimientos->count(),
-            'total_general' => $clientesNaturales->count() + $clientesEstablecimientos->count()
+            'total_naturales' => $clientes_naturales->count(),
+            'total_establecimientos' => $clientes_establecimientos->count(),
+            'total_general' => $clientes_naturales->count() + $clientes_establecimientos->count()
         ];
 
         $data = [
-            'clientes_naturales' => $clientesNaturales,
-            'clientes_establecimientos' => $clientesEstablecimientos,
+            'clientes_naturales' => $clientes_naturales,
+            'clientes_establecimientos' => $clientes_establecimientos,
             'estadisticas' => $estadisticas,
             'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s')
         ];
 
         $pdf = Pdf::loadView('exports.clientes-consolidado-pdf', $data);
-        $pdf->setPaper('A4', 'landscape');
+        $pdf->setPaper('A4', 'portrait');
         
-        return $pdf->download('clientes_consolidado_' . Carbon::now()->format('Y-m-d_H-i-s') . '.pdf');
+        return $pdf->download('reporte-consolidado-clientes-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Exportar lista de productos a PDF
+     */
+    public function exportarProductos(Request $request)
+    {
+        $query = \App\Models\Producto::query();
+        
+        // Aplicar filtros si existen
+        if ($request->filled('buscar')) {
+            $buscar = $request->buscar;
+            $query->where(function($q) use ($buscar) {
+                $q->where('nombre', 'LIKE', "%{$buscar}%")
+                  ->orWhere('codigo', 'LIKE', "%{$buscar}%")
+                  ->orWhere('descripcion', 'LIKE', "%{$buscar}%");
+            });
+        }
+
+        if ($request->filled('categoria')) {
+            $query->where('categoria_id', $request->categoria);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $productos = $query->with(['categoria', 'diseno', 'variante'])->get();
+        
+        // Estadísticas
+        $estadisticas = [
+            'total_productos' => \App\Models\Producto::count(),
+            'productos_activos' => \App\Models\Producto::where('estado', true)->count(),
+            'productos_inactivos' => \App\Models\Producto::where('estado', false)->count(),
+            'con_stock' => \App\Models\Producto::where('stock', '>', 0)->count(),
+            'sin_stock' => \App\Models\Producto::where('stock', '<=', 0)->count(),
+            'categorias_total' => \App\Models\Categoria::count()
+        ];
+
+        $data = [
+            'productos' => $productos,
+            'estadisticas' => $estadisticas,
+            'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s'),
+            'filtros_aplicados' => $request->only(['buscar', 'categoria', 'estado'])
+        ];
+
+        $pdf = Pdf::loadView('exports.productos-pdf', $data);
+        $pdf->setPaper('A4', 'portrait'); // Cambiar a vertical
+        
+        return $pdf->download('reporte-productos-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Exportar lista de diseños a PDF
+     */
+    public function exportarDisenos(Request $request)
+    {
+        $query = \App\Models\Diseno::query();
+        
+        // Aplicar filtros si existen
+        if ($request->filled('buscar')) {
+            $buscar = $request->buscar;
+            $query->where(function($q) use ($buscar) {
+                $q->where('nombre', 'LIKE', "%{$buscar}%")
+                  ->orWhere('descripcion', 'LIKE', "%{$buscar}%");
+            });
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $disenos = $query->with(['empleado.user'])->get();
+        
+        // Estadísticas
+        $estadisticas = [
+            'total_disenos' => \App\Models\Diseno::count(),
+            'disenos_activos' => \App\Models\Diseno::where('estado', true)->count(),
+            'disenos_inactivos' => \App\Models\Diseno::where('estado', false)->count(),
+            'con_empleado' => \App\Models\Diseno::whereNotNull('idEmpleado')->count(),
+        ];
+
+        $data = [
+            'disenos' => $disenos,
+            'estadisticas' => $estadisticas,
+            'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s'),
+            'filtros_aplicados' => $request->only(['buscar', 'estado'])
+        ];
+
+        $pdf = Pdf::loadView('exports.disenos-pdf', $data);
+        $pdf->setPaper('A4', 'portrait');
+        
+        return $pdf->download('reporte-disenos-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Exportar pedidos (ventas) a PDF
+     */
+    public function exportarPedidos(Request $request)
+    {
+        // Obtener filtros de la request
+        $estadoPedido = $request->get('estadoPedido');
+        $estadoPago = $request->get('estadoPago');
+        $fechaInicio = $request->get('fechaInicio');
+        $fechaFin = $request->get('fechaFin');
+        $idEmpleado = $request->get('idEmpleado');
+
+        // Query base para pedidos (ventas)
+        $query = Venta::with([
+            'empleado.user', 
+            'clienteNatural.user', 
+            'clienteEstablecimiento', 
+            'detalleVentas.talla'
+        ]);
+
+        // Aplicar filtros
+        if ($estadoPedido) {
+            $query->where('estadoPedido', $estadoPedido);
+        }
+
+        if ($estadoPago) {
+            if ($estadoPago === 'pagado') {
+                $query->where('saldo', 0);
+            } elseif ($estadoPago === 'pendiente') {
+                $query->where('saldo', '>', 0);
+            }
+        }
+
+        if ($fechaInicio) {
+            $query->whereDate('created_at', '>=', $fechaInicio);
+        }
+
+        if ($fechaFin) {
+            $query->whereDate('created_at', '<=', $fechaFin);
+        }
+
+        if ($idEmpleado) {
+            $query->where('idEmpleado', $idEmpleado);
+        }
+
+        $pedidos = $query->orderBy('created_at', 'desc')->get();
+
+        // Estadísticas
+        $totalPedidos = $pedidos->count();
+        $pedidosPendientes = $pedidos->where('estadoPedido', 'pendiente')->count();
+        $pedidosEnProceso = $pedidos->where('estadoPedido', 'en proceso')->count();
+        $pedidosCompletados = $pedidos->where('estadoPedido', 'completado')->count();
+        $pedidosCancelados = $pedidos->where('estadoPedido', 'cancelado')->count();
+        
+        $totalVentas = $pedidos->sum('total');
+        $saldoPendiente = $pedidos->sum('saldo');
+        $totalPagado = $totalVentas - $saldoPendiente;
+
+        $estadisticas = [
+            'total_pedidos' => $totalPedidos,
+            'pedidos_pendientes' => $pedidosPendientes,
+            'pedidos_en_proceso' => $pedidosEnProceso,
+            'pedidos_completados' => $pedidosCompletados,
+            'pedidos_cancelados' => $pedidosCancelados,
+            'total_ventas' => $totalVentas,
+            'total_pagado' => $totalPagado,
+            'saldo_pendiente' => $saldoPendiente
+        ];
+
+        $pdf = PDF::loadView('exports.pedidos-pdf', compact('pedidos', 'estadisticas'));
+        return $pdf->download('pedidos_' . date('Y-m-d_H-i-s') . '.pdf');
     }
 
     /**

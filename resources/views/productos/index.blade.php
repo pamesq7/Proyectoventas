@@ -41,10 +41,16 @@
                     <i class="fas fa-boxes me-1"></i>
                     Lista de Productos
                 </div>
-                <a href="{{ route('productos.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i>
-                    Nuevo Producto
-                </a>
+                <div>
+                    <a href="{{ route('productos.create') }}" class="btn btn-primary btn-sm me-2">
+                        <i class="fas fa-plus me-1"></i>
+                        Nuevo Producto
+                    </a>
+                    <a href="{{ route('export.productos.pdf') }}" class="btn btn-success btn-sm" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        Exportar PDF
+                    </a>
+                </div>
             </div>
         </div>
         <div class="card-body">

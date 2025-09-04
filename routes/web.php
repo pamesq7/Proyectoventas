@@ -137,6 +137,12 @@ Route::post('productos/{producto}/generar-variantes', [ProductoController::class
 // Rutas para diseños
 Route::resource('disenos', DisenoController::class);
 
+// Exportación de Diseños
+Route::get('/export/disenos/pdf', [ExportController::class, 'exportarDisenos'])->name('export.disenos.pdf');
+
+// Exportación de Pedidos
+Route::get('/export/pedidos/pdf', [ExportController::class, 'exportarPedidos'])->name('export.pedidos.pdf');
+
 /*
 |--------------------------------------------------------------------------
 | Rutas de Gestión de Pedidos
@@ -207,3 +213,6 @@ Route::get('/export/empleados/pdf', [ExportController::class, 'exportarEmpleados
 Route::get('/export/clientes-naturales/pdf', [ExportController::class, 'exportarClientesNaturales'])->name('export.clientes-naturales.pdf');
 Route::get('/export/clientes-establecimientos/pdf', [ExportController::class, 'exportarClientesEstablecimientos'])->name('export.clientes-establecimientos.pdf');
 Route::get('/export/clientes-consolidado/pdf', [ExportController::class, 'exportarClientesConsolidado'])->name('export.clientes-consolidado.pdf');
+
+// Exportación de Productos
+Route::get('/export/productos/pdf', [ExportController::class, 'exportarProductos'])->name('export.productos.pdf');

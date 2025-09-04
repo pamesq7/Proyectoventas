@@ -41,10 +41,16 @@
                     <i class="fas fa-clipboard-list me-1"></i>
                     Lista de Pedidos
                 </div>
-                <a href="{{ route('pedidos.catalogo') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i>
-                    Crear Pedido
-                </a>
+                <div>
+                    <a href="{{ route('pedidos.catalogo') }}" class="btn btn-primary btn-sm me-2">
+                        <i class="fas fa-plus me-1"></i>
+                        Crear Pedido
+                    </a>
+                    <a href="{{ route('export.pedidos.pdf') }}" class="btn btn-success btn-sm" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        Exportar PDF
+                    </a>
+                </div>
             </div>
         </div>
         <div class="card-body">
