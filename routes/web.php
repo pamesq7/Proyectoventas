@@ -13,6 +13,8 @@ use App\Http\Controllers\ClienteEstablecimientoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\DisenoController;
 use App\Http\Controllers\ConfiguracionController;
+use App\Http\Controllers\VentaController;
+use App\Http\Controllers\PedidoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +35,21 @@ Route::get('/', function () {
 // Dashboard
 Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
+/*
+|--------------------------------------------------------------------------
+| Rutas de Gestión de Ventas
+|--------------------------------------------------------------------------
+*/
+// Gestión principal de ventas
+Route::get('ventas', [VentaController::class, 'index'])->name('ventas.index');
+Route::get('ventas/create', [VentaController::class, 'create'])->name('ventas.create');
+Route::get('ventas/morosos', [VentaController::class, 'clientesMorosos'])->name('ventas.morosos');
+Route::get('ventas/dashboard', [VentaController::class, 'dashboard'])->name('ventas.dashboard');
+Route::post('ventas', [VentaController::class, 'store'])->name('ventas.store');
+Route::get('ventas/{venta}', [VentaController::class, 'show'])->name('ventas.show');
+
+// Actualizar estado de pedido
+Route::post('ventas/{venta}/estado', [VentaController::class, 'actualizarEstado'])->name('ventas.actualizar-estado');
 
 /*
 |--------------------------------------------------------------------------
@@ -115,8 +132,6 @@ Route::resource('disenos', DisenoController::class);
 | Rutas de Gestión de Pedidos
 |--------------------------------------------------------------------------
 */
-use App\Http\Controllers\PedidoController;
-
 // Rutas públicas del catálogo
 Route::get('catalogo', [PedidoController::class, 'catalogo'])->name('pedidos.catalogo');
 Route::get('producto/{idProducto}/configurar', [PedidoController::class, 'configurarProducto'])->name('pedidos.configurar');

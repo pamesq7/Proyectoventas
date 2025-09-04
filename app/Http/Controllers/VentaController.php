@@ -143,38 +143,41 @@ class VentaController extends Controller
     {
         $clientesMorosos = collect();
 
-        // Clientes naturales con saldo pendiente
+        // Clientes naturales con saldo pendiente (pagos incompletos)
         $naturales = DB::table('ventas')
             ->join('cliente_naturals', 'ventas.idCliente', '=', 'cliente_naturals.idCliente')
-            ->where('ventas.saldo', '>', 0)
+            ->join('users', 'cliente_naturals.idCliente', '=', 'users.idUser')
+            ->where('ventas.saldo', '>', 0) // Solo pagos incompletos
             ->select(
-                'cliente_naturals.idCliente as id',
-                'cliente_naturals.nombre',
-                'cliente_naturals.apellido',
-                'cliente_naturals.telefono',
-                DB::raw("'natural' as tipo"),
+                'cliente_naturals.idCliente as id_cliente',
+                DB::raw("CONCAT(users.name, ' ', users.primerApellido, COALESCE(CONCAT(' ', users.segundApellido), '')) as nombre_cliente"),
+                'users.telefono',
+                DB::raw("'Natural' as tipo_cliente"),
                 DB::raw('SUM(ventas.saldo) as saldo_total'),
-                DB::raw('COUNT(ventas.idVenta) as ventas_pendientes')
+                DB::raw('COUNT(ventas.idVenta) as ventas_pendientes'),
+                DB::raw('AVG(DATEDIFF(NOW(), ventas.created_at)) as dias_atraso_promedio')
             )
-            ->groupBy('cliente_naturals.idCliente', 'cliente_naturals.nombre', 'cliente_naturals.apellido', 'cliente_naturals.telefono')
+            ->groupBy('cliente_naturals.idCliente', 'users.name', 'users.primerApellido', 'users.segundApellido', 'users.telefono')
             ->get();
 
-        // Clientes establecimientos con saldo pendiente
+        // Clientes establecimientos con saldo pendiente (pagos incompletos)
         $establecimientos = DB::table('ventas')
             ->join('cliente_establecimientos', 'ventas.idEstablecimiento', '=', 'cliente_establecimientos.idEstablecimiento')
-            ->where('ventas.saldo', '>', 0)
+            ->join('users as representante', 'cliente_establecimientos.idRepresentante', '=', 'representante.idUser')
+            ->where('ventas.saldo', '>', 0) // Solo pagos incompletos
             ->select(
-                'cliente_establecimientos.idEstablecimiento as id',
-                'cliente_establecimientos.nombreEstablecimiento as nombre',
-                DB::raw("'' as apellido"),
-                'cliente_establecimientos.telefono',
-                DB::raw("'establecimiento' as tipo"),
+                'cliente_establecimientos.idEstablecimiento as id_cliente',
+                'cliente_establecimientos.razonSocial as nombre_cliente',
+                'representante.telefono',
+                DB::raw("'Establecimiento' as tipo_cliente"),
                 DB::raw('SUM(ventas.saldo) as saldo_total'),
-                DB::raw('COUNT(ventas.idVenta) as ventas_pendientes')
+                DB::raw('COUNT(ventas.idVenta) as ventas_pendientes'),
+                DB::raw('AVG(DATEDIFF(NOW(), ventas.created_at)) as dias_atraso_promedio')
             )
-            ->groupBy('cliente_establecimientos.idEstablecimiento', 'cliente_establecimientos.nombreEstablecimiento', 'cliente_establecimientos.telefono')
+            ->groupBy('cliente_establecimientos.idEstablecimiento', 'cliente_establecimientos.razonSocial', 'representante.telefono')
             ->get();
 
+        // Combinar ambos tipos de clientes y ordenar por saldo total descendente
         $clientesMorosos = $naturales->concat($establecimientos)->sortByDesc('saldo_total');
 
         return view('ventas.morosos', compact('clientesMorosos'));

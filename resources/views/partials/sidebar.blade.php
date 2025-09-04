@@ -90,6 +90,26 @@
                     <div class="sb-nav-link-icon"><i class="fas fa-clipboard-list"></i></div>
                     📑 Pedidos
                 </a>
+
+                <hr class="sidebar-divider">
+
+                <!-- 💰 GESTIÓN DE VENTAS -->
+                <div class="sb-sidenav-menu-heading">💰 GESTIÓN DE VENTAS</div>
+
+                <!-- Ventas con Submenú -->
+                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseVentas"
+                    aria-expanded="false" aria-controls="collapseVentas">
+                    <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
+                    💰 Ventas
+                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                </a>
+                <div class="collapse" id="collapseVentas" aria-labelledby="headingVentas" data-bs-parent="#sidenavAccordion">
+                    <nav class="sb-sidenav-menu-nested nav">
+                        <a class="nav-link" href="{{ route('ventas.index') }}">📊 Gestión de Ventas</a>
+                        <a class="nav-link" href="{{ route('ventas.create') }}">💳 Registrar Pago</a>
+                        <a class="nav-link" href="{{ route('ventas.morosos') }}">⚠️ Clientes Morosos</a>
+                    </nav>
+                </div>
             </div>
         </div>
         <div class="sb-sidenav-footer">
