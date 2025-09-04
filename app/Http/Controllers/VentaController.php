@@ -163,18 +163,17 @@ class VentaController extends Controller
         // Clientes establecimientos con saldo pendiente (pagos incompletos)
         $establecimientos = DB::table('ventas')
             ->join('cliente_establecimientos', 'ventas.idEstablecimiento', '=', 'cliente_establecimientos.idEstablecimiento')
-            ->join('users as representante', 'cliente_establecimientos.idRepresentante', '=', 'representante.idUser')
             ->where('ventas.saldo', '>', 0) // Solo pagos incompletos
             ->select(
                 'cliente_establecimientos.idEstablecimiento as id_cliente',
-                'cliente_establecimientos.razonSocial as nombre_cliente',
-                'representante.telefono',
+                'cliente_establecimientos.nombreEstablecimiento as nombre_cliente',
+                'cliente_establecimientos.telefono',
                 DB::raw("'Establecimiento' as tipo_cliente"),
                 DB::raw('SUM(ventas.saldo) as saldo_total'),
                 DB::raw('COUNT(ventas.idVenta) as ventas_pendientes'),
                 DB::raw('AVG(DATEDIFF(NOW(), ventas.created_at)) as dias_atraso_promedio')
             )
-            ->groupBy('cliente_establecimientos.idEstablecimiento', 'cliente_establecimientos.razonSocial', 'representante.telefono')
+            ->groupBy('cliente_establecimientos.idEstablecimiento', 'cliente_establecimientos.nombreEstablecimiento', 'cliente_establecimientos.telefono')
             ->get();
 
         // Combinar ambos tipos de clientes y ordenar por saldo total descendente

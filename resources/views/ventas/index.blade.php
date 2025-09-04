@@ -43,16 +43,7 @@
                                     <option value="pendiente" {{ request('estado_pago') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label for="estado_pedido">Estado Pedido:</label>
-                                <select name="estado_pedido" id="estado_pedido" class="form-control">
-                                    <option value="">Todos</option>
-                                    <option value="0" {{ request('estado_pedido') == '0' ? 'selected' : '' }}>Solicitado</option>
-                                    <option value="1" {{ request('estado_pedido') == '1' ? 'selected' : '' }}>Diseño</option>
-                                    <option value="2" {{ request('estado_pedido') == '2' ? 'selected' : '' }}>Confección</option>
-                                    <option value="3" {{ request('estado_pedido') == '3' ? 'selected' : '' }}>Entregado</option>
-                                </select>
-                            </div>
+
                             <div class="col-md-2">
                                 <label for="tipo_cliente">Tipo Cliente:</label>
                                 <select name="tipo_cliente" id="tipo_cliente" class="form-control">
@@ -118,10 +109,9 @@
                             <thead class="thead-dark">
                                 <tr>
                                     <th>Fecha</th>
-                                    <th>Total</th>
                                     <th>Cliente</th>
+                                    <th>Total</th>
                                     <th>Estado Pago</th>
-                                    <th>Estado Pedido</th>
                                     <th>Vendedor</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -131,15 +121,15 @@
                                 <tr>
                                     <td>{{ $venta->created_at->format('d/m/Y') }}</td>
                                     <td>
+                                        <strong>{{ $venta->nombre_cliente }}</strong>
+                                        <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
+                                    </td>
+                                    <td>
                                         <strong>S/. {{ number_format($venta->total, 2) }}</strong>
                                         @if($venta->estado_pago == 'PARCIAL')
                                             <br><small class="text-muted">Pagado: S/. {{ number_format($venta->monto_pagado, 2) }}</small>
                                             <br><small class="text-danger">Debe: S/. {{ number_format($venta->saldo, 2) }}</small>
                                         @endif
-                                    </td>
-                                    <td>
-                                        <strong>{{ $venta->nombre_cliente }}</strong>
-                                        <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
                                     </td>
                                     <td>
                                         @if($venta->estado_pago == 'PAGADO')
@@ -153,16 +143,6 @@
                                                 <br><small class="text-danger">{{ $venta->dias_atraso }} días</small>
                                             @endif
                                         @endif
-                                    </td>
-                                    <td>
-                                        <select class="form-control form-control-sm estado-pedido" 
-                                                data-venta-id="{{ $venta->idVenta }}"
-                                                {{ $venta->estado == '3' ? 'disabled' : '' }}>
-                                            <option value="0" {{ $venta->estado == '0' ? 'selected' : '' }}>Solicitado</option>
-                                            <option value="1" {{ $venta->estado == '1' ? 'selected' : '' }}>Diseño</option>
-                                            <option value="2" {{ $venta->estado == '2' ? 'selected' : '' }}>Confección</option>
-                                            <option value="3" {{ $venta->estado == '3' ? 'selected' : '' }}>Entregado</option>
-                                        </select>
                                     </td>
                                     <td>{{ $venta->empleado->nombre ?? 'No asignado' }}</td>
                                     <td>
@@ -192,7 +172,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="7" class="text-center">No se encontraron ventas</td>
+                                    <td colspan="6" class="text-center">No se encontraron ventas</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -208,6 +188,54 @@
         </div>
     </div>
 </div>
+
+<!-- Estilos para la tabla -->
+<style>
+    .table {
+        color: #000000; /* Texto negro */
+        font-size: 0.9rem;
+    }
+    
+    .table thead th {
+        background-color: #343a40;
+        color: white;
+        padding: 8px 12px;
+        vertical-align: middle;
+    }
+    
+    .table tbody td {
+        padding: 6px 12px;
+        vertical-align: middle;
+    }
+    
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Ajuste para los botones de acción */
+    .btn-group-sm > .btn, .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Ajuste para los badges de estado */
+    .badge-success, .badge-warning, .badge-danger {
+        color: #000000 !important; /* Texto negro */
+        font-weight: 500;
+    }
+    .badge-success { background-color: #a3e4a3; } /* Verde claro */
+    .badge-warning { background-color: #f9e79f; } /* Amarillo claro */
+    .badge-danger { background-color: #f5b7b1; } /* Rojo claro */
+    
+    /* Ajuste para los textos pequeños */
+    small {
+        font-size: 0.8rem;
+    }
+</style>
 
 <!-- Modal para registrar pago -->
 <div class="modal fade" id="modalPago" tabindex="-1">
@@ -272,31 +300,6 @@
 @section('scripts')
 <script>
 $(document).ready(function() {
-    // Manejar cambio de estado de pedido
-    $('.estado-pedido').change(function() {
-        const ventaId = $(this).data('venta-id');
-        const nuevoEstado = $(this).val();
-        
-        $.ajax({
-            url: `/ventas/${ventaId}/estado`,
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                estado: nuevoEstado
-            },
-            success: function(response) {
-                if (response.success) {
-                    toastr.success(response.message);
-                    location.reload();
-                }
-            },
-            error: function() {
-                toastr.error('Error al actualizar el estado');
-                location.reload();
-            }
-        });
-    });
-    
     // Abrir modal de pago
     $('.btn-cobrar').click(function() {
         const ventaId = $(this).data('venta-id');
