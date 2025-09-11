@@ -97,7 +97,7 @@
                                 <span class="info-box-icon"><i class="fas fa-dollar-sign"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Monto Pendiente</span>
-                                    <span class="info-box-number">S/. {{ number_format($estadisticas['monto_pendiente'], 2) }}</span>
+                                    <span class="info-box-number">Bs. {{ number_format($estadisticas['monto_pendiente'], 2) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -125,10 +125,10 @@
                                         <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
                                     </td>
                                     <td>
-                                        <strong>S/. {{ number_format($venta->total, 2) }}</strong>
+                                        <strong>Bs. {{ number_format($venta->total, 2) }}</strong>
                                         @if($venta->estado_pago == 'PARCIAL')
-                                            <br><small class="text-muted">Pagado: S/. {{ number_format($venta->monto_pagado, 2) }}</small>
-                                            <br><small class="text-danger">Debe: S/. {{ number_format($venta->saldo, 2) }}</small>
+                                            <br><small class="text-muted">Pagado: Bs. {{ number_format($venta->monto_pagado, 2) }}</small>
+                                            <br><small class="text-danger">Debe: Bs. {{ number_format($venta->saldo, 2) }}</small>
                                         @endif
                                     </td>
                                     <td>
@@ -308,7 +308,7 @@ $(document).ready(function() {
         
         $('#ventaId').val(ventaId);
         $('#clienteNombre').text(cliente);
-        $('#saldoPendiente').text('S/. ' + parseFloat(saldo).toFixed(2));
+        $('#saldoPendiente').text('Bs. ' + parseFloat(saldo).toFixed(2));
         $('#monto').attr('max', saldo);
         $('#modalPago').modal('show');
     });

@@ -66,7 +66,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <div class="small text-white-50">Ventas Totales</div>
-                            <div class="h5 mb-0">S/. {{ number_format($estadisticas['total_ventas'], 2) }}</div>
+                            <div class="h5 mb-0">Bs. {{ number_format($estadisticas['total_ventas'], 2) }}</div>
                         </div>
                         <div class="fa-2x">
                             <i class="fas fa-dollar-sign"></i>
@@ -127,7 +127,7 @@
                             <div class="small">Pendientes</div>
                         </div>
                         <div class="col-12">
-                            <div class="h5 text-warning">S/. {{ number_format($estadisticas['saldo_pendiente'], 2) }}</div>
+                            <div class="h5 text-warning">Bs. {{ number_format($estadisticas['saldo_pendiente'], 2) }}</div>
                             <div class="small">Saldo Total Pendiente</div>
                         </div>
                     </div>
@@ -192,7 +192,7 @@
                     Ventas del Mes Actual
                 </div>
                 <div class="card-body text-center">
-                    <div class="h3 text-success">S/. {{ number_format($ventasMesActual, 2) }}</div>
+                    <div class="h3 text-success">Bs. {{ number_format($ventasMesActual, 2) }}</div>
                     <p class="text-muted">{{ now()->format('F Y') }}</p>
                 </div>
             </div>

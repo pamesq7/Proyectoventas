@@ -37,7 +37,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <div class="small text-white-50">Deuda Total</div>
-                            <div class="h5 mb-0">S/. {{ number_format($clientesMorosos->sum('saldo_total'), 2) }}</div>
+                            <div class="h5 mb-0">Bs. {{ number_format($clientesMorosos->sum('saldo_total'), 2) }}</div>
                         </div>
                         <div class="fa-2x">
                             <i class="fas fa-dollar-sign"></i>
@@ -145,7 +145,7 @@
                                     </td>
                                     <td>
                                         <strong class="text-danger">
-                                            S/. {{ number_format($cliente->saldo_total, 2) }}
+                                            Bs. {{ number_format($cliente->saldo_total, 2) }}
                                         </strong>
                                     </td>
                                     <td>
@@ -163,7 +163,7 @@
                                     <td>
                                         <div class="btn-group" role="group">
                                             @if($cliente->telefono)
-                                                <a href="https://wa.me/51{{ $cliente->telefono }}?text=Hola {{ $cliente->nombre_cliente }}, te contactamos por el saldo pendiente de S/. {{ number_format($cliente->saldo_total, 2) }}" 
+                                                <a href="https://wa.me/51{{ $cliente->telefono }}?text=Hola {{ $cliente->nombre_cliente }}, te contactamos por el saldo pendiente de Bs. {{ number_format($cliente->saldo_total, 2) }}" 
                                                    target="_blank" 
                                                    class="btn btn-success btn-sm" 
                                                    title="Contactar por WhatsApp">

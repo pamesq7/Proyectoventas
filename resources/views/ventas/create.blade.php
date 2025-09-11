@@ -44,11 +44,11 @@
                                             <strong>{{ $venta->nombre_cliente }}</strong>
                                             <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
                                         </td>
-                                        <td>S/. {{ number_format($venta->total, 2) }}</td>
-                                        <td>S/. {{ number_format($venta->monto_pagado, 2) }}</td>
+                                        <td>Bs. {{ number_format($venta->total, 2) }}</td>
+                                        <td>Bs. {{ number_format($venta->monto_pagado, 2) }}</td>
                                         <td>
                                             <span class="font-weight-bold text-danger">
-                                                S/. {{ number_format($venta->saldo, 2) }}
+                                                Bs. {{ number_format($venta->saldo, 2) }}
                                             </span>
                                         </td>
                                         <td>
@@ -114,9 +114,9 @@
                                 <div class="card-body">
                                     <h6 class="card-title">Información de la Venta</h6>
                                     <p><strong>Cliente:</strong> <span id="clienteModal"></span></p>
-                                    <p><strong>Total:</strong> S/. <span id="totalModal"></span></p>
+                                    <p><strong>Total:</strong> Bs. <span id="totalModal"></span></p>
                                     <p><strong>Saldo Pendiente:</strong> 
-                                        <span class="text-danger font-weight-bold">S/. <span id="saldoModal"></span></span>
+                                        <span class="text-danger font-weight-bold">Bs. <span id="saldoModal"></span></span>
                                     </p>
                                 </div>
                             </div>
@@ -183,11 +183,11 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <strong>Monto a pagar:</strong><br>
-                                <span class="text-success" id="montoPagar">S/. 0.00</span>
+                                <span class="text-success" id="montoPagar">Bs. 0.00</span>
                             </div>
                             <div class="col-md-4">
                                 <strong>Saldo restante:</strong><br>
-                                <span class="text-danger" id="saldoRestante">S/. 0.00</span>
+                                <span class="text-danger" id="saldoRestante">Bs. 0.00</span>
                             </div>
                             <div class="col-md-4">
                                 <strong>Estado final:</strong><br>
@@ -255,8 +255,8 @@ $(document).ready(function() {
         const monto = parseFloat($('#monto').val()) || 0;
         const saldoRestante = saldoActual - monto;
         
-        $('#montoPagar').text('S/. ' + monto.toFixed(2));
-        $('#saldoRestante').text('S/. ' + saldoRestante.toFixed(2));
+        $('#montoPagar').text('Bs. ' + monto.toFixed(2));
+        $('#saldoRestante').text('Bs. ' + saldoRestante.toFixed(2));
         
         if (saldoRestante <= 0) {
             $('#estadoFinal').removeClass('badge-warning badge-danger').addClass('badge-success').text('🟢 PAGADO');

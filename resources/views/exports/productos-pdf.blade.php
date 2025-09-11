@@ -136,7 +136,7 @@
                     @endif
                 </td>
                 <td>{{ $producto->categoria->nombre ?? 'Sin categoría' }}</td>
-                <td class="precio">S/. {{ number_format($producto->precioVenta ?? 0, 2) }}</td>
+                <td class="precio">Bs. {{ number_format($producto->precioVenta ?? 0, 2) }}</td>
                 <td class="{{ $producto->cantidad <= 5 ? 'stock-bajo' : 'stock-normal' }}">
                     {{ $producto->cantidad ?? 0 }}
                 </td>
