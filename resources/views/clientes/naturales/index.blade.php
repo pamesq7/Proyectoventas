@@ -127,9 +127,6 @@
                             <th>Email</th>
                             <th>Teléfono</th>
                             <th>NIT</th>
-                            <th>Ventas</th>
-                            <th>Monto Total</th>
-                            <th>Última Venta</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -146,8 +143,7 @@
                                             {{ strtoupper(substr($cliente->user->name, 0, 1)) }}
                                         </div>
                                         <div>
-                                            <div class="fw-bold">{{ $cliente->user->nombre_completo }}</div>
-                                            <small class="text-muted">ID: #{{ $cliente->idCliente }}</small>
+                                            <div class="fw-bold">{{ $cliente->user->nombre_completo }}</div>                            
                                         </div>
                                     </div>
                                 </td>
@@ -170,19 +166,6 @@
                                         <code class="bg-light px-2 py-1 rounded">{{ $cliente->nit }}</code>
                                     @else
                                         <span class="text-muted">No registrado</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="badge bg-info">{{ $cliente->total_ventas }}</span>
-                                </td>
-                                <td>
-                                    <strong>Bs. {{ number_format($cliente->monto_total_ventas, 2) }}</strong>
-                                </td>
-                                <td>
-                                    @if($cliente->ultima_venta)
-                                        {{ \Carbon\Carbon::parse($cliente->ultima_venta)->format('d/m/Y') }}
-                                    @else
-                                        <span class="text-muted">Sin ventas</span>
                                     @endif
                                 </td>
                                 <td>

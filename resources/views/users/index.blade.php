@@ -106,10 +106,6 @@
                     Lista de Usuarios
                 </div>
                 <div>
-                    <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm me-2">
-                        <i class="fas fa-plus me-1"></i>
-                        Nuevo Usuario
-                    </a>
                     <a href="{{ route('export.usuarios.pdf') }}" class="btn btn-success btn-sm" target="_blank">
                         <i class="fas fa-file-pdf me-1"></i>
                         Exportar PDF

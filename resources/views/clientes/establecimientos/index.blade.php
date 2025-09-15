@@ -97,33 +97,6 @@
         </div>
     </div>
 
-    {{-- Estadísticas por Tipo de Establecimiento --}}
-    @if($estadisticas['tipos_establecimiento']->count() > 0)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="card-title mb-0">
-                            <i class="fas fa-chart-pie me-1"></i>
-                            Distribución por Tipo de Establecimiento
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            @foreach($estadisticas['tipos_establecimiento'] as $tipo => $cantidad)
-                                <div class="col-md-2 col-sm-4 text-center mb-3">
-                                    <div class="border rounded p-3">
-                                        <div class="h4 mb-1 text-primary">{{ $cantidad }}</div>
-                                        <small class="text-muted">{{ $tipo }}</small>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
 
     {{-- Tabla de Establecimientos --}}
     <div class="card mb-4">
@@ -155,10 +128,7 @@
                             <th>Representante</th>
                             <th>Tipo</th>
                             <th>Email</th>
-                            <th>Teléfono</th>
-                            <th>Ventas</th>
-                            <th>Monto Total</th>
-                            <th>Última Venta</th>
+                            <th>Teléfono</th>                         
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -176,7 +146,6 @@
                                         </div>
                                         <div>
                                             <div class="fw-bold">{{ $establecimiento->razonSocial }}</div>
-                                            <small class="text-muted">ID: #{{ $establecimiento->idEstablecimiento }}</small>
                                         </div>
                                     </div>
                                 </td>
@@ -203,41 +172,20 @@
                                         <span class="text-muted">No registrado</span>
                                     @endif
                                 </td>
+
                                 <td>
-                                    <span class="badge bg-info">{{ $establecimiento->total_ventas }}</span>
-                                </td>
-                                <td>
-                                    <strong>Bs. {{ number_format($establecimiento->monto_total_ventas, 2) }}</strong>
-                                </td>
-                                <td>
-                                    @if($establecimiento->ultima_venta)
-                                        {{ \Carbon\Carbon::parse($establecimiento->ultima_venta)->format('d/m/Y') }}
-                                    @else
-                                        <span class="text-muted">Sin ventas</span>
-                                    @endif
-                                </td>
-                                <td>
+
                                     {{-- Estado del Establecimiento --}}
-                                    @if($establecimiento->estado == 1)
+                                    @if($establecimiento->estado == 1 && $establecimiento->representante->estado == 1)
                                         <span class="badge bg-success">
-                                            <i class="fas fa-building me-1"></i>Establecimiento Activo
+                                            <i class="fas fa-check me-1"></i>Activo
                                         </span>
                                     @else
                                         <span class="badge bg-danger">
-                                            <i class="fas fa-building me-1"></i>Establecimiento Inactivo
+                                            <i class="fas fa-times me-1"></i>Inactivo
                                         </span>
                                     @endif
                                     
-                                    {{-- Estado del Representante --}}
-                                    @if($establecimiento->representante->estado == 1)
-                                        <br><small class="badge bg-info mt-1">
-                                            <i class="fas fa-user me-1"></i>Representante Activo
-                                        </small>
-                                    @else
-                                        <br><small class="badge bg-warning mt-1">
-                                            <i class="fas fa-user me-1"></i>Representante Inactivo
-                                        </small>
-                                    @endif
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">

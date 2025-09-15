@@ -284,62 +284,6 @@
                 </div>
             </div>
             
-            {{-- Acciones Rápidas --}}
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-cogs me-1"></i>
-                        Acciones
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('clienteEstablecimiento.edit', $clienteEstablecimiento->idEstablecimiento) }}" class="btn btn-warning">
-                            <i class="fas fa-edit me-1"></i>
-                            Editar Establecimiento
-                        </a>
-                        
-                        {{-- Botón Nueva Venta --}}
-                        <a href="#" class="btn btn-success">
-                            <i class="fas fa-plus me-1"></i>
-                            Nueva Venta
-                        </a>
-                        
-                        {{-- Botón Ver Todas las Ventas --}}
-                        @if($estadisticas['total_ventas'] > 0)
-                            <a href="#" class="btn btn-info">
-                                <i class="fas fa-list me-1"></i>
-                                Ver Todas las Ventas
-                            </a>
-                        @endif
-                        
-                        {{-- Botón Ver Representante --}}
-                        <a href="{{ route('users.show', $clienteEstablecimiento->representante->idUser) }}" class="btn btn-outline-primary">
-                            <i class="fas fa-user-tie me-1"></i>
-                            Ver Representante
-                        </a>
-                        
-                        <a href="{{ route('clienteEstablecimiento.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-1"></i>
-                            Volver a la Lista
-                        </a>
-                        
-                        {{-- Botón Eliminar --}}
-                        <form action="{{ route('clienteEstablecimiento.destroy', $clienteEstablecimiento->idEstablecimiento) }}" 
-                              method="POST" 
-                              class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" 
-                                    class="btn btn-danger w-100"
-                                    onclick="return confirm('¿Estás seguro de que deseas eliminar el establecimiento {{ addslashes($clienteEstablecimiento->razonSocial) }}? Se marcará como inactivo.')">
-                                <i class="fas fa-trash me-1"></i>
-                                Eliminar Establecimiento
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
 
             {{-- Resumen Rápido --}}
             @if($estadisticas['total_ventas'] > 0)
@@ -371,17 +315,6 @@
                     </div>
                 </div>
             @else
-                <div class="card mt-4">
-                    <div class="card-body text-center">
-                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-                        <h6 class="text-muted">Sin Actividad Comercial</h6>
-                        <p class="text-muted small">Este establecimiento aún no ha realizado compras</p>
-                        <a href="#" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus me-1"></i>
-                            Crear Primera Venta
-                        </a>
-                    </div>
-                </div>
             @endif
         </div>
     </div>

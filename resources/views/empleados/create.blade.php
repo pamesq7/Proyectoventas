@@ -37,42 +37,126 @@
 
                     <form action="{{ route('empleados.store') }}" method="POST">
                         @csrf
+                        <div class="row">
+                            {{-- CI --}}
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="ci" class="form-label">
+                                        <i class="fas fa-id-badge me-1"></i>
+                                        Cédula de Identidad <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('ci') is-invalid @enderror" 
+                                           id="ci" 
+                                           name="ci" 
+                                           value="{{ old('ci') }}" 
+                                           placeholder="Ej: 1234567"
+                                           required>
+                                    @error('ci')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
 
-                        <!-- Selección de Usuario -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <div class="card bg-light">
-                                    <div class="card-body">
-                                        <h6 class="card-title">
-                                            <i class="fas fa-user me-2"></i>
-                                            Seleccionar Usuario
-                                        </h6>
-                                        <div class="mb-3">
-                                            <label for="idUser" class="form-label">Usuario <span class="text-danger">*</span></label>
-                                            <select class="form-select @error('idUser') is-invalid @enderror" 
-                                                    id="idUser" name="idUser" required>
-                                                <option value="">Seleccione un usuario...</option>
-                                                @foreach($usuariosDisponibles as $usuario)
-                                                    <option value="{{ $usuario->idUser }}" 
-                                                            {{ old('idUser') == $usuario->idUser ? 'selected' : '' }}>
-                                                        {{ $usuario->name }} {{ $usuario->primerApellido }} 
-                                                        @if($usuario->segundApellido) {{ $usuario->segundApellido }} @endif
-                                                        - CI: {{ $usuario->ci ?? 'N/A' }}
-                                                        @if($usuario->email) ({{ $usuario->email }}) @endif
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('idUser')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                            <div class="form-text">
-                                                Solo se muestran usuarios que no son empleados actualmente.
-                                            </div>
-                                        </div>
-                                    </div>
+                            {{-- Nombre --}}
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">
+                                        <i class="fas fa-user me-1"></i>
+                                        Nombre <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('name') is-invalid @enderror" 
+                                           id="name" 
+                                           name="name" 
+                                           value="{{ old('name') }}" 
+                                           placeholder="Nombre del cliente"
+                                           required>
+                                    @error('name')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            {{-- Primer Apellido --}}
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="primerApellido" class="form-label">
+                                        Primer Apellido <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('primerApellido') is-invalid @enderror" 
+                                           id="primerApellido" 
+                                           name="primerApellido" 
+                                           value="{{ old('primerApellido') }}" 
+                                           placeholder="Primer apellido"
+                                           required>
+                                    @error('primerApellido')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
+
+                        <div class="row">
+                            {{-- Segundo Apellido --}}
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="segundApellido" class="form-label">
+                                        Segundo Apellido
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @error('segundApellido') is-invalid @enderror" 
+                                           id="segundApellido" 
+                                           name="segundApellido" 
+                                           value="{{ old('segundApellido') }}" 
+                                           placeholder="Segundo apellido (opcional)">
+                                    @error('segundApellido')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            {{-- Email --}}
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>
+                                        Correo Electrónico <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" 
+                                           class="form-control @error('email') is-invalid @enderror" 
+                                           id="email" 
+                                           name="email" 
+                                           value="{{ old('email') }}" 
+                                           placeholder="correo@ejemplo.com"
+                                           required>
+                                    @error('email')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            {{-- Teléfono --}}
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="telefono" class="form-label">
+                                        <i class="fas fa-phone me-1"></i>
+                                        Teléfono
+                                    </label>
+                                    <input type="tel" 
+                                           class="form-control @error('telefono') is-invalid @enderror" 
+                                           id="telefono" 
+                                           name="telefono" 
+                                           value="{{ old('telefono') }}" 
+                                           placeholder="Ej: 70123456">
+                                    @error('telefono')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    
 
                         <!-- Información Laboral -->
                         <div class="row mb-4">
@@ -110,9 +194,6 @@
                                     </option>
                                     <option value="operador" {{ old('rol') == 'operador' ? 'selected' : '' }}>
                                         Operador
-                                    </option>
-                                    <option value="cliente" {{ old('rol') == 'cliente' ? 'selected' : '' }}>
-                                        Cliente
                                     </option>
                                 </select>
                                 @error('rol')

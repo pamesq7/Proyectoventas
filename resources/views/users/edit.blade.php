@@ -203,49 +203,7 @@
                             </div>
                         </div>
 
-                        {{-- Cambio de Contraseña (Opcional) --}}
-                        <div class="row">
-                            <div class="col-12">
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-key me-1"></i>
-                                    Cambiar Contraseña (Opcional)
-                                </h6>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Nueva Contraseña
-                                    </label>
-                                    <input type="password" 
-                                           class="form-control @error('password') is-invalid @enderror" 
-                                           id="password" 
-                                           name="password" 
-                                           placeholder="Dejar vacío para mantener la actual">
-                                    <div class="form-text">Mínimo 6 caracteres. Dejar vacío para no cambiar.</div>
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password_confirmation" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Confirmar Nueva Contraseña
-                                    </label>
-                                    <input type="password" 
-                                           class="form-control" 
-                                           id="password_confirmation" 
-                                           name="password_confirmation" 
-                                           placeholder="Repetir nueva contraseña">
-                                </div>
-                            </div>
-                        </div>
 
                         {{-- Campos específicos por tipo de usuario --}}
                         
@@ -531,23 +489,6 @@
 <script>
 $(document).ready(function() {
     // Validación del formulario
-    $('#editUserForm').on('submit', function(e) {
-        // Validar contraseñas si se están cambiando
-        const password = $('#password').val();
-        const passwordConfirmation = $('#password_confirmation').val();
-        
-        if (password && password !== passwordConfirmation) {
-            e.preventDefault();
-            alert('Las contraseñas no coinciden');
-            return false;
-        }
-        
-        if (password && password.length < 6) {
-            e.preventDefault();
-            alert('La contraseña debe tener al menos 6 caracteres');
-            return false;
-        }
-    });
 
     // Confirmación antes de cambiar estado a inactivo
     $('#estado').on('change', function() {
@@ -558,15 +499,7 @@ $(document).ready(function() {
         }
     });
 
-    // Mostrar/ocultar confirmación de contraseña
-    $('#password').on('input', function() {
-        const passwordValue = $(this).val();
-        if (passwordValue) {
-            $('#password_confirmation').prop('required', true);
-        } else {
-            $('#password_confirmation').prop('required', false);
-        }
-    });
+
 });
 </script>
 @endpush

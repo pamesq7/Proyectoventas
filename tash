@@ -1,0 +1,49 @@
+[33m702cdd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{0}: reset: moving to HEAD~2
+[33m0ce5e30[m HEAD@{1}: reset: moving to HEAD~2
+[33mfaf9850[m HEAD@{2}: reset: moving to faf9850
+[33m1977be9[m HEAD@{3}: commit: rol administrador
+[33mb09cb30[m HEAD@{4}: commit: rol administrador
+[33mfaf9850[m HEAD@{5}: commit: Registrar usuario y editar rol
+[33m0db297d[m HEAD@{6}: commit: Cambiar $ a Bs
+[33m0ce5e30[m HEAD@{7}: commit: Login y registro
+[33m0a22d92[m HEAD@{8}: commit: Login
+[33m702cdd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{9}: reset: moving to HEAD
+[33m702cdd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{10}: reset: moving to HEAD
+[33m702cdd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{11}: reset: moving to HEAD
+[33m702cdd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{12}: reset: moving to HEAD
+[33m702cdd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{13}: reset: moving to HEAD
+[33m702cdd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{14}: reset: moving to HEAD
+[33m702cdd8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{15}: commit: Guardado completo: todos los cambios actuales exportar pdf
+[33md552127[m HEAD@{16}: commit: Exportar reportes en pedidos
+[33md58a30e[m HEAD@{17}: commit: Exportar pdf reportes usuarios
+[33m31c2cef[m HEAD@{18}: commit: Gestion empleados
+[33md07a4f1[m HEAD@{19}: commit: Gestion reportes
+[33m8717f41[m HEAD@{20}: commit: gestion ventas, clientes morosos
+[33m617f264[m HEAD@{21}: commit: Gestion pedidos
+[33m3768aa7[m HEAD@{22}: commit: Limpieza de codigo
+[33m7689b78[m HEAD@{23}: commit: Transaccion corregido
+[33m15e706d[m HEAD@{24}: commit: Backup completo del proyecto Laravel
+[33mf196162[m HEAD@{25}: reset: moving to f196162
+[33m5c8c7b1[m HEAD@{26}: commit: Restore pedidos/nuevo.blade.php to f196162
+[33mf196162[m HEAD@{27}: commit: Limpieza de codigo
+[33m8e9b0a7[m HEAD@{28}: commit: Limpieza de codigo
+[33mdb07bd4[m HEAD@{29}: commit: chore: remove docs (.md) not needed for runtime
+[33mc6bc548[m HEAD@{30}: commit: chore: remove debug/test/migration helper scripts
+[33med1c35a[m HEAD@{31}: commit: Pago inicial, pago total
+[33m77ed0f6[m HEAD@{32}: commit: Pedidos precio total cliente, saldo
+[33mc2365f2[m HEAD@{33}: commit: Guardar pedido
+[33m054e46a[m HEAD@{34}: commit: Pedido variantes caracteristicas y tabla de pedido
+[33m138584c[m HEAD@{35}: commit: Personalizar diseño
+[33m68656d4[m HEAD@{36}: commit: Agregar imagen a productos y solucionar errores editar y eliminar
+[33me09a701[m HEAD@{37}: commit: Agregar imagen desde la tabla diseños a la gestion producto
+[33m9798af9[m HEAD@{38}: commit: Mejoras en gestión de diseños: agregar columna iddetalleVenta, corregir visualización de imágenes, actualizar estados y estilos
+[33mee67abe[m HEAD@{39}: reset: moving to HEAD
+[33mee67abe[m HEAD@{40}: commit: Muestra imagen adjuntada en diseño
+[33m1949fde[m HEAD@{41}: reset: moving to HEAD
+[33m1949fde[m HEAD@{42}: commit: Gestion diseño agregado
+[33mc13650e[m HEAD@{43}: reset: moving to origin/main
+[33mc1c7108[m HEAD@{44}: commit: Actualizacion base de datos y migraciones
+[33mc13650e[m HEAD@{45}: reset: moving to origin/main
+[33mc13650e[m HEAD@{46}: Branch: renamed refs/heads/main to refs/heads/main
+[33mc13650e[m HEAD@{48}: Branch: renamed refs/heads/master to refs/heads/main
+[33mc13650e[m HEAD@{50}: commit (initial): Primer commit

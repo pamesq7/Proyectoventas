@@ -236,11 +236,18 @@
                                                     <i class="fas fa-{{ $empleado->estado ? 'times' : 'check' }}"></i>
                                                 </button>
                                             </form>
-                                            <button type="button" class="btn btn-danger btn-sm" 
-                                                    onclick="confirmarEliminacion({{ $empleado->idEmpleado }})"
-                                                    title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <form action="{{ route('users.destroy', $empleado->user->idUser) }}" 
+                                                  method="POST" 
+                                                  style="display:inline;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" 
+                                                        class="btn btn-danger btn-sm"
+                                                        title="Eliminar"
+                                                        onclick="return confirm('¿Estás seguro de que deseas eliminar el empleado {{ addslashes($empleado->user->name) }} {{ addslashes($empleado->user->primerApellido) }}? Se marcará como inactivo.')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
