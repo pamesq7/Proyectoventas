@@ -57,6 +57,7 @@
                 font-size: 1.2rem;
             }
         </style>
+        @stack('styles')
     </head>
     <body class="sb-nav-fixed">
         @include('partials.navbar')
@@ -121,7 +122,9 @@
                         </div>
                     @endif
                     
-                    @yield('content')
+                    <div class="container-fluid px-4">
+                        @yield('content')
+                    </div>
                 </main>
                 @include('partials.footer')
             </div>
@@ -129,7 +132,8 @@
         
         @include('partials.js')
         
-        {{-- JavaScript para notificaciones --}}
+        @stack('scripts')
+        
         <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Auto-hide notifications after 6 seconds
@@ -281,6 +285,30 @@
                 };
                 return titles[type] || 'Mensaje';
             }
+            
+            // Mostrar notificación si hay mensajes en la sesión
+            @if(session('success'))
+                showNotification('success', '{{ session('success') }}');
+            @endif
+            
+            @if(session('error'))
+                showNotification('error', '{{ session('error') }}');
+            @endif
+            
+            @if(session('warning'))
+                showNotification('warning', '{{ session('warning') }}');
+            @endif
+            
+            @if(session('info'))
+                showNotification('info', '{{ session('info') }}');
+            @endif
+            
+            // Mostrar errores de validación
+            @if($errors->any())
+                @foreach($errors->all() as $error)
+                    showNotification('error', '{{ $error }}');
+                @endforeach
+            @endif
         });
         </script>
     </body>

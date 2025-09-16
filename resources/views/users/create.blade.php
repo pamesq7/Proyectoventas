@@ -441,94 +441,88 @@
 
 @push('scripts')
 <script>
-// Función para mostrar/ocultar campos (JavaScript vanilla)
+// Verificar si jQuery está cargado
+if (typeof jQuery == 'undefined') {
+    console.error('jQuery no está cargado');
+}
+
+// Función para mostrar/ocultar campos
 function toggleCamposTipoUsuario() {
     console.log('toggleCamposTipoUsuario ejecutándose...');
     
-    // Ocultar todos los campos
-    const todosCampos = document.querySelectorAll('.tipo-usuario-campos');
-    todosCampos.forEach(function(campo) {
-        campo.style.display = 'none';
-    });
+    // Ocultar todos los campos de tipo de usuario
+    $('.tipo-usuario-campos').hide();
     
-    // Obtener tipo seleccionado
-    const tipoSeleccionado = document.querySelector('input[name="tipo_usuario"]:checked');
+    // Obtener el valor del tipo de usuario seleccionado
+    const tipoSeleccionado = $('input[name="tipo_usuario"]:checked');
     
-    if (tipoSeleccionado) {
-        const valor = tipoSeleccionado.value;
-        console.log('Tipo seleccionado:', valor);
+    if (tipoSeleccionado.length > 0) {
+        const valor = tipoSeleccionado.val();
+        console.log('Mostrando campos para:', valor);
         
-        const campoAMostrar = document.getElementById('campos_' + valor);
-        if (campoAMostrar) {
-            campoAMostrar.style.display = 'block';
-            console.log('Mostrando campos para:', valor);
+        // Mostrar solo los campos correspondientes al tipo seleccionado
+        const camposAMostrar = $('#campos_' + valor);
+        if (camposAMostrar.length) {
+            camposAMostrar.show();
+            console.log('Campos mostrados correctamente');
         } else {
-            console.error('No se encontró el elemento con ID: campos_' + valor);
+            console.error('No se encontraron campos para el tipo:', valor);
         }
     }
 }
 
-// Ejecutar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM cargado, inicializando...');
+// Inicialización cuando el documento esté listo
+$(document).ready(function() {
+    console.log('jQuery listo');
     
-    // Ejecutar al cargar la página
+    // Inicializar visibilidad de campos
     toggleCamposTipoUsuario();
     
-    // Agregar event listeners a los radio buttons
-    const radioButtons = document.querySelectorAll('input[name="tipo_usuario"]');
-    radioButtons.forEach(function(radio) {
-        radio.addEventListener('change', toggleCamposTipoUsuario);
+    // Manejar cambio de tipo de usuario
+    $(document).on('change', 'input[name="tipo_usuario"]', function() {
+        console.log('Cambio detectado en tipo de usuario');
+        toggleCamposTipoUsuario();
     });
     
     // Validación del formulario
-    const form = document.getElementById('createUserForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            const tipoUsuario = document.querySelector('input[name="tipo_usuario"]:checked');
+    $('#createUserForm').on('submit', function(e) {
+        const tipoUsuario = $('input[name="tipo_usuario"]:checked');
+        
+        if (tipoUsuario.length === 0) {
+            e.preventDefault();
+            alert('Por favor selecciona un tipo de usuario');
+            return false;
+        }
+        
+        const valor = tipoUsuario.val();
+        
+        // Validaciones específicas
+        if (valor === 'cliente_establecimiento') {
+            const nit = $('#nit_establecimiento').val();
+            const razonSocial = $('#razonSocial').val();
+            const tipoEst = $('#tipoEstablecimiento').val();
+            const domicilio = $('#domicilioFiscal').val();
             
-            if (!tipoUsuario) {
+            if (!nit || !razonSocial || !tipoEst || !domicilio) {
                 e.preventDefault();
-                alert('Por favor selecciona un tipo de usuario');
+                alert('Por favor completa todos los campos obligatorios del establecimiento');
                 return false;
             }
+        }
+        
+        if (valor === 'empleado') {
+            const cargo = $('#cargo').val();
+            const rol = $('#rol').val();
             
-            const valor = tipoUsuario.value;
-            console.log('Validando formulario para tipo:', valor);
-            
-            // Validaciones específicas según tipo
-            if (valor === 'cliente_establecimiento') {
-                const nitEst = document.getElementById('nit_establecimiento');
-                const razonSocial = document.getElementById('razonSocial');
-                const tipoEst = document.getElementById('tipoEstablecimiento');
-                const domicilio = document.getElementById('domicilioFiscal');
-                
-                if (!nitEst.value || !razonSocial.value || !tipoEst.value || !domicilio.value) {
-                    e.preventDefault();
-                    alert('Por favor completa todos los campos obligatorios del establecimiento');
-                    return false;
-                }
+            if (!cargo || !rol) {
+                e.preventDefault();
+                alert('Por favor completa todos los campos obligatorios del empleado');
+                return false;
             }
-            
-            if (valor === 'empleado') {
-                const cargo = document.getElementById('cargo');
-                const rol = document.getElementById('rol');
-                
-                if (!cargo.value || !rol.value) {
-                    e.preventDefault();
-                    alert('Por favor completa todos los campos obligatorios del empleado');
-                    return false;
-                }
-            }
-        });
-    }
-});
-
-// También mantener la versión jQuery como respaldo
-$(document).ready(function() {
-    console.log('jQuery también cargado');
+        }
+    });
     
-    // Generar email automático basado en nombre y apellido
+    // Generar email automático
     $('#name, #primerApellido').on('blur', function() {
         if ($('#email').val() === '') {
             const nombre = $('#name').val().toLowerCase();
