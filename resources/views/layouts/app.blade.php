@@ -286,29 +286,7 @@
                 return titles[type] || 'Mensaje';
             }
             
-            // Mostrar notificación si hay mensajes en la sesión
-            @if(session('success'))
-                showNotification('success', '{{ session('success') }}');
-            @endif
-            
-            @if(session('error'))
-                showNotification('error', '{{ session('error') }}');
-            @endif
-            
-            @if(session('warning'))
-                showNotification('warning', '{{ session('warning') }}');
-            @endif
-            
-            @if(session('info'))
-                showNotification('info', '{{ session('info') }}');
-            @endif
-            
-            // Mostrar errores de validación
-            @if($errors->any())
-                @foreach($errors->all() as $error)
-                    showNotification('error', '{{ $error }}');
-                @endforeach
-            @endif
+           
         });
         </script>
     </body>

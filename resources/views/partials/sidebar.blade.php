@@ -79,11 +79,7 @@
                     ✨ Personalizar mi diseño
                 </a>
 
-                <!-- Carrito -->
-                <a class="nav-link" href="{{ route('pedidos.carrito') }}">
-                    <div class="sb-nav-link-icon"><i class="fas fa-shopping-basket"></i></div>
-                    🧺 Carrito
-                </a>
+
 
                 <!-- Pedidos (Administración) -->
                 <a class="nav-link" href="{{ route('pedidos.index') }}">

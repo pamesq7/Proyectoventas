@@ -72,7 +72,7 @@ class ProductoController extends Controller
         try {
             // Validación de datos
             $validator = Validator::make($request->all(), [
-                'SKU' => 'required|string|max:50|unique:productos,SKU',
+                'SKU' => 'nullable|string|max:50|unique:productos,SKU',
                 'nombre' => 'required|string|max:255',
                 'descripcion' => 'nullable|string|max:1000',
                 'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -84,7 +84,7 @@ class ProductoController extends Controller
                 'idCategoria' => 'required|exists:categorias,idCategoria',
                 'idVariante' => 'nullable|exists:variantes,idVariante'
             ], [
-                'SKU.required' => 'El SKU es obligatorio.',
+                'SKU.required' => 'El SKU no es obligatorio.',
                 'SKU.unique' => 'Ya existe un producto con este SKU.',
                 'nombre.required' => 'El nombre del producto es obligatorio.',
                 'foto.image' => 'El archivo debe ser una imagen.',
