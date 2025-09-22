@@ -2,486 +2,457 @@
 
 @section('content')
 <div class="container-fluid px-4">
-    <h1 class="mt-4">Detalles del Producto</h1>
+    <h1 class="mt-4">Detalles del Pedido #{{ $pedido->idVenta }}</h1>
     <ol class="breadcrumb mb-4">
         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ route('productos.index') }}">Productos</a></li>
-        <li class="breadcrumb-item active">{{ $producto->nombre }}</li>
+        <li class="breadcrumb-item"><a href="{{ route('pedidos.index') }}">Pedidos</a></li>
+        <li class="breadcrumb-item active">Pedido #{{ $pedido->idVenta }}</li>
     </ol>
 
     <div class="row">
-        {{-- Información Principal del Producto --}}
+        {{-- Información Principal del Pedido --}}
         <div class="col-lg-8">
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-box me-2"></i>
-                        {{ $producto->nombre }}
-                        @if($producto->estado == 1)
-                            <span class="badge bg-success ms-2">
-                                <i class="fas fa-check me-1"></i>Activo
-                            </span>
-                        @else
-                            <span class="badge bg-danger ms-2">
-                                <i class="fas fa-times me-1"></i>Inactivo
-                            </span>
-                        @endif
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Información del Pedido
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        {{-- Imagen del Producto --}}
-                        <div class="col-md-4">
-                            @if($producto->foto)
-                                <img src="{{ asset('storage/' . $producto->foto) }}" 
-                                     alt="{{ $producto->nombre }}" 
-                                     class="img-fluid rounded shadow-sm mb-3"
-                                     style="max-height: 300px; width: 100%; object-fit: cover;">
-                            @else
-                                <div class="bg-light d-flex align-items-center justify-content-center rounded" 
-                                     style="height: 300px;">
-                                    <div class="text-center text-muted">
-                                        <i class="fas fa-image fa-3x mb-2"></i>
-                                        <p>Sin imagen</p>
-                                    </div>
-                                </div>
-                            @endif
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Cliente:</label>
+                                <p class="mb-0">{{ $pedido->cliente->nombre ?? 'Cliente no especificado' }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Fecha de creación:</label>
+                                <p class="mb-0">{{ \Carbon\Carbon::parse($pedido->created_at)->format('d/m/Y H:i') }}</p>
+                            </div>
                         </div>
-                        
-                        {{-- Información Básica --}}
-                        <div class="col-md-8">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">SKU:</label>
-                                        <div>
-                                            <code class="bg-light px-2 py-1 rounded fs-6">{{ $producto->SKU }}</code>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">Categoría:</label>
-                                        <div>
-                                            @if($producto->categoria)
-                                                <span class="badge bg-secondary fs-6">
-                                                    <i class="fas fa-folder me-1"></i>
-                                                    {{ $producto->categoria->nombreCategoria }}
-                                                </span>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Estado:</label>
+                                <p class="mb-0">
+                                    @php
+                                        $estadoClases = [
+                                            'pendiente' => 'warning',
+                                            'procesando' => 'info',
+                                            'completado' => 'success',
+                                            'cancelado' => 'danger'
+                                        ][$pedido->estado] ?? 'secondary';
+                                    @endphp
+                                    <span class="badge bg-{{ $estadoClases }}">
+                                        {{ ucfirst($pedido->estado) }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Total:</label>
+                                <p class="mb-0 fw-bold">${{ number_format($pedido->total, 2) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if($pedido->notas)
+                    <div class="mt-3">
+                        <label class="form-label text-muted">Notas:</label>
+                        <p class="mb-0">{{ $pedido->notas }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Detalles del Pedido --}}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-boxes me-2"></i>
+                        Productos del Pedido
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($pedido->detalleVentas as $detalle)
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if($detalle->producto && $detalle->producto->foto)
+                                                <img src="{{ asset('storage/' . $detalle->producto->foto) }}" 
+                                                     alt="{{ $detalle->producto->nombre }}" 
+                                                     class="me-2" 
+                                                     style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
                                             @else
-                                                <span class="badge bg-warning fs-6">Sin categoría</span>
+                                                <div class="bg-light d-flex align-items-center justify-content-center me-2" 
+                                                     style="width: 40px; height: 40px; border-radius: 4px;">
+                                                    <i class="fas fa-box text-muted"></i>
+                                                </div>
                                             @endif
+                                            <div>
+                                                <div class="fw-semibold">{{ $detalle->producto->nombre ?? 'Producto no disponible' }}</div>
+                                                @if($detalle->descripcion_adicional)
+                                                    <small class="text-muted">{{ $detalle->descripcion_adicional }}</small>
+                                                @endif
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            @if($producto->descripcion)
-                                <div class="mb-3">
-                                    <label class="form-label text-muted">Descripción:</label>
-                                    <p class="mb-0">{{ $producto->descripcion }}</p>
-                                </div>
-                            @endif
-                            
-                            {{-- Precios --}}
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">Precio de Venta:</label>
-                                        <div class="h4 text-success mb-0">
-                                            ${{ number_format($producto->precioVenta, 2) }}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted">Precio de Producción:</label>
-                                        <div class="h5 text-info mb-0">
-                                            ${{ number_format($producto->precioProduccion, 2) }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {{-- Margen de Ganancia --}}
-                            @if($producto->precioVenta > 0 && $producto->precioProduccion > 0)
-                                @php
-                                    $margen = (($producto->precioVenta - $producto->precioProduccion) / $producto->precioVenta) * 100;
-                                    $ganancia = $producto->precioVenta - $producto->precioProduccion;
-                                    $alertClass = $margen >= 40 ? 'success' : ($margen >= 20 ? 'warning' : 'danger');
-                                @endphp
-                                <div class="alert alert-{{ $alertClass }} mb-3">
-                                    <i class="fas fa-chart-line me-2"></i>
-                                    <strong>Margen de Ganancia:</strong> {{ number_format($margen, 2) }}% 
-                                    | <strong>Ganancia:</strong> ${{ number_format($ganancia, 2) }}
-                                </div>
-                            @endif
-                        </div>
+                                    </td>
+                                    <td class="text-center align-middle">{{ $detalle->cantidad }}</td>
+                                    <td class="text-end align-middle">${{ number_format($detalle->precio_unitario, 2) }}</td>
+                                    <td class="text-end align-middle fw-semibold">${{ number_format($detalle->precio_unitario * $detalle->cantidad, 2) }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        No hay productos en este pedido
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="3" class="text-end">Subtotal:</th>
+                                    <th class="text-end">${{ number_format($pedido->subtotal, 2) }}</th>
+                                </tr>
+                                @if($pedido->descuento > 0)
+                                <tr>
+                                    <th colspan="3" class="text-end">Descuento:</th>
+                                    <th class="text-end text-danger">-${{ number_format($pedido->descuento, 2) }}</th>
+                                </tr>
+                                @endif
+                                <tr class="table-active">
+                                    <th colspan="3" class="text-end">Total:</th>
+                                    <th class="text-end">${{ number_format($pedido->total, 2) }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
-        
-        {{-- Panel de Estadísticas --}}
+
+        {{-- Panel Lateral --}}
         <div class="col-lg-4">
-            {{-- Inventario --}}
+            {{-- Acciones --}}
             <div class="card mb-4">
                 <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-warehouse me-1"></i>
-                        Inventario
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <div class="mb-2">
-                                <div class="h4 mb-0 text-primary">{{ $producto->cantidad }}</div>
-                                <small class="text-muted">Cantidad</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="mb-2">
-                                <div class="h4 mb-0 text-info">{{ $producto->pedidoMinimo }}</div>
-                                <small class="text-muted">Mín. Pedido</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            {{-- Información del Sistema --}}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Información del Sistema
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Fecha de Creación:</label>
-                        <div>{{ $producto->created_at ? $producto->created_at->format('d/m/Y H:i') : 'No disponible' }}</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Última Actualización:</label>
-                        <div>{{ $producto->updated_at ? $producto->updated_at->format('d/m/Y H:i') : 'No disponible' }}</div>
-                    </div>
-                    <div class="mb-0">
-                        <label class="form-label text-muted">ID del Producto:</label>
-                        <div><code>#{{ $producto->idProducto }}</code></div>
-                    </div>
-                </div>
-            </div>
-            
-            {{-- Acciones Rápidas --}}
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-cogs me-1"></i>
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog me-2"></i>
                         Acciones
-                    </h6>
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('productos.edit', $producto->idProducto) }}" class="btn btn-warning">
-                            <i class="fas fa-edit me-1"></i>
-                            Editar Producto
-                        </a>
-                        <a href="{{ route('productos.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-1"></i>
-                            Volver a la Lista
-                        </a>
-                        
-                        {{-- Botón Eliminar --}}
-                        <form action="{{ route('productos.destroy', $producto->idProducto) }}" 
-                              method="POST" 
-                              class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" 
-                                    class="btn btn-danger w-100"
-                                    onclick="return confirm('¿Estás seguro de que deseas eliminar el producto {{ addslashes($producto->nombre) }}? Se marcará como inactivo.')">
-                                <i class="fas fa-trash me-1"></i>
-                                Eliminar Producto
+                        @if($pedido->estado === 'pendiente')
+                            <button type="button" class="btn btn-success mb-2" data-bs-toggle="modal" data-bs-target="#marcarComoCompletadoModal">
+                                <i class="fas fa-check-circle me-1"></i> Marcar como Completado
                             </button>
-                        </form>
+                            <a href="{{ route('pedidos.edit', $pedido->idVenta) }}" class="btn btn-primary mb-2">
+                                <i class="fas fa-edit me-1"></i> Editar Pedido
+                            </a>
+                            <button type="button" class="btn btn-danger mb-2" data-bs-toggle="modal" data-bs-target="#cancelarPedidoModal">
+                                <i class="fas fa-times-circle me-1"></i> Cancelar Pedido
+                            </button>
+                        @elseif($pedido->estado === 'completado')
+                            <a href="#" class="btn btn-success mb-2" disabled>
+                                <i class="fas fa-check-double me-1"></i> Pedido Completado
+                            </a>
+                            <a href="{{ route('pedidos.edit', $pedido->idVenta) }}" class="btn btn-outline-primary mb-2">
+                                <i class="fas fa-eye me-1"></i> Ver Detalles
+                            </a>
+                        @elseif($pedido->estado === 'cancelado')
+                            <button type="button" class="btn btn-secondary mb-2" disabled>
+                                <i class="fas fa-ban me-1"></i> Pedido Cancelado
+                            </button>
+                        @endif
+                        
+                        <a href="{{ route('pedidos.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Volver a la lista
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    {{-- Sección de Información de Variante --}}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-gradient-info text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="card-title mb-0">
-                            <i class="fas fa-tag me-1"></i>
-                            Variante del Producto
-                        </h6>
-                        <div class="d-flex gap-2">
-                            @if($producto->variante)
-                                <a href="{{ route('productos.edit', $producto->idProducto) }}" class="btn btn-outline-light btn-sm">
-                                    <i class="fas fa-edit me-1"></i>
-                                    Cambiar Variante
-                                </a>
-                            @else
-                                <a href="{{ route('productos.edit', $producto->idProducto) }}" class="btn btn-light btn-sm">
-                                    <i class="fas fa-plus me-1"></i>
-                                    Asignar Variante
-                                </a>
-                            @endif
-                        </div>
-                    </div>
+
+            {{-- Información del Cliente --}}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Información del Cliente
+                    </h5>
                 </div>
                 <div class="card-body">
-                    @if($producto->variante)
-                        {{-- Producto CON variante --}}
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="card border-success">
-                                    <div class="card-header bg-success text-white py-2">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-cube me-1"></i>
-                                                {{ $producto->variante->nombre }}
-                                            </h6>
-                                            <span class="badge bg-light text-success">
-                                                ID: {{ $producto->variante->idVariante }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        @if($producto->variante->descripcion)
-                                            <p class="text-muted mb-3">{{ $producto->variante->descripcion }}</p>
-                                        @endif
-                                        
-                                        {{-- Estado de la variante --}}
-                                        <div class="mb-3">
-                                            <strong>Estado:</strong>
-                                            @if($producto->variante->estado == 1)
-                                                <span class="badge bg-success ms-1">
-                                                    <i class="fas fa-check me-1"></i>Activa
-                                                </span>
-                                            @else
-                                                <span class="badge bg-warning ms-1">
-                                                    <i class="fas fa-pause me-1"></i>Inactiva
-                                                </span>
-                                            @endif
-                                        </div>
-                                        
-                                        {{-- Características de la variante --}}
-                                        @if($producto->variante->varianteCaracteristicas && $producto->variante->varianteCaracteristicas->count() > 0)
-                                            <div class="mb-3">
-                                                <strong>Características:</strong>
-                                                <div class="mt-2">
-                                                    @foreach($producto->variante->varianteCaracteristicas as $varianteCaracteristica)
-                                                        @if($varianteCaracteristica->caracteristica && $varianteCaracteristica->caracteristica->opcion)
-                                                            <span class="badge bg-primary me-1 mb-1" style="font-size: 0.8rem;">
-                                                                {{ $varianteCaracteristica->caracteristica->opcion->nombre }}: 
-                                                                <strong>{{ $varianteCaracteristica->caracteristica->nombre }}</strong>
-                                                                @if($varianteCaracteristica->precioAdicional > 0)
-                                                                    <small class="text-warning">(+${{ number_format($varianteCaracteristica->precioAdicional, 2) }})</small>
-                                                                @endif
-                                                            </span>
-                                                        @endif
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @else
-                                            <div class="alert alert-warning">
-                                                <i class="fas fa-exclamation-triangle me-1"></i>
-                                                Esta variante no tiene características asignadas.
-                                            </div>
-                                        @endif
-                                        
-                                        {{-- Fechas --}}
-                                        <div class="row text-muted small">
-                                            <div class="col-md-6">
-                                                <strong>Creada:</strong> {{ $producto->variante->created_at->format('d/m/Y H:i') }}
-                                            </div>
-                                            <div class="col-md-6">
-                                                <strong>Actualizada:</strong> {{ $producto->variante->updated_at->format('d/m/Y H:i') }}
-                                            </div>
-                                        </div>
-                                    </div>
+                    @if($pedido->cliente)
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 50px; height: 50px; font-size: 1.25rem;">
+                                    {{ substr($pedido->cliente->nombre, 0, 1) }}
                                 </div>
                             </div>
-                            
-                            <div class="col-md-4">
-                                {{-- Estadísticas de la variante --}}
-                                <div class="card bg-light">
-                                    <div class="card-body">
-                                        <h6 class="card-title">
-                                            <i class="fas fa-chart-bar me-1"></i>
-                                            Estadísticas
-                                        </h6>
-                                        
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between">
-                                                <span>Características:</span>
-                                                <span class="badge bg-primary">
-                                                    {{ $producto->variante->varianteCaracteristicas->count() }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between">
-                                                <span>Precio adicional:</span>
-                                                <span class="text-success fw-bold">
-                                                    ${{ number_format($producto->variante->varianteCaracteristicas->sum('precioAdicional'), 2) }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between">
-                                                <span>Productos con esta variante:</span>
-                                                <span class="badge bg-info">
-                                                    {{ $producto->variante->productos->count() }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        
-                                        <hr>
-                                        <div class="d-grid gap-2">
-                                            <a href="{{ route('configuracion.index') }}" class="btn btn-outline-primary btn-sm">
-                                                <i class="fas fa-cogs me-1"></i>
-                                                Gestionar Variantes
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="ms-3">
+                                <h6 class="mb-0">{{ $pedido->cliente->nombre }}</h6>
+                                <small class="text-muted">
+                                    {{ $pedido->cliente->tipo === 'natural' ? 'Cliente Natural' : 'Cliente Empresarial' }}
+                                </small>
                             </div>
                         </div>
-                    @else
-                        {{-- Producto SIN variante --}}
-                        <div class="text-center py-4">
-                            <i class="fas fa-minus-circle fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">Este producto no tiene variante asignada</h5>
-                            <p class="text-muted mb-4">
-                                Para aprovechar las características y opciones disponibles, asigna una variante a este producto.
-                            </p>
+                        
+                        <ul class="list-unstyled">
+                            @if($pedido->cliente->email)
+                            <li class="mb-2">
+                                <i class="fas fa-envelope me-2 text-muted"></i>
+                                <a href="mailto:{{ $pedido->cliente->email }}" class="text-decoration-none">
+                                    {{ $pedido->cliente->email }}
+                                </a>
+                            </li>
+                            @endif
                             
-                            <div class="row justify-content-center">
-                                <div class="col-md-6">
-                                    <div class="card border-info">
-                                        <div class="card-body">
-                                            <h6 class="card-title text-info">
-                                                <i class="fas fa-lightbulb me-1"></i>
-                                                ¿Cómo asignar una variante?
-                                            </h6>
-                                            <p class="card-text small text-muted">
-                                                1. Haz clic en "Asignar Variante" arriba<br>
-                                                2. En el formulario de edición, selecciona una variante existente<br>
-                                                3. Guarda los cambios
-                                            </p>
-                                            <a href="{{ route('productos.edit', $producto->idProducto) }}" class="btn btn-info">
-                                                <i class="fas fa-plus me-1"></i>
-                                                Asignar Variante Ahora
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            @if($pedido->cliente->telefono)
+                            <li class="mb-2">
+                                <i class="fas fa-phone me-2 text-muted"></i>
+                                <a href="tel:{{ $pedido->cliente->telefono }}" class="text-decoration-none">
+                                    {{ $pedido->cliente->telefono }}
+                                </a>
+                            </li>
+                            @endif
+                            
+                            @if($pedido->cliente->direccion)
+                            <li class="mb-2">
+                                <i class="fas fa-map-marker-alt me-2 text-muted"></i>
+                                {{ $pedido->cliente->direccion }}
+                            </li>
+                            @endif
+                            
+                            @if($pedido->cliente->tipo === 'empresarial' && $pedido->cliente->ruc)
+                            <li class="mb-2">
+                                <i class="fas fa-building me-2 text-muted"></i>
+                                RUC: {{ $pedido->cliente->ruc }}
+                            </li>
+                            @endif
+                        </ul>
+                        
+                        <a href="{{ $pedido->cliente->tipo === 'natural' ? route('clienteNatural.show', $pedido->cliente->idCliente) : route('clienteEstablecimiento.show', $pedido->cliente->idCliente) }}" 
+                           class="btn btn-sm btn-outline-primary w-100 mt-2">
+                            <i class="fas fa-user-circle me-1"></i> Ver perfil del cliente
+                        </a>
+                    @else
+                        <div class="text-center py-3">
+                            <i class="fas fa-user-slash fa-2x text-muted mb-2"></i>
+                            <p class="mb-0">Cliente no especificado</p>
                         </div>
                     @endif
                 </div>
             </div>
+
+            {{-- Historial de Estados --}}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Historial del Pedido
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        @php
+                            $estados = [
+                                'pendiente' => ['icon' => 'clock', 'color' => 'warning', 'label' => 'Pendiente'],
+                                'procesando' => ['icon' => 'cog', 'color' => 'info', 'label' => 'En Proceso'],
+                                'completado' => ['icon' => 'check-circle', 'color' => 'success', 'label' => 'Completado'],
+                                'cancelado' => ['icon' => 'times-circle', 'color' => 'danger', 'label' => 'Cancelado']
+                            ];
+                            
+                            $currentState = $pedido->estado;
+                            $currentStateIndex = array_search($currentState, array_keys($estados));
+                        @endphp
+                        
+                        @foreach($estados as $key => $estado)
+                            @php
+                                $isActive = $key === $currentState;
+                                $isCompleted = array_search($key, array_keys($estados)) < $currentStateIndex;
+                                $isFuture = array_search($key, array_keys($estados)) > $currentStateIndex;
+                            @endphp
+                            
+                            <div class="timeline-item {{ $isActive ? 'active' : '' }} {{ $isCompleted ? 'completed' : '' }} {{ $isFuture ? 'future' : '' }}">
+                                <div class="timeline-icon bg-{{ $estado['color'] }}">
+                                    <i class="fas fa-{{ $estado['icon'] }}"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">{{ $estado['label'] }}</h6>
+                                    @if($isActive || $isCompleted)
+                                        <small class="text-muted">
+                                            {{ $pedido->updated_at->format('d/m/Y H:i') }}
+                                        </small>
+                                    @else
+                                        <small class="text-muted">Pendiente</small>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    {{-- Modal para Nueva Variante Manual --}}
-    <div class="modal fade" id="nuevaVarianteModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-plus me-2"></i>
-                        Nueva Variante Manual
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form method="POST" action="{{ route('productos.storeVariante') }}">
+</div>
+
+{{-- Modal para confirmar cambio de estado a Completado --}}
+<div class="modal fade" id="marcarComoCompletadoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Confirmar Pedido Completado
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de marcar este pedido como <strong>completado</strong>?</p>
+                <p class="mb-0">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancelar
+                </button>
+                <form action="{{ route('pedidos.actualizar-estado', $pedido->idVenta) }}" method="POST" class="d-inline">
                     @csrf
-                    <input type="hidden" name="idProducto" value="{{ $producto->idProducto }}">
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Precio <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" 
-                                               class="form-control" 
-                                               name="precio" 
-                                               step="0.01"
-                                               value="{{ $producto->precio }}"
-                                               required>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Stock Inicial</label>
-                                    <input type="number" 
-                                           class="form-control" 
-                                           name="stock" 
-                                           value="0"
-                                           min="0">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Seleccionar Características</label>
-                            <div id="caracteristicasSelector">
-                                @foreach($opciones as $opcion)
-                                    @if($opcion->caracteristicas->count() > 0)
-                                    <div class="mb-3">
-                                        <label class="form-label text-primary">{{ $opcion->nombre }}</label>
-                                        <select class="form-select" name="caracteristicas[{{ $opcion->idOpcion }}]" required>
-                                            <option value="">Selecciona {{ $opcion->nombre }}...</option>
-                                            @foreach($opcion->caracteristicas as $caracteristica)
-                                                <option value="{{ $caracteristica->idCaracteristica }}">
-                                                    {{ $caracteristica->nombre }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    @endif
-                                @endforeach
-                            </div>
-                        </div>
-                        
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" 
-                                   type="checkbox" 
-                                   name="estado" 
-                                   value="1" 
-                                   checked>
-                            <label class="form-check-label fw-bold">
-                                Variante activa
-                            </label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fas fa-times me-1"></i>
-                            Cancelar
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>
-                            Crear Variante
-                        </button>
-                    </div>
+                    @method('PATCH')
+                    <input type="hidden" name="estado" value="completado">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i> Sí, marcar como completado
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+{{-- Modal para confirmar cancelación --}}
+<div class="modal fade" id="cancelarPedidoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmar Cancelación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de cancelar este pedido?</p>
+                <div class="mb-3">
+                    <label for="motivoCancelacion" class="form-label">Motivo de cancelación (opcional):</label>
+                    <textarea class="form-control" id="motivoCancelacion" name="motivo" rows="3" placeholder="Especifica el motivo de la cancelación"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> No, mantener pedido
+                </button>
+                <form action="{{ route('pedidos.actualizar-estado', $pedido->idVenta) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="estado" value="cancelado">
+                    <input type="hidden" name="motivo_cancelacion" id="motivoCancelacionHidden">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-ban me-1"></i> Sí, cancelar pedido
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('styles')
+<style>
+    /* Estilos para la línea de tiempo */
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #e9ecef;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+    
+    .timeline-icon {
+        position: absolute;
+        left: -30px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+    }
+    
+    .timeline-content {
+        padding-left: 15px;
+    }
+    
+    .timeline-item.completed .timeline-content {
+        opacity: 0.7;
+    }
+    
+    .timeline-item.future .timeline-content {
+        opacity: 0.5;
+    }
+    
+    .timeline-item.active .timeline-content {
+        font-weight: 500;
+    }
+    
+    /* Estilos para el avatar del cliente */
+    .avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    // Capturar el motivo de cancelación y asignarlo al campo oculto
+    document.getElementById('cancelarPedidoModal').addEventListener('show.bs.modal', function () {
+        const motivoInput = document.getElementById('motivoCancelacion');
+        const motivoHidden = document.getElementById('motivoCancelacionHidden');
+        
+        motivoInput.addEventListener('input', function() {
+            motivoHidden.value = this.value;
+        });
+    });
+</script>
+@endpush
 @endsection
