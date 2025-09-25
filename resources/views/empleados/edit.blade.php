@@ -150,7 +150,13 @@
                         </div>
 
                         <!-- Estadísticas del Empleado -->
-                        @if($empleado->ventas->count() > 0 || $empleado->disenos->count() > 0)
+                        @php
+                            $ventasCount = $empleado->ventas ? $empleado->ventas->count() : 0;
+                            $disenosCount = $empleado->disenos ? $empleado->disenos->count() : 0;
+                            $totalVentas = $empleado->ventas ? $empleado->ventas->sum('total') : 0;
+                        @endphp
+
+                        @if($ventasCount > 0 || $disenosCount > 0)
                         <div class="row mb-4">
                             <div class="col-12">
                                 <h6 class="mb-3">
@@ -161,7 +167,7 @@
                                     <div class="col-md-4">
                                         <div class="card bg-info text-white">
                                             <div class="card-body text-center">
-                                                <h4>{{ $empleado->ventas->count() }}</h4>
+                                                <h4>{{ $ventasCount }}</h4>
                                                 <small>Ventas Realizadas</small>
                                             </div>
                                         </div>
@@ -169,7 +175,7 @@
                                     <div class="col-md-4">
                                         <div class="card bg-success text-white">
                                             <div class="card-body text-center">
-                                                <h4>${{ number_format($empleado->ventas->sum('total'), 2) }}</h4>
+                                                <h4>${{ number_format($totalVentas, 2) }}</h4>
                                                 <small>Total Vendido</small>
                                             </div>
                                         </div>
@@ -177,7 +183,7 @@
                                     <div class="col-md-4">
                                         <div class="card bg-warning text-white">
                                             <div class="card-body text-center">
-                                                <h4>{{ $empleado->disenos->count() }}</h4>
+                                                <h4>{{ $disenosCount }}</h4>
                                                 <small>Diseños Creados</small>
                                             </div>
                                         </div>
@@ -187,7 +193,7 @@
                         </div>
                         @endif
 
-                        <!-- Información de Registro -->
+                        <!-- Información de Registro (CORREGIDO) -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="alert alert-secondary">
@@ -195,11 +201,11 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <strong>Fecha de Registro:</strong> 
-                                            {{ $empleado->created_at->format('d/m/Y H:i') }}
+                                            {{ $empleado->created_at ? $empleado->created_at->format('d/m/Y H:i') : 'No disponible' }}
                                         </div>
                                         <div class="col-md-6">
                                             <strong>Última Actualización:</strong> 
-                                            {{ $empleado->updated_at->format('d/m/Y H:i') }}
+                                            {{ $empleado->updated_at ? $empleado->updated_at->format('d/m/Y H:i') : 'No disponible' }}
                                         </div>
                                     </div>
                                 </div>
@@ -252,15 +258,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Confirmación antes de cambiar el estado si tiene ventas
     const estadoCheckbox = document.getElementById('estado');
-    const ventasCount = {{ $empleado->ventas->count() }};
+    const ventasCount = {{ $ventasCount }};
     
-    estadoCheckbox.addEventListener('change', function() {
-        if (!this.checked && ventasCount > 0) {
-            if (!confirm('Este empleado tiene ' + ventasCount + ' ventas registradas. ¿Está seguro de desactivarlo?')) {
-                this.checked = true;
+    if (estadoCheckbox) {
+        estadoCheckbox.addEventListener('change', function() {
+            if (!this.checked && ventasCount > 0) {
+                if (!confirm('Este empleado tiene ' + ventasCount + ' ventas registradas. ¿Está seguro de desactivarlo?')) {
+                    this.checked = true;
+                }
             }
-        }
-    });
+        });
+    }
 });
 </script>
 @endpush

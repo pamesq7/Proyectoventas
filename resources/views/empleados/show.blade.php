@@ -90,7 +90,7 @@
                         </div>
                         <div class="col-md-6 mt-3">
                             <h6><i class="fas fa-calendar-plus me-2"></i>Fecha de Registro</h6>
-                            <p class="text-muted">{{ $empleado->created_at->format('d/m/Y H:i') }}</p>
+                            <p class="text-muted">{{ $empleado->created_at ? $empleado->created_at->format('d/m/Y H:i') : 'No disponible' }}</p>
                         </div>
                         <div class="col-md-6 mt-3">
                             <h6><i class="fas fa-toggle-on me-2"></i>Estado</h6>

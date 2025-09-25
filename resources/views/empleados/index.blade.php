@@ -214,7 +214,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <small>{{ $empleado->created_at->format('d/m/Y') }}</small>
+                                        <small>{{ $empleado->created_at ? $empleado->created_at->format('d/m/Y') : 'No disponible' }}</small>
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
