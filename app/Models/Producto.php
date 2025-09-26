@@ -14,7 +14,7 @@ class Producto extends Model
     public $incrementing = true;
     protected $keyType = 'int';
     public $timestamps = true;
-    
+
     protected $fillable = [
         'SKU',
         'nombre',
@@ -50,6 +50,7 @@ class Producto extends Model
     }
 
     // Relación: un producto pertenece a una variante
+    // Relación con variante
     public function variante()
     {
         return $this->belongsTo(Variante::class, 'idVariante', 'id');
@@ -58,7 +59,7 @@ class Producto extends Model
     // Relación: un producto puede tener muchas variantes (para casos especiales)
     public function variantes()
     {
-        return $this->hasMany(Variante::class, 'idProducto', 'idProducto');
+        // return $this->hasMany(Variante::class, 'idProducto', 'idProducto');
     }
 
     // Relación: un producto puede tener muchas características (eliminada tabla producto_caracteristicas)

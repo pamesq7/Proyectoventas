@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Variante extends Model
 {
     use HasFactory;
+
     protected $table = 'variantes';
     protected $primaryKey = 'id';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'nombre',
@@ -17,48 +20,26 @@ class Variante extends Model
         'estado',
     ];
 
-    // 🔸 Relación: una variante tiene muchos productos
+    // Relación con productos
     public function productos()
     {
-        return $this->hasMany(Producto::class, 'idVariante');
+        return $this->hasMany(Producto::class, 'idVariante', 'id');
     }
 
-    // 🔸 Relación: una variante puede tener muchas características
-    public function varianteCaracteristicas()
-    {
-        return $this->hasMany(VarianteCaracteristica::class, 'idVariante');
-    }
-
-    // Relación con características a través de variante_caracteristicas
+    // Relación con características a través de la tabla intermedia
     public function caracteristicas()
     {
-        return $this->hasManyThrough(
+        return $this->belongsToMany(
             Caracteristica::class,
-            VarianteCaracteristica::class,
-            'idVariante', // FK en variante_caracteristicas que referencia variantes.id
-            'idCaracteristica', // FK en caracteristicas (usamos PK para enlazar)
-            'id', // clave local en variantes
-            'idCaracteristica' // clave local en pivote hacia caracteristicas
-        );
+            'variante_caracteristicas', // nombre de la tabla intermedia
+            'idVariante',               // foreign key en la tabla intermedia
+            'idCaracteristica'          // related key en la tabla intermedia
+        )->withTimestamps();
     }
-
-    // Scope para variantes activas
-    public function scopeActivo($query)
+    
+    // Alias para mantener compatibilidad con el código existente
+    public function varianteCaracteristicas()
     {
-        return $query->where('estado', 1);
-    }
-
-    // Accesor para mostrar estado como texto
-    public function getEstadoTextoAttribute()
-    {
-        return $this->estado == 1 ? 'Activo' : 'Inactivo';
-    }
-
-    // Método para obtener el precio total de la variante
-    public function getPrecioTotalAttribute()
-    {
-        $precioBase = $this->productos->sum('precioVenta') ?? 0;
-        $precioAdicional = $this->varianteCaracteristicas->sum('precioAdicional');
-        return $precioBase + $precioAdicional;
+        return $this->caracteristicas();
     }
 }

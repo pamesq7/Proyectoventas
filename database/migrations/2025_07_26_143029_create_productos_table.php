@@ -39,11 +39,11 @@ return new class extends Migration
                   ->onDelete('no action')
                   ->onUpdate('no action');
                   
-            // $table->foreign('idVariante')
-            //       ->references('id')
-            //       ->on('variantes')
-            //       ->onDelete('set null')
-            //       ->onUpdate('no action');
+            $table->foreign('idVariante')
+                  ->references('id')
+                  ->on('variantes')
+                  ->onDelete('set null')
+                  ->onUpdate('no action');
         });
     }
 

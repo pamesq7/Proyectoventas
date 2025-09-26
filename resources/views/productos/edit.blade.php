@@ -76,10 +76,10 @@
                                             <label for="idVariante" class="form-label">Variante</label>
                                             <select class="form-select @error('idVariante') is-invalid @enderror" 
                                                     id="idVariante" name="idVariante">
-                                                <option value="">Sin variante</option>
+                                                <option value="">Seleccione una variante</option>
                                                 @foreach($variantes as $variante)
-                                                    <option value="{{ $variante->idVariante }}" 
-                                                            {{ old('idVariante', $producto->idVariante) == $variante->idVariante ? 'selected' : '' }}>
+                                                    <option value="{{ $variante->id }}" 
+                                                            {{ old('idVariante', $producto->idVariante) == $variante->id ? 'selected' : '' }}>
                                                         {{ $variante->nombre }}
                                                         @if($variante->varianteCaracteristicas->count() > 0)
                                                             ({{ $variante->varianteCaracteristicas->count() }} características)
