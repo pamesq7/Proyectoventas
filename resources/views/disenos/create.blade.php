@@ -44,16 +44,14 @@
                                 </div>
                             </div>
 
-                            <!-- Estado del Diseño -->
+                            <!-- Estado del Diseño - CORREGIDO -->
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="estadoDiseño">Estado del Diseño <span class="text-danger">*</span></label>
                                     <select class="form-control @error('estadoDiseño') is-invalid @enderror" 
                                             id="estadoDiseño" name="estadoDiseño" required>
                                         <option value="">Seleccione un estado</option>
-                                        <option value="no realizado" {{ old('estadoDiseño') == 'no realizado' ? 'selected' : '' }}>
-                                            No Realizado
-                                        </option>
+                                        <!-- SOLO ESTAS DOS OPCIONES SON VÁLIDAS -->
                                         <option value="en proceso" {{ old('estadoDiseño') == 'en proceso' ? 'selected' : '' }}>
                                             En Proceso
                                         </option>
@@ -64,15 +62,16 @@
                                     @error('estadoDiseño')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
+                                    <small class="form-text text-muted">Valores permitidos: "en proceso" o "terminado"</small>
                                 </div>
                             </div>
 
-                            <!-- Empleado -->
+                            <!-- Empleado - CAMBIAR A REQUERIDO -->
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="idEmpleado">Empleado</label>
+                                    <label for="idEmpleado">Empleado <span class="text-danger">*</span></label>
                                     <select class="form-control @error('idEmpleado') is-invalid @enderror" 
-                                            id="idEmpleado" name="idEmpleado">
+                                            id="idEmpleado" name="idEmpleado" required>
                                         <option value="">Seleccione un empleado</option>
                                         @foreach($empleados as $empleado)
                                             <option value="{{ $empleado->idEmpleado }}" {{ old('idEmpleado') == $empleado->idEmpleado ? 'selected' : '' }}>
