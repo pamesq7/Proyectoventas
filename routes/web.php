@@ -145,6 +145,7 @@ Route::middleware('auth')->group(function () {
 
     // Rutas para diseños
     Route::resource('disenos', DisenoController::class);
+    
 
     // Exportación de Diseños
     Route::get('/export/disenos/pdf', [ExportController::class, 'exportarDisenos'])->name('export.disenos.pdf');

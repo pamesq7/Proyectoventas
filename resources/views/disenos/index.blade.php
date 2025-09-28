@@ -64,7 +64,6 @@
                                     <th>Imagen</th>
                                     <th>Comentario</th>
                                     <th>Estado Diseño</th>
-                                    <th>Empleado</th>
                                     <th>ID Diseñador</th>
                                     <th>ID Detalle Venta</th>
                                     <th>Estado</th>
@@ -139,7 +138,6 @@
                                                 {{ ucfirst($diseno->estadoDiseño) }}
                                             </span>
                                         </td>
-                                        <td>{{ $diseno->empleado->nombre ?? 'N/A' }}</td>
                                         <td>{{ $diseno->idDiseñador ?? 'N/A' }}</td>
                                         <td>{{ $diseno->iddetalleVenta ?? 'N/A' }}</td>
                                         <td>

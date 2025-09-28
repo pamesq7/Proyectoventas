@@ -34,7 +34,7 @@ class DisenoController extends Controller
         }
 
         $disenos = $query->orderBy('created_at', 'desc')->paginate(12);
-        
+
         // Estados disponibles para filtro
         $estadosDiseno = ['no realizado', 'en proceso', 'terminado'];
 
@@ -83,7 +83,7 @@ class DisenoController extends Controller
             if ($request->hasFile('archivo')) {
                 $archivo = $request->file('archivo');
                 $nombreArchivo = time() . '_' . Str::slug($request->comentario ?? 'diseno') . '.' . $archivo->getClientOriginalExtension();
-                $archivoPath = $archivo->storeAs('disenos', $nombreArchivo, 'public');
+                $archivoPath = $archivo->storeAs('disenos_personalizados', $nombreArchivo, 'public');
             }
 
             Diseno::create([
@@ -98,7 +98,6 @@ class DisenoController extends Controller
 
             return redirect()->route('disenos.index')
                 ->with('success', 'Diseño creado exitosamente.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Error al crear el diseño: ' . $e->getMessage())
@@ -157,10 +156,10 @@ class DisenoController extends Controller
                 if ($diseno->archivo) {
                     Storage::disk('public')->delete($diseno->archivo);
                 }
-                
+
                 $archivo = $request->file('archivo');
                 $nombreArchivo = time() . '_' . Str::slug($request->comentario ?? 'diseno') . '.' . $archivo->getClientOriginalExtension();
-                $archivoPath = $archivo->storeAs('disenos', $nombreArchivo, 'public');
+                $archivoPath = $archivo->storeAs('disenos_personalizados', $nombreArchivo, 'public');
                 $diseno->archivo = $archivoPath;
             }
 
@@ -175,7 +174,6 @@ class DisenoController extends Controller
 
             return redirect()->route('disenos.index')
                 ->with('success', 'Diseño actualizado exitosamente.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Error al actualizar el diseño: ' . $e->getMessage())
@@ -198,13 +196,15 @@ class DisenoController extends Controller
 
             return redirect()->route('disenos.index')
                 ->with('success', 'Diseño eliminado exitosamente.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Error al eliminar el diseño: ' . $e->getMessage());
         }
     }
 
+    /**
+     * API: Obtener diseños terminados para vincular con productos
+     */
     /**
      * API: Obtener diseños terminados para vincular con productos
      */
@@ -217,11 +217,23 @@ class DisenoController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            return response()->json($disenos);
-
+            // Asegurar que la respuesta tenga la estructura correcta
+            return response()->json($disenos->map(function ($diseno) {
+                return [
+                    'idDiseno' => $diseno->idDiseno, // o 'id' si la PK se llama id
+                    'comentario' => $diseno->comentario,
+                    'archivo' => $diseno->archivo,
+                    'estadoDiseño' => $diseno->estadoDiseño,
+                    'empleado' => $diseno->empleado ? [
+                        'id' => $diseno->empleado->idEmpleado,
+                        'nombre' => $diseno->empleado->nombre
+                    ] : null,
+                    'created_at' => $diseno->created_at
+                ];
+            }));
         } catch (\Exception $e) {
+            \Log::error('Error en getDisenosTerminados: ' . $e->getMessage());
             return response()->json(['error' => 'Error al cargar diseños terminados'], 500);
         }
     }
-
 }

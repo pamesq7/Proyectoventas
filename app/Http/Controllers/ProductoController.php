@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class ProductoController extends Controller
 {
@@ -23,28 +22,14 @@ class ProductoController extends Controller
      */
     public function index()
     {
-        // Cargar solo productos activos con categoría, variante y diseño
+        // Cargar productos con categoría y variante
         $productos = Producto::with([
             'categoria',
-            'variante',
-            'diseno'
+            'variante'
         ])->where('estado', 1)
-            ->orderBy('nombre', 'asc')
-            ->get();
-
-        // Log para debug
-        Log::info('Productos encontrados:', [
-            'total' => $productos->count(),
-            'productos' => $productos->map(function ($p) {
-                return [
-                    'id' => $p->idProducto,
-                    'nombre' => $p->nombre,
-                    'estado' => $p->estado,
-                    'created_at' => $p->created_at
-                ];
-            })
-        ]);
-
+          ->orderBy('nombre', 'asc')
+          ->get();
+          
         return view('productos.index', compact('productos'));
     }
 
@@ -53,25 +38,15 @@ class ProductoController extends Controller
      */
     public function create()
     {
-        try {
-            $categorias = Categoria::where('estado', 1)->get();
-
-            // Usamos consulta directa para evitar problemas con Eloquent
-            $variantes = \DB::table('variantes')
-                ->where('estado', 1)
-                ->select('id', 'nombre')
-                ->get();
-
-            $opciones = Opcion::with(['caracteristicas' => function ($query) {
-                $query->where('estado', 1);
-            }])->where('estado', 1)->get();
-
-            return view('productos.create', compact('categorias', 'variantes', 'opciones'));
-        } catch (\Exception $e) {
-            \Log::error('Error en create: ' . $e->getMessage());
-            return back()->with('error', 'Error al cargar el formulario');
-        }
+        $categorias = Categoria::where('estado', 1)->get();
+        $variantes = \App\Models\Variante::where('estado', 1)->get();
+        $opciones = Opcion::with(['caracteristicas' => function($query) {
+            $query->where('estado', 1);
+        }])->where('estado', 1)->get();
+        
+        return view('productos.create', compact('categorias', 'variantes', 'opciones'));
     }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -79,11 +54,11 @@ class ProductoController extends Controller
     {
         Log::info('=== INICIO STORE PRODUCTO ===');
         Log::info('Datos recibidos:', $request->all());
-
+        
         try {
             // Validación de datos
             $validator = Validator::make($request->all(), [
-                'SKU' => 'nullable|string|max:50|unique:productos,SKU',
+                'SKU' => 'required|string|max:50|unique:productos,SKU',
                 'nombre' => 'required|string|max:255',
                 'descripcion' => 'nullable|string|max:1000',
                 'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -93,9 +68,9 @@ class ProductoController extends Controller
                 'pedidoMinimo' => 'required|integer|min:1',
                 'estado' => 'required|boolean',
                 'idCategoria' => 'required|exists:categorias,idCategoria',
-                'idVariante' => 'required|exists:variantes,id'
+                'idVariante' => 'nullable|exists:variantes,idVariante'
             ], [
-                'SKU.required' => 'El SKU no es obligatorio.',
+                'SKU.required' => 'El SKU es obligatorio.',
                 'SKU.unique' => 'Ya existe un producto con este SKU.',
                 'nombre.required' => 'El nombre del producto es obligatorio.',
                 'foto.image' => 'El archivo debe ser una imagen.',
@@ -132,16 +107,6 @@ class ProductoController extends Controller
                 Log::info('Imagen guardada:', ['nombre' => $nombreImagen]);
             }
 
-            // Obtener el primer diseño seleccionado para la relación uno-a-muchos
-            $idDisenoSeleccionado = null;
-            if ($request->filled('disenos_vinculados')) {
-                $disenosIds = explode(',', $request->disenos_vinculados);
-                $disenosIds = array_filter($disenosIds);
-                if (!empty($disenosIds)) {
-                    $idDisenoSeleccionado = $disenosIds[0]; // Tomar el primer diseño como principal
-                }
-            }
-
             // Datos para crear el producto
             $datosProducto = [
                 'SKU' => $request->SKU,
@@ -154,8 +119,7 @@ class ProductoController extends Controller
                 'pedidoMinimo' => $request->pedidoMinimo,
                 'estado' => $request->estado ?? 1,
                 'idCategoria' => $request->idCategoria,
-                'idVariante' => $request->idVariante,
-                'idDiseno' => $idDisenoSeleccionado // Relación uno-a-muchos: un diseño puede tener muchos productos
+                'idVariante' => $request->idVariante
             ];
 
             Log::info('Datos preparados para crear producto:', $datosProducto);
@@ -170,19 +134,41 @@ class ProductoController extends Controller
                     'nombre' => $producto->nombre
                 ]);
 
-                // Log del diseño vinculado (relación uno-a-muchos)
-                if ($idDisenoSeleccionado) {
-                    Log::info('Producto vinculado al diseño:', ['idDiseno' => $idDisenoSeleccionado]);
+                // Vincular diseños seleccionados
+                if ($request->filled('disenos_vinculados')) {
+                    $disenosIds = explode(',', $request->disenos_vinculados);
+                    $disenosIds = array_filter($disenosIds); // Remover valores vacíos
+                    
+                    if (!empty($disenosIds)) {
+                        Log::info('Vinculando diseños:', $disenosIds);
+                        
+                        // Preparar datos para la tabla pivot
+                        $pivotData = [];
+                        foreach ($disenosIds as $index => $disenoId) {
+                            $pivotData[$disenoId] = [
+                                'es_principal' => $index === 0, // El primer diseño es principal
+                                'precio_personalizado' => null,
+                                'personalizaciones' => null,
+                                'estado' => 1,
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ];
+                        }
+                        
+                        $producto->disenos()->attach($pivotData);
+                        Log::info('Diseños vinculados exitosamente');
+                    }
                 }
 
                 return redirect()->route('productos.index')
-                    ->with('success', 'Producto creado exitosamente' . ($idDisenoSeleccionado ? ' con diseño vinculado.' : '.'));
+                    ->with('success', 'Producto creado exitosamente con ' . (isset($disenosIds) ? count($disenosIds) : 0) . ' diseños vinculados.');
             } else {
                 Log::error('ERROR: Producto::create() retornó false o null');
                 return redirect()->back()
                     ->with('error', 'Error al crear el producto.')
                     ->withInput();
             }
+
         } catch (\Exception $e) {
             Log::error('EXCEPCIÓN en store():', [
                 'mensaje' => $e->getMessage(),
@@ -206,12 +192,12 @@ class ProductoController extends Controller
             'categoria',
             'variante.varianteCaracteristicas.caracteristica.opcion'
         ]);
-
+        
         // Cargar opciones para el modal de nueva variante (si es necesario)
-        $opciones = \App\Models\Opcion::with(['caracteristicas' => function ($query) {
+        $opciones = \App\Models\Opcion::with(['caracteristicas' => function($query) {
             $query->where('estado', 1)->orderBy('nombre');
         }])->where('estado', 1)->orderBy('nombre')->get();
-
+        
         return view('productos.show', compact('producto', 'opciones'));
     }
 
@@ -222,11 +208,11 @@ class ProductoController extends Controller
     {
         $producto = Producto::with(['categoria', 'variante.varianteCaracteristicas.caracteristica.opcion'])->findOrFail($id);
         $categorias = Categoria::where('estado', 1)->get();
-        $variantes = Variante::where('estado', 1)->get(); // Para el dropdown de selección
-        $opciones = Opcion::with(['caracteristicas' => function ($query) {
+        $variantes = \App\Models\Variante::where('estado', 1)->get(); // Para el dropdown de selección
+        $opciones = Opcion::with(['caracteristicas' => function($query) {
             $query->where('estado', 1);
         }])->where('estado', 1)->get();
-
+        
         return view('productos.edit', compact('producto', 'categorias', 'variantes', 'opciones'));
     }
 
@@ -244,7 +230,7 @@ class ProductoController extends Controller
             'precioProduccion' => 'nullable|numeric|min:0',
             'estado' => 'required|boolean',
             'idCategoria' => 'required|exists:categorias,idCategoria',
-            'idVariante' => 'required|exists:variantes,id',
+            'idVariante' => 'nullable|exists:variantes,idVariante',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ], [
             'SKU.required' => 'El SKU es obligatorio.',
@@ -270,14 +256,14 @@ class ProductoController extends Controller
 
         try {
             $fotoPath = $producto->foto; // Mantener foto actual por defecto
-
+            
             // Manejar subida de nueva imagen
             if ($request->hasFile('foto')) {
                 // Eliminar foto anterior si existe
                 if ($producto->foto && Storage::disk('public')->exists($producto->foto)) {
                     Storage::disk('public')->delete($producto->foto);
                 }
-
+                
                 $foto = $request->file('foto');
                 $nombreArchivo = time() . '_' . Str::slug($request->nombre) . '.' . $foto->getClientOriginalExtension();
                 $fotoPath = $foto->storeAs('productos', $nombreArchivo, 'public');
@@ -313,7 +299,7 @@ class ProductoController extends Controller
             // Verificar si el producto tiene ventas asociadas
             // Aquí puedes agregar lógica para verificar si tiene detalles de venta
             // $ventasAsociadas = $producto->detalleVentas()->count();
-
+            
             // Eliminación lógica: cambiar estado a inactivo
             $producto->update(['estado' => 0]);
 
@@ -330,7 +316,7 @@ class ProductoController extends Controller
         $caracteristicas = Caracteristica::where('idOpcion', $opcionId)
             ->where('estado', 1)
             ->get();
-
+            
         return response()->json($caracteristicas);
     }
 
@@ -377,7 +363,7 @@ class ProductoController extends Controller
             foreach ($combinaciones as $combinacion) {
                 // Verificar si ya existe una variante con esta combinación
                 $varianteExistente = $this->verificarVarianteExistente($producto->idProducto, $combinacion);
-
+                
                 if ($varianteExistente) {
                     $variantesExistentes++;
                     continue;
@@ -419,6 +405,7 @@ class ProductoController extends Controller
                 'variantes_creadas' => $variantesCreadas,
                 'variantes_existentes' => $variantesExistentes
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -545,24 +532,23 @@ class ProductoController extends Controller
     private function generarCombinaciones($caracteristicasPorOpcion)
     {
         $opciones = $caracteristicasPorOpcion->values()->toArray();
-
+        
         if (empty($opciones)) {
             return [];
         }
 
         // Función recursiva para generar combinaciones
-        function combinar($arrays, $i = 0, $current = [])
-        {
+        function combinar($arrays, $i = 0, $current = []) {
             if ($i == count($arrays)) {
                 return [$current];
             }
-
+            
             $result = [];
             foreach ($arrays[$i] as $caracteristica) {
                 $newCombinations = combinar($arrays, $i + 1, array_merge($current, [$caracteristica->idCaracteristica]));
                 $result = array_merge($result, $newCombinations);
             }
-
+            
             return $result;
         }
 
@@ -581,7 +567,7 @@ class ProductoController extends Controller
         foreach ($variantes as $variante) {
             $caracteristicasVariante = $variante->caracteristicas->pluck('idCaracteristica')->sort()->values()->toArray();
             $combinacionOrdenada = collect($combinacion)->sort()->values()->toArray();
-
+            
             if ($caracteristicasVariante === $combinacionOrdenada) {
                 return true;
             }
@@ -599,7 +585,7 @@ class ProductoController extends Controller
             ->with('opcion')
             ->get();
 
-        $nombres = $caracteristicas->map(function ($caracteristica) {
+        $nombres = $caracteristicas->map(function($caracteristica) {
             return $caracteristica->nombre;
         })->toArray();
 
@@ -614,7 +600,7 @@ class ProductoController extends Controller
         $caracteristicas = Caracteristica::whereIn('idCaracteristica', $combinacion)
             ->get();
 
-        $sufijos = $caracteristicas->map(function ($caracteristica) {
+        $sufijos = $caracteristicas->map(function($caracteristica) {
             return strtoupper(substr($caracteristica->nombre, 0, 2));
         })->toArray();
 

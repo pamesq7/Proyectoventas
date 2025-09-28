@@ -115,13 +115,15 @@
                                             <label for="idVariante" class="form-label">Variante</label>
                                             <select class="form-select @error('idVariante') is-invalid @enderror"
                                                 id="idVariante" name="idVariante">
-                                                <option value="0">Sin variante</option>
+                                                <option value="">Sin variante</option>
+                                                @if(isset($variantes))
                                                 @foreach($variantes as $variante)
-                                                <option value="{{ $variante->id }}"
-                                                    {{ old('idVariante') == $variante->id ? 'selected' : '' }}>
+                                                <option value="{{ $variante->idVariante }}"
+                                                    {{ old('idVariante') == $variante->idVariante ? 'selected' : '' }}>
                                                     {{ $variante->nombre }}
                                                 </option>
                                                 @endforeach
+                                                @endif
                                             </select>
                                             @error('idVariante')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -137,7 +139,7 @@
                                             <select class="form-select @error('estado') is-invalid @enderror"
                                                 id="estado" name="estado" required>
                                                 <option value="1" {{ old('estado', 1) == 1 ? 'selected' : '' }}>Activo</option>
-                                                <option value="0" {{ old('estado', 1) == 0 ? 'selected' : '' }}>Inactivo</option>
+                                                <option value="0" {{ old('estado') == 0 ? 'selected' : '' }}>Inactivo</option>
                                             </select>
                                             @error('estado')
                                             <div class="invalid-feedback">{{ $message }}</div>

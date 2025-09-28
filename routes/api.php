@@ -21,7 +21,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Rutas API para diseños
-Route::get('/disenos/terminados', [DisenoController::class, 'getDisenosTerminados']);
+Route::get('/disenos/terminados', [App\Http\Controllers\DisenoController::class, 'getDisenosTerminados']);
 
 // Precios por talla para un producto
 Route::get('/producto/{idProducto}/tallas-precios', [PedidoController::class, 'apiTallasPreciosPorProducto']);

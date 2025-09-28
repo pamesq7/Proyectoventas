@@ -76,10 +76,10 @@
                                             <label for="idVariante" class="form-label">Variante</label>
                                             <select class="form-select @error('idVariante') is-invalid @enderror" 
                                                     id="idVariante" name="idVariante">
-                                                <option value="">Seleccione una variante</option>
+                                                <option value="">Sin variante</option>
                                                 @foreach($variantes as $variante)
-                                                    <option value="{{ $variante->id }}" 
-                                                            {{ old('idVariante', $producto->idVariante) == $variante->id ? 'selected' : '' }}>
+                                                    <option value="{{ $variante->idVariante }}" 
+                                                            {{ old('idVariante', $producto->idVariante) == $variante->idVariante ? 'selected' : '' }}>
                                                         {{ $variante->nombre }}
                                                         @if($variante->varianteCaracteristicas->count() > 0)
                                                             ({{ $variante->varianteCaracteristicas->count() }} características)
@@ -94,10 +94,10 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <select class="form-select @error('estado') is-invalid @enderror" 
-                                                    id="estado" name="estado" required>
-                                                <option value="1" {{ old('estado', $producto->estado ?? 1) == 1 ? 'selected' : '' }}>Activo</option>
-                                                <option value="0" {{ old('estado', $producto->estado ?? 1) == 0 ? 'selected' : '' }}>Inactivo</option>
+                                            <label for="estado" class="form-label">Estado *</label>
+                                            <select class="form-select" id="estado" name="estado" required>
+                                                <option value="1" {{ old('estado', $producto->estado) == 1 ? 'selected' : '' }}>Activo</option>
+                                                <option value="0" {{ old('estado', $producto->estado) == 0 ? 'selected' : '' }}>Inactivo</option>
                                             </select>
                                         </div>
                                     </div>
@@ -307,33 +307,6 @@
 // Variables globales para diseños
 let disenosSeleccionados = [];
 let disenosDisponibles = [];
-
-// Cargar diseño existente del producto al inicializar
-document.addEventListener('DOMContentLoaded', function() {
-    const idDisenoExistente = {{ $producto->idDiseno ?? 'null' }};
-    
-    if (idDisenoExistente) {
-        // Buscar el diseño en la API y agregarlo
-        fetch('/api/disenos/terminados')
-            .then(response => response.json())
-            .then(data => {
-                const disenoExistente = data.find(d => d.idDiseno === idDisenoExistente);
-                if (disenoExistente) {
-                    disenosSeleccionados.push({
-                        id: disenoExistente.idDiseno,
-                        comentario: disenoExistente.comentario,
-                        archivo: disenoExistente.archivo,
-                        empleado: disenoExistente.empleado
-                    });
-                    actualizarGaleriaDisenosSeleccionados();
-                }
-            })
-            .catch(error => console.error('Error cargando diseño existente:', error));
-    } else {
-        // Mostrar mensaje de no diseños si no hay ninguno
-        document.getElementById('noDisenosMessage').style.display = 'block';
-    }
-});
 
 // Cargar diseños terminados cuando se abre el modal
 document.getElementById('disenosModal').addEventListener('show.bs.modal', function() {
