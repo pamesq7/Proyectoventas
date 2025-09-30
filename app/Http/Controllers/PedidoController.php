@@ -54,9 +54,7 @@ class PedidoController extends Controller
         $producto = Producto::findOrFail($idProducto);
 
         // Todas las tallas activas del sistema
-        $tallas = Talla::where('estado', 1)
-            ->orderBy('nombre')
-            ->get(['idTalla', 'nombre']);
+        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
 
         // Relación producto_tallas (puede no existir registro para alguna talla)
         $pt = ProductoTalla::where('idProducto', $idProducto)
@@ -252,7 +250,7 @@ class PedidoController extends Controller
             ->whereBetween('idProducto', [1, 4]) // ← FILTRO AÑADIDO
             ->orderBy('idProducto')
             ->get();
-        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
+        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
 
         $clientesNaturales = ClienteNatural::where('estado', 1)->get();
         $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->get();
