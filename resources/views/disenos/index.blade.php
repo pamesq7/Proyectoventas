@@ -26,15 +26,15 @@
                                 <select name="estadoDiseno" class="form-control">
                                     <option value="">Todos los estados</option>
                                     @if(isset($estadosDiseno) && count($estadosDiseno) > 0)
-                                        @foreach($estadosDiseno as $estado)
-                                            <option value="{{ $estado }}" {{ request('estadoDiseno') == $estado ? 'selected' : '' }}>
-                                                {{ ucwords(str_replace('_', ' ', $estado)) }}
-                                            </option>
-                                        @endforeach
+                                    @foreach($estadosDiseno as $estado)
+                                    <option value="{{ $estado }}" {{ request('estadoDiseno') == $estado ? 'selected' : '' }}>
+                                        {{ ucwords(str_replace('_', ' ', $estado)) }}
+                                    </option>
+                                    @endforeach
                                     @else
-                                        <option value="no realizado">No Realizado</option>
-                                        <option value="en proceso">En Proceso</option>
-                                        <option value="terminado">Terminado</option>
+                                    <option value="no realizado">No Realizado</option>
+                                    <option value="en proceso">En Proceso</option>
+                                    <option value="terminado">Terminado</option>
                                     @endif
                                 </select>
                             </div>
@@ -60,7 +60,7 @@
                         <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Nº</th>
                                     <th>Imagen</th>
                                     <th>Comentario</th>
                                     <th>Estado Diseño</th>
@@ -73,101 +73,101 @@
                             </thead>
                             <tbody>
                                 @forelse($disenos as $diseno)
-                                    <tr>
-                                        <td>{{ $diseno->idDiseno }}</td>
-                                        <td style="width: 120px;">
-                                            @if($diseno->archivo)
-                                                @php
-                                                    $extension = pathinfo($diseno->archivo, PATHINFO_EXTENSION);
-                                                    $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
-                                                    $fileName = basename($diseno->archivo);
-                                                @endphp
-                                                
-                                                @if($isImage)
-                                                    <div class="text-center">
-                                                        <img src="{{ asset('storage/' . $diseno->archivo) }}" 
-                                                             alt="Diseño" 
-                                                             class="img-thumbnail" 
-                                                             style="max-width: 80px; max-height: 80px; cursor: pointer;"
-                                                             onclick="window.open('{{ asset('storage/' . $diseno->archivo) }}', '_blank')"
-                                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                                        <div class="text-warning" style="display: none;">
-                                                            <i class="fas fa-image"></i>
-                                                            <br>
-                                                            <small>No disponible</small>
-                                                        </div>
-                                                        <br>
-                                                        <small class="text-muted">{{ strtoupper($extension) }}</small>
-                                                        <br>
-                                                        <small class="text-info" title="Archivo: {{ $fileName }}">
-                                                            {{ $fileName }}
-                                                        </small>
-                                                    </div>
-                                                @else
-                                                    <div class="text-center">
-                                                        <i class="fas fa-file fa-2x text-muted"></i>
-                                                        <br>
-                                                        <small class="text-muted">{{ strtoupper($extension) }}</small>
-                                                        <br>
-                                                        <a href="{{ asset('storage/' . $diseno->archivo) }}" target="_blank" class="btn btn-xs btn-outline-info">
-                                                            <i class="fas fa-download"></i>
-                                                        </a>
-                                                    </div>
-                                                @endif
-                                            @else
-                                                <div class="text-center text-muted">
-                                                    <i class="fas fa-image fa-2x"></i>
-                                                    <br>
-                                                    <small>Sin archivo</small>
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td>{{ $diseno->comentario ?? 'Sin comentario' }}</td>
-                                        <td>
-                                            @php
-                                                $badgeClass = 'secondary';
-                                                if ($diseno->estadoDiseño == 'terminado') {
-                                                    $badgeClass = 'success';
-                                                } elseif ($diseno->estadoDiseño == 'en proceso') {
-                                                    $badgeClass = 'warning';
-                                                } elseif ($diseno->estadoDiseño == 'no realizado') {
-                                                    $badgeClass = 'secondary';
-                                                }
-                                            @endphp
-                                            <span class="badge badge-{{ $badgeClass }}" style="color: black;">
-                                                {{ ucfirst($diseno->estadoDiseño) }}
-                                            </span>
-                                        </td>
-                                        <td>{{ $diseno->idDiseñador ?? 'N/A' }}</td>
-                                        <td>{{ $diseno->iddetalleVenta ?? 'N/A' }}</td>
-                                        <td>
-                                            <span class="badge badge-{{ $diseno->estado ? 'success' : 'danger' }}" style="color: black;">
-                                                {{ $diseno->estado ? 'Activo' : 'Inactivo' }}
-                                            </span>
-                                        </td>
-                                        <td>{{ $diseno->created_at->format('d/m/Y H:i') }}</td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <a href="{{ route('disenos.show', $diseno) }}" class="btn btn-sm btn-info">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{{ route('disenos.edit', $diseno) }}" class="btn btn-sm btn-warning">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <form action="{{ route('disenos.destroy', $diseno) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este diseño?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
+                                <tr>
+                                    <td>{{ $diseno->contador }}</td>
+                                    <td style="width: 120px;">
+                                        @if($diseno->archivo)
+                                        @php
+                                        $extension = pathinfo($diseno->archivo, PATHINFO_EXTENSION);
+                                        $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
+                                        $fileName = basename($diseno->archivo);
+                                        @endphp
+
+                                        @if($isImage)
+                                        <div class="text-center">
+                                            <img src="{{ asset('storage/' . $diseno->archivo) }}"
+                                                alt="Diseño"
+                                                class="img-thumbnail"
+                                                style="max-width: 80px; max-height: 80px; cursor: pointer;"
+                                                onclick="window.open('{{ asset('storage/' . $diseno->archivo) }}', '_blank')"
+                                                onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                            <div class="text-warning" style="display: none;">
+                                                <i class="fas fa-image"></i>
+                                                <br>
+                                                <small>No disponible</small>
                                             </div>
-                                        </td>
-                                    </tr>
+                                            <br>
+                                            <small class="text-muted">{{ strtoupper($extension) }}</small>
+                                            <br>
+                                            <small class="text-info" title="Archivo: {{ $fileName }}">
+                                                {{ $fileName }}
+                                            </small>
+                                        </div>
+                                        @else
+                                        <div class="text-center">
+                                            <i class="fas fa-file fa-2x text-muted"></i>
+                                            <br>
+                                            <small class="text-muted">{{ strtoupper($extension) }}</small>
+                                            <br>
+                                            <a href="{{ asset('storage/' . $diseno->archivo) }}" target="_blank" class="btn btn-xs btn-outline-info">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                        @endif
+                                        @else
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-image fa-2x"></i>
+                                            <br>
+                                            <small>Sin archivo</small>
+                                        </div>
+                                        @endif
+                                    </td>
+                                    <td>{{ $diseno->comentario ?? 'Sin comentario' }}</td>
+                                    <td>
+                                        @php
+                                        $badgeClass = 'secondary';
+                                        if ($diseno->estadoDiseño == 'terminado') {
+                                        $badgeClass = 'success';
+                                        } elseif ($diseno->estadoDiseño == 'en proceso') {
+                                        $badgeClass = 'warning';
+                                        } elseif ($diseno->estadoDiseño == 'no realizado') {
+                                        $badgeClass = 'secondary';
+                                        }
+                                        @endphp
+                                        <span class="badge badge-{{ $badgeClass }}" style="color: black;">
+                                            {{ ucfirst($diseno->estadoDiseño) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $diseno->idDiseñador ?? 'N/A' }}</td>
+                                    <td>{{ $diseno->iddetalleVenta ?? 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ $diseno->estado ? 'success' : 'danger' }}" style="color: black;">
+                                            {{ $diseno->estado ? 'Activo' : 'Inactivo' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $diseno->created_at->format('d/m/Y H:i') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('disenos.show', $diseno) }}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ route('disenos.edit', $diseno) }}" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('disenos.destroy', $diseno) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este diseño?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
                                 @empty
-                                    <tr>
-                                        <td colspan="10" class="text-center">No se encontraron diseños</td>
-                                    </tr>
+                                <tr>
+                                    <td colspan="10" class="text-center">No se encontraron diseños</td>
+                                </tr>
                                 @endforelse
                             </tbody>
                         </table>

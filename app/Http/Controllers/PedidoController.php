@@ -823,6 +823,11 @@ class PedidoController extends Controller
         ])->where('estado', 1)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+        // Agregar numeración consecutiva
+        $contador = ($pedidos->currentPage() - 1) * $pedidos->perPage() + 1;
+        $pedidos->each(function ($pedido) use (&$contador) {
+            $pedido->contador = $contador++;
+        });
 
         return view('pedidos.index', compact('pedidos'));
     }

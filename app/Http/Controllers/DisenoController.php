@@ -37,6 +37,12 @@ class DisenoController extends Controller
 
         // Estados disponibles para filtro
         $estadosDiseno = ['no realizado', 'en proceso', 'terminado'];
+        // Agregar numeración consecutiva
+        $contador = ($disenos->currentPage() - 1) * $disenos->perPage() + 1;
+        $disenos->each(function ($diseno) use (&$contador) {
+            $diseno->contador = $contador++;
+        });
+
 
         return view('disenos.index', compact('disenos', 'estadosDiseno'));
     }
