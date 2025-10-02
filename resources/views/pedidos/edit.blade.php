@@ -46,9 +46,25 @@
                     <div class="p-3 bg-light rounded h-100">
                         <h6 class="text-muted mb-2">Cliente</h6>
                         @php
-                            $nombreCliente = $pedido->clienteNatural->nombre ?? $pedido->clienteEstablecimiento->nombreEstablecimiento ?? '—';
+                            if ($pedido->clienteNatural && $pedido->clienteNatural->user) {
+                                $nombreCliente = trim($pedido->clienteNatural->user->name . ' ' . 
+                                                     $pedido->clienteNatural->user->primerApellido . ' ' . 
+                                                     ($pedido->clienteNatural->user->segundApellido ?? ''));
+                                $tipoCliente = 'Cliente Natural';
+                            } elseif ($pedido->clienteEstablecimiento) {
+                                $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ?? 
+                                               $pedido->clienteEstablecimiento->nombreEstablecimiento ?? 
+                                               'Establecimiento';
+                                $tipoCliente = 'Establecimiento';
+                            } else {
+                                $nombreCliente = 'No especificado';
+                                $tipoCliente = '';
+                            }
                         @endphp
                         <div class="fw-semibold">{{ $nombreCliente }}</div>
+                        @if($tipoCliente)
+                            <div class="text-muted small">{{ $tipoCliente }}</div>
+                        @endif
                         <div class="text-muted small">Creado: {{ $pedido->created_at->format('d/m/Y H:i') }}</div>
                     </div>
                 </div>
