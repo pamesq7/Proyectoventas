@@ -53,10 +53,10 @@
                                         </td>
                                         <td>
                                             @if($venta->estado_pago == 'PARCIAL')
-                                                <span class="badge badge-warning">🟡 PARCIAL</span>
+                                                <span class="badge badge-success text-dark">🟡 PARCIAL</span>
                                                 <br><small>{{ $venta->porcentaje_pagado }}%</small>
                                             @else
-                                                <span class="badge badge-danger">🔴 PENDIENTE</span>
+                                                <span class="badge badge-success text-dark">🔴 PENDIENTE</span>
                                             @endif
                                         </td>
                                         <td>

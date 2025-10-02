@@ -226,8 +226,6 @@
                                     <div id="uiBreakdownTallas" class="small"></div>
                                 </div>
                                 <div class="d-flex justify-content-between"><small>Precio unitario</small><small id="uiPrecioUnit">Bs 0.00</small></div>
-                                <div class="d-flex justify-content-between"><small>SUBTOTAL</small><small id="uiSubtotal">Bs 0.00</small></div>
-                                <div class="d-flex justify-content-between"><small>IGV (18%)</small><small id="uiIgv">Bs 0.00</small></div>
                                 <div class="d-flex justify-content-between"><strong>TOTAL</strong><strong id="uiTotal">Bs 0.00</strong></div>
                                 <div class="mt-3 p-2 border rounded">
                                     <div id="uiTablaTallas"></div>
@@ -661,8 +659,7 @@
         });
 
         const subtotal = Object.values(grupos).reduce((acc, g) => acc + g.total, 0);
-        const igv = 0; // Mantener 0 (frontend)
-        const total = subtotal + igv;
+        const total = subtotal;
 
         // UI: cantidad total y desglose por talla específica
         const uiCant = document.getElementById('uiCantTotal');
@@ -720,9 +717,7 @@
             }
         }
 
-        // Subtotales y totales
-        document.getElementById('uiSubtotal').textContent = formatear(subtotal);
-        document.getElementById('uiIgv').textContent = formatear(igv);
+        // Total
         document.getElementById('uiTotal').textContent = formatear(total);
 
         // Adelanto y saldo

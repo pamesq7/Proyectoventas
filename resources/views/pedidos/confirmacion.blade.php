@@ -35,7 +35,6 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-2"><strong>Total:</strong> ${{ number_format($venta->total, 2) }}</div>
-                            <div class="mb-2"><strong>Subtotal:</strong> ${{ number_format($venta->subtotal, 2) }}</div>
                             <div class="mb-2"><strong>Saldo pendiente:</strong> <span class="badge bg-{{ $venta->saldo > 0 ? 'warning' : 'success' }}">${{ number_format($venta->saldo, 2) }}</span></div>
                             <div class="mb-2"><strong>Entrega:</strong> {{ \Carbon\Carbon::parse($venta->fechaEntrega)->format('d/m/Y') }} en {{ $venta->lugarEntrega }}</div>
                         </div>
@@ -56,11 +55,7 @@
 
                     <hr>
                     <h6 class="mb-3">Detalles</h6>
-                    <div class="mb-2 d-flex justify-content-end">
-                        <a href="{{ route('pedidos.personalizar', ['venta' => $venta->idVenta]) }}" class="btn btn-outline-primary">
-                            <i class="fas fa-plus me-1"></i> Agregar otro pedido
-                        </a>
-                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead>

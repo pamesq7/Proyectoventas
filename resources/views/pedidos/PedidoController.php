@@ -853,11 +853,13 @@ class PedidoController extends Controller
 
         // Estados posibles para select
         $estados = [
-            '0' => 'En Diseño',
-            '1' => 'Producción',
-            '2' => 'Terminado',
-            '3' => 'Entregado',
-            '4' => 'Cancelado',
+            '0' => 'Solicitado',
+            '1' => 'Confirmado',
+            '2' => 'En Diseño',
+            '3' => 'En Producción',
+            '4' => 'Terminado',
+            '5' => 'Entregado',
+            '6' => 'Cancelado',
         ];
 
         // Tallas activas para la edición de detalles
@@ -880,19 +882,21 @@ class PedidoController extends Controller
     }
 
     /**
-     * Actualizar pedido (solo fecha y lugar de entrega)
+     * Actualizar pedido
      */
     public function update(Request $request, $idVenta)
     {
         $request->validate([
             'fechaEntrega' => 'required|date|after:today',
             'lugarEntrega' => 'required|string|max:200',
+            'estadoPedido' => 'required|in:0,1,2,3,4,5,6',
         ]);
 
         $pedido = Venta::findOrFail($idVenta);
 
         $pedido->fechaEntrega = $request->fechaEntrega;
         $pedido->lugarEntrega = $request->lugarEntrega;
+        $pedido->estadoPedido = (string) $request->estadoPedido;
         $pedido->save();
 
         return redirect()->route('pedidos.index')->with('success', 'Pedido actualizado correctamente.');
@@ -1114,30 +1118,23 @@ class PedidoController extends Controller
      */
     public function actualizarEstado(Request $request, $idVenta)
     {
-        try {
-            $request->validate([
-                'estadoPedido' => 'required|in:0,1,2,3,4'
-            ]);
+        $request->validate([
+            'estadoPedido' => 'required|in:0,1,2,3,4,5,6'
+        ]);
 
+        try {
             $pedido = Venta::findOrFail($idVenta);
             $estadoAnterior = $pedido->estadoPedido;
-            
-            // Actualizar el estado
-            $pedido->estadoPedido = $request->estadoPedido;
-            $pedido->save();
-
-            Log::info('Estado de pedido actualizado', [
-                'idVenta' => $idVenta,
-                'estadoAnterior' => $estadoAnterior,
-                'estadoNuevo' => $request->estadoPedido
-            ]);
+            $pedido->update(['estadoPedido' => $request->estadoPedido]);
 
             $estados = [
-                '0' => 'En Diseño',
-                '1' => 'Producción',
-                '2' => 'Terminado',
-                '3' => 'Entregado',
-                '4' => 'Cancelado'
+                '0' => 'Solicitado',
+                '1' => 'Confirmado',
+                '2' => 'En Diseño',
+                '3' => 'En Producción',
+                '4' => 'Terminado',
+                '5' => 'Entregado',
+                '6' => 'Cancelado'
             ];
 
             // Si es petición AJAX, devolver JSON
@@ -1145,19 +1142,16 @@ class PedidoController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Estado actualizado correctamente',
+                    'estadoAnterior' => $estados[$estadoAnterior] ?? 'Desconocido',
                     'estadoNuevo' => $estados[$request->estadoPedido] ?? 'Desconocido',
                     'pedidoId' => $idVenta
                 ]);
             }
 
+            // Si es petición normal, redirigir
             return redirect()->back()
                 ->with('success', 'Estado del pedido actualizado exitosamente');
         } catch (\Exception $e) {
-            Log::error('Error al actualizar estado de pedido', [
-                'idVenta' => $idVenta,
-                'error' => $e->getMessage()
-            ]);
-
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,

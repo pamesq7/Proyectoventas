@@ -71,23 +71,21 @@
                 @csrf
                 @method('PUT')
 
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label for="fechaEntrega" class="form-label">Fecha de entrega *</label>
                     <input type="date" id="fechaEntrega" name="fechaEntrega" class="form-control" value="{{ old('fechaEntrega', optional($pedido->fechaEntrega)->format('Y-m-d')) }}" required>
                 </div>
 
-                <div class="col-md-5">
+                <div class="col-md-6">
                     <label for="lugarEntrega" class="form-label">Lugar de entrega *</label>
                     <input type="text" id="lugarEntrega" name="lugarEntrega" class="form-control" maxlength="200" value="{{ old('lugarEntrega', $pedido->lugarEntrega) }}" required>
                 </div>
 
-                <div class="col-md-3">
-                    <label for="estadoPedido" class="form-label">Estado *</label>
-                    <select id="estadoPedido" name="estadoPedido" class="form-select" required>
-                        @foreach($estados as $k => $label)
-                            <option value="{{ $k }}" {{ old('estadoPedido', (string)$pedido->estadoPedido) === (string)$k ? 'selected' : '' }}>{{ $label }}</option>
-                        @endforeach
-                    </select>
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota:</strong> El estado del pedido se modifica desde la lista principal de pedidos usando el dropdown de cambio rápido.
+                    </div>
                 </div>
 
                 <div class="col-12 d-flex justify-content-end mt-2">
@@ -217,8 +215,6 @@
                     </div>
                     <div class="col-md-4">
                         <div class="p-2 bg-light rounded border">
-                            <div class="d-flex justify-content-between"><span>Subtotal</span><strong id="sum-subtotal">0.00</strong></div>
-                            <div class="d-flex justify-content-between"><span>IGV (18%)</span><strong id="sum-igv">0.00</strong></div>
                             <div class="d-flex justify-content-between"><span>Total</span><strong id="sum-total">0.00</strong></div>
                             <div class="d-flex justify-content-between"><span>Saldo actual</span><strong>{{ number_format($pedido->saldo, 2) }}</strong></div>
                         </div>
@@ -347,10 +343,7 @@
                     const p = parseFloat(tr.querySelector('.precio')?.value || '0');
                     sum += (c * p);
                 });
-                const igv = sum * 0.18;
-                document.getElementById('sum-subtotal').textContent = sum.toFixed(2);
-                document.getElementById('sum-igv').textContent = igv.toFixed(2);
-                document.getElementById('sum-total').textContent = (sum + igv).toFixed(2);
+                document.getElementById('sum-total').textContent = sum.toFixed(2);
             }
 
             // Inicializar bloque 0
