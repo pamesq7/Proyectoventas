@@ -880,19 +880,21 @@ class PedidoController extends Controller
     }
 
     /**
-     * Actualizar pedido (solo fecha y lugar de entrega)
+     * Actualizar pedido
      */
     public function update(Request $request, $idVenta)
     {
         $request->validate([
-            'fechaEntrega' => 'required|date|after:today',
+            'fechaEntrega' => 'required|date',
             'lugarEntrega' => 'required|string|max:200',
+            'estadoPedido' => 'required|in:0,1,2,3,4',
         ]);
 
         $pedido = Venta::findOrFail($idVenta);
 
         $pedido->fechaEntrega = $request->fechaEntrega;
         $pedido->lugarEntrega = $request->lugarEntrega;
+        $pedido->estadoPedido = (string) $request->estadoPedido;
         $pedido->save();
 
         return redirect()->route('pedidos.index')->with('success', 'Pedido actualizado correctamente.');
