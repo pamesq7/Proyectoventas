@@ -73,7 +73,12 @@
 
                 <div class="col-md-4">
                     <label for="fechaEntrega" class="form-label">Fecha de entrega *</label>
-                    <input type="date" id="fechaEntrega" name="fechaEntrega" class="form-control" value="{{ old('fechaEntrega', optional($pedido->fechaEntrega)->format('Y-m-d')) }}" required>
+                    <input type="date" 
+                           id="fechaEntrega" 
+                           name="fechaEntrega" 
+                           class="form-control" 
+                           value="{{ old('fechaEntrega', $pedido->fechaEntrega ? $pedido->fechaEntrega->format('Y-m-d') : '') }}" 
+                           required>
                 </div>
 
                 <div class="col-md-5">

@@ -26,6 +26,10 @@ class Venta extends Model
         'idEstablecimiento',
     ];
 
+    protected $casts = [
+        'fechaEntrega' => 'date',
+    ];
+
     // Relación: pertenece a un empleado
     public function empleado()
     {
