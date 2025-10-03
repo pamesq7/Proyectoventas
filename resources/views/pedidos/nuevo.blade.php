@@ -193,7 +193,7 @@
                                                     @php($val = 'establecimiento:' . $e->idEstablecimiento)
                                                     @php($doc = $e->nit ?? '')
                                                     @php($tel = $e->representante->telefono ?? '')
-                                                    @php($nom = $e->nombreEstablecimiento ?? ($e->razonSocial ?? 'Establecimiento'))
+                                                    @php($nom = $e->razonSocial ?? 'Establecimiento')
                                                     @php($label = trim(($doc ? 'NIT: '.$doc.' - ' : '') . $nom . ($tel ? ' - Tel: '.$tel : '')))
                                                     <option value="{{ $val }}" data-ci="{{ $doc }}" data-telefono="{{ $tel }}" {{ $oldClienteSel === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                 @endforeach

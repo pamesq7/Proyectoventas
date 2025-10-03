@@ -58,10 +58,10 @@ Route::middleware('auth')->group(function () {
     Route::get('ventas/morosos', [VentaController::class, 'clientesMorosos'])->name('ventas.morosos');
     Route::get('ventas/dashboard', [VentaController::class, 'dashboard'])->name('ventas.dashboard');
     Route::post('ventas', [VentaController::class, 'store'])->name('ventas.store');
-    Route::get('ventas/{venta}', [VentaController::class, 'show'])->name('ventas.show');
+    Route::get('ventas/{id}', [VentaController::class, 'show'])->name('ventas.show');
 
     // Actualizar estado de pedido
-    Route::post('ventas/{venta}/estado', [VentaController::class, 'actualizarEstado'])->name('ventas.actualizar-estado');
+    Route::post('ventas/{id}/estado', [VentaController::class, 'actualizarEstado'])->name('ventas.actualizar-estado');
 
     /*
     |--------------------------------------------------------------------------

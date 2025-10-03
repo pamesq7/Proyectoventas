@@ -43,7 +43,7 @@
                                 @if($venta->clienteNatural)
                                     {{ $venta->clienteNatural->nombres }} {{ $venta->clienteNatural->apellidos }}
                                 @elseif($venta->clienteEstablecimiento)
-                                    {{ $venta->clienteEstablecimiento->nombreEstablecimiento }}
+                                    {{ $venta->clienteEstablecimiento->razonSocial }}
                                 @else
                                     -
                                 @endif

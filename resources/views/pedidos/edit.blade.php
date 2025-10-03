@@ -53,7 +53,7 @@
                                 $tipoCliente = 'Cliente Natural';
                             } elseif ($pedido->clienteEstablecimiento) {
                                 $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ?? 
-                                               $pedido->clienteEstablecimiento->nombreEstablecimiento ?? 
+                                               $pedido->clienteEstablecimiento->razonSocial ?? 
                                                'Establecimiento';
                                 $tipoCliente = 'Establecimiento';
                             } else {
