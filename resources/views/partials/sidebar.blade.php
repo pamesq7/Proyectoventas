@@ -102,7 +102,6 @@
                 <div class="collapse" id="collapseVentas" aria-labelledby="headingVentas" data-bs-parent="#sidenavAccordion">
                     <nav class="sb-sidenav-menu-nested nav">
                         <a class="nav-link" href="{{ route('ventas.index') }}">📊 Gestión de Ventas</a>
-                        <a class="nav-link" href="{{ route('ventas.create') }}">💳 Registrar Pago</a>
                        
                     </nav>
                 </div>

@@ -18,8 +18,7 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\ExportController;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PagoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +58,11 @@ Route::middleware('auth')->group(function () {
     Route::get('ventas/dashboard', [VentaController::class, 'dashboard'])->name('ventas.dashboard');
     Route::post('ventas', [VentaController::class, 'store'])->name('ventas.store');
     Route::get('ventas/{id}', [VentaController::class, 'show'])->name('ventas.show');
+
+    // Gestión de pagos individuales
+    Route::get('pagos/{id}/edit', [PagoController::class, 'editPago'])->name('pagos.edit');
+    Route::put('pagos/{id}', [PagoController::class, 'updatePago'])->name('pagos.update');
+    Route::get('pagos', [PagoController::class, 'index'])->name('pagos.index');
 
     // Actualizar estado de pedido
     Route::post('ventas/{id}/estado', [VentaController::class, 'actualizarEstado'])->name('ventas.actualizar-estado');
