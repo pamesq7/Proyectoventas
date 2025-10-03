@@ -108,7 +108,7 @@ class Venta extends Model
         // Establecimiento: razón social o nombreEstablecimiento
         if ($this->clienteEstablecimiento) {
             return $this->clienteEstablecimiento->razonSocial
-                ?? $this->clienteEstablecimiento->nombreEstablecimiento
+                ?? $this->clienteEstablecimiento->razonSocial
                 ?? 'Establecimiento';
         }
         return 'Cliente no especificado';

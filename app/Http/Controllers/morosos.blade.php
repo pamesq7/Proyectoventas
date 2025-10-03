@@ -170,12 +170,12 @@
                                                     <i class="fab fa-whatsapp"></i>
                                                 </a>
                                             @endif
-                                            <a href="{{ route('ventas.index', ['estado_pago' => 'pendiente']) }}" 
+                                            <a href="{{ route('ventas.index', ['cliente_id' => $cliente->id_cliente, 'estado_pago' => 'pendiente']) }}" 
                                                class="btn btn-primary btn-sm" 
                                                title="Ver ventas pendientes">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('ventas.create') }}" 
+                                            <a href="{{ route('ventas.create', ['cliente_id' => $cliente->id_cliente]) }}" 
                                                class="btn btn-warning btn-sm" 
                                                title="Registrar pago">
                                                 <i class="fas fa-money-bill"></i>
@@ -239,7 +239,7 @@ $(document).ready(function() {
         "language": {
             "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
         },
-        "order": [[ 4, "desc" ]], // Ordenar por deuda total descendente
+        "order": [[ 4, "desc" ]], // Ordenar por saldo total descendente
         "pageLength": 25,
         "responsive": true
     });
