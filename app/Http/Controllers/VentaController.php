@@ -77,8 +77,7 @@ class VentaController extends Controller
             'clienteNatural', 
             'clienteEstablecimiento', 
             'detalleVentas.talla',
-            'transacciones.user',
-            'disenos'
+            'transacciones.user'
         ])->findOrFail($id);
 
         return view('ventas.show', compact('venta'));
@@ -110,30 +109,32 @@ class VentaController extends Controller
             'observaciones' => 'nullable|string|max:500'
         ]);
 
-        $venta = Venta::findOrFail($request->idVenta);
+        return DB::transaction(function () use ($request) {
+            $venta = Venta::lockForUpdate()->findOrFail($request->idVenta);
 
-        // Verificar que el monto no exceda el saldo pendiente
-        if ($request->monto > $venta->saldo) {
-            return back()->withErrors(['monto' => 'El monto no puede ser mayor al saldo pendiente']);
-        }
+            // Verificar que el monto no exceda el saldo pendiente
+            if ($request->monto > $venta->saldo) {
+                return back()->withErrors(['monto' => 'El monto no puede ser mayor al saldo pendiente']);
+            }
 
-        // Crear la transacción
-        $transaccion = Transaccion::create([
-            'tipoTransaccion' => $request->tipoTransaccion,
-            'monto' => $request->monto,
-            'metodoPago' => $request->metodoPago,
-            'observaciones' => $request->observaciones,
-            'estado' => 1,
-            'idVenta' => $request->idVenta,
-            'idUser' => Auth::id()
-        ]);
+            // Crear la transacción
+            Transaccion::create([
+                'tipoTransaccion' => $request->tipoTransaccion,
+                'monto' => $request->monto,
+                'metodoPago' => $request->metodoPago,
+                'observaciones' => $request->observaciones,
+                'estado' => 1,
+                'idVenta' => $request->idVenta,
+                'idUser' => Auth::id()
+            ]);
 
-        // Actualizar saldo de la venta
-        $venta->saldo = $venta->saldo - $request->monto;
-        $venta->save();
+            // Actualizar saldo de la venta (evitar negativos)
+            $venta->saldo = max(0, $venta->saldo - $request->monto);
+            $venta->save();
 
-        return redirect()->route('ventas.show', $request->idVenta)
-            ->with('success', 'Pago registrado correctamente. Saldo actualizado.');
+            return redirect()->route('ventas.show', $request->idVenta)
+                ->with('success', 'Pago registrado correctamente. Saldo actualizado.');
+        });
     }
 
     /**

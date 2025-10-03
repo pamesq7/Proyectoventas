@@ -87,8 +87,6 @@
             </div>
         </div>
     </div>
-</div>
-
 <!-- Modal para registrar pago -->
 <div class="modal fade" id="modalRegistrarPago" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -97,15 +95,14 @@
                 <h5 class="modal-title">
                     <i class="fas fa-dollar-sign"></i> Registrar Pago
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ route('ventas.store') }}">
                 @csrf
                 <div class="modal-body">
                     <input type="hidden" name="idVenta" id="ventaIdModal">
                     <input type="hidden" name="tipoTransaccion" value="pago">
+{{ ... }}
                     
                     <!-- Información de la venta -->
                     <div class="row mb-3">
@@ -197,7 +194,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
                     <button type="submit" class="btn btn-success">
@@ -233,7 +230,14 @@ $(document).ready(function() {
         $('#monto').val(saldo); // Por defecto, pago completo
         
         actualizarResumen();
-        $('#modalRegistrarPago').modal('show');
+        // Compatibilidad Bootstrap 5 y fallback a Bootstrap 4
+        const modalEl = document.getElementById('modalRegistrarPago');
+        if (window.bootstrap && bootstrap.Modal) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        } else if (typeof $ !== 'undefined' && typeof $('#modalRegistrarPago').modal === 'function') {
+            $('#modalRegistrarPago').modal('show');
+        }
     });
     
     // Manejar tipo de pago
@@ -270,11 +274,17 @@ $(document).ready(function() {
     }
     
     // Limpiar modal al cerrar
-    $('#modalRegistrarPago').on('hidden.bs.modal', function() {
-        $(this).find('form')[0].reset();
+    // Reset al cerrar (Bootstrap 5 y 4)
+    const resetModal = function() {
+        const form = document.querySelector('#modalRegistrarPago form');
+        if (form) form.reset();
         $('#resumenPago').hide();
         saldoActual = 0;
-    });
+    };
+    const modalEl = document.getElementById('modalRegistrarPago');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', resetModal);
+    }
     
     // Validación del formulario
     $('form').submit(function(e) {

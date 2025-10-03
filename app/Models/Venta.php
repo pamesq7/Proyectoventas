@@ -60,12 +60,6 @@ class Venta extends Model
         return $this->hasMany(Transaccion::class, 'idVenta');
     }
 
-    // Relación: diseños vinculados (muchos a muchos con tabla intermedia)
-    public function disenos()
-    {
-        return $this->belongsToMany(Diseno::class, 'venta_disenos', 'idventa', 'idDiseno');
-    }
-
 
     // Accessor: estado textual
     public function getEstadoTextoAttribute()
@@ -97,7 +91,9 @@ class Venta extends Model
     public function getPorcentajePagadoAttribute()
     {
         if ($this->total <= 0) return 0;
-        return round(($this->monto_pagado / $this->total) * 100, 2);
+        // Calcular usando solo campos existentes: monto_pagado = total - saldo
+        $montoPagado = $this->total - $this->saldo;
+        return round(($montoPagado / $this->total) * 100, 2);
     }
 
     // Accessor: nombre completo del cliente

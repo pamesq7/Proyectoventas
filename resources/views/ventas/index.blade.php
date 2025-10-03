@@ -12,9 +12,7 @@
                         <i class="fas fa-shopping-cart"></i> Gestión de Ventas
                     </h3>
                     <div class="btn-group">
-                        <a href="{{ route('ventas.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Registrar Pago
-                        </a>
+
                         <a href="{{ route('ventas.morosos') }}" class="btn btn-warning">
                             <i class="fas fa-exclamation-triangle"></i> Clientes Morosos
                         </a>
@@ -152,7 +150,10 @@
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             @if($venta->puedeRecibirPagos())
-                                                <button type="button" class="btn btn-success btn-cobrar" 
+                                                <button type="button" 
+                                                        class="btn btn-success" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#modalPago"
                                                         data-venta-id="{{ $venta->idVenta }}"
                                                         data-cliente="{{ $venta->nombre_cliente }}"
                                                         data-saldo="{{ $venta->saldo }}"
@@ -243,9 +244,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Registrar Pago</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formPago" method="POST" action="{{ route('ventas.store') }}">
                 @csrf
@@ -287,7 +286,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Registrar Pago</button>
                 </div>
             </form>
@@ -297,26 +296,90 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
-$(document).ready(function() {
-    // Abrir modal de pago
-    $('.btn-cobrar').click(function() {
-        const ventaId = $(this).data('venta-id');
-        const cliente = $(this).data('cliente');
-        const saldo = $(this).data('saldo');
+// Poblar datos del modal cuando se abre
+const modalEl = document.getElementById('modalPago');
+if (modalEl) {
+    modalEl.addEventListener('show.bs.modal', function (event) {
+        // Botón que disparó el modal
+        const button = event.relatedTarget;
         
-        $('#ventaId').val(ventaId);
-        $('#clienteNombre').text(cliente);
-        $('#saldoPendiente').text('Bs. ' + parseFloat(saldo).toFixed(2));
-        $('#monto').attr('max', saldo);
-        $('#modalPago').modal('show');
+        // Extraer datos del botón
+        const ventaId = button.getAttribute('data-venta-id');
+        const cliente = button.getAttribute('data-cliente');
+        const saldo = parseFloat(button.getAttribute('data-saldo')) || 0;
+        
+        // Actualizar campos del modal
+        document.getElementById('ventaId').value = ventaId;
+        document.getElementById('clienteNombre').textContent = cliente;
+        document.getElementById('saldoPendiente').textContent = 'Bs. ' + saldo.toFixed(2);
+        document.getElementById('monto').setAttribute('max', saldo);
+        document.getElementById('monto').value = saldo; // Prellenar con saldo completo
     });
     
-    // Limpiar modal al cerrar
-    $('#modalPago').on('hidden.bs.modal', function() {
-        $('#formPago')[0].reset();
+    // Limpiar formulario al cerrar
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        const form = document.getElementById('formPago');
+        if (form) form.reset();
+    });
+}
+
+// Enviar pago por AJAX para evitar redirección a ventas.show
+$(function() {
+    $('#formPago').on('submit', function(e) {
+        e.preventDefault();
+        const $form = $(this);
+        const url = $form.attr('action');
+        const data = $form.serialize();
+
+        // Validar datos básicos antes de enviar
+        const monto = parseFloat($('#monto').val()) || 0;
+        const metodo = $('#metodoPago').val();
+        const ventaId = $('#ventaId').val();
+
+        if (!ventaId || !metodo || monto <= 0) {
+            alert('Por favor complete todos los campos requeridos.');
+            return;
+        }
+
+        // Deshabilitar botón mientras se envía
+        const $submit = $form.find('button[type="submit"]');
+        $submit.prop('disabled', true).text('Guardando...');
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: data,
+            success: function() {
+                // Cerrar modal y recargar lista
+                if (window.bootstrap && bootstrap.Modal) {
+                    const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalPago'));
+                    if (modalInstance) modalInstance.hide();
+                } else if (typeof $('#modalPago').modal === 'function') {
+                    $('#modalPago').modal('hide');
+                }
+                // Pago registrado correctamente
+                setTimeout(function(){ location.reload(); }, 500);
+            },
+            error: function(xhr) {
+                // Mostrar errores específicos, pero solo si son errores reales
+                let msg = 'No se pudo registrar el pago.';
+                if (xhr.status === 419) {
+                    msg = 'Sesión expirada. Recarga la página.';
+                } else if (xhr.status === 422 && xhr.responseJSON) {
+                    msg = 'Datos inválidos. Verifica el monto y método de pago.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+
+                alert(msg);
+            },
+            complete: function() {
+                $submit.prop('disabled', false).html('<i class="fas fa-check"></i> Registrar Pago');
+            }
+        });
     });
 });
 </script>
-@endsection
+@endpush
