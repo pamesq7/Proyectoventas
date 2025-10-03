@@ -89,7 +89,7 @@ class VentaController extends Controller
      */
     public function create()
     {
-        $ventasPendientes = Venta::with(['clienteNatural', 'clienteEstablecimiento'])
+        $ventasPendientes = Venta::with(['clienteNatural.user', 'clienteEstablecimiento'])
             ->where('saldo', '>', 0)
             ->orderBy('created_at', 'desc')
             ->get();

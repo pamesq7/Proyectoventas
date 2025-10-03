@@ -103,11 +103,17 @@ class Venta extends Model
     // Accessor: nombre completo del cliente
     public function getNombreClienteAttribute()
     {
-        if ($this->clienteNatural) {
-            return $this->clienteNatural->nombre . ' ' . $this->clienteNatural->apellido;
+        // Cliente natural: tomar desde users (name, primerApellido, segundApellido)
+        if ($this->clienteNatural && method_exists($this->clienteNatural, 'user') && $this->clienteNatural->user) {
+            $u = $this->clienteNatural->user;
+            $nombre = trim(($u->name ?? '') . ' ' . ($u->primerApellido ?? '') . ' ' . ($u->segundApellido ?? ''));
+            return $nombre !== '' ? $nombre : 'Cliente natural';
         }
+        // Establecimiento: razón social o nombreEstablecimiento
         if ($this->clienteEstablecimiento) {
-            return $this->clienteEstablecimiento->nombreEstablecimiento;
+            return $this->clienteEstablecimiento->razonSocial
+                ?? $this->clienteEstablecimiento->nombreEstablecimiento
+                ?? 'Establecimiento';
         }
         return 'Cliente no especificado';
     }
