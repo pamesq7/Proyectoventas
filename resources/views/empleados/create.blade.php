@@ -156,7 +156,47 @@
                                 </div>
                             </div>
                         </div>
-                    
+
+                        <!-- Campos de Password (NUEVOS) -->
+                        <div class="row">
+                            {{-- Password --}}
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock me-1"></i>
+                                        Contraseña <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" 
+                                           class="form-control @error('password') is-invalid @enderror" 
+                                           id="password" 
+                                           name="password" 
+                                           placeholder="Mínimo 8 caracteres"
+                                           required>
+                                    @error('password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            {{-- Confirmar Password --}}
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password_confirmation" class="form-label">
+                                        <i class="fas fa-lock me-1"></i>
+                                        Confirmar Contraseña <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" 
+                                           class="form-control @error('password_confirmation') is-invalid @enderror" 
+                                           id="password_confirmation" 
+                                           name="password_confirmation" 
+                                           placeholder="Repetir contraseña"
+                                           required>
+                                    @error('password_confirmation')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Información Laboral -->
                         <div class="row mb-4">
@@ -225,16 +265,17 @@
                             </div>
                         </div>
 
-                        <!-- Información Adicional -->
+                        <!-- Información Adicional (ACTUALIZADA) -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="alert alert-info">
                                     <h6><i class="fas fa-info-circle me-2"></i>Información Importante:</h6>
                                     <ul class="mb-0">
-                                        <li>El empleado heredará la información personal (nombre, teléfono, email) del usuario seleccionado.</li>
-                                        <li>Una vez creado, podrá gestionar ventas y diseños según su rol asignado.</li>
+                                        <li>Se creará automáticamente un usuario con los datos proporcionados.</li>
+                                        <li>El empleado podrá acceder al sistema con su email y contraseña.</li>
                                         <li>Los administradores tendrán acceso completo al sistema.</li>
                                         <li>Los vendedores podrán gestionar ventas y clientes.</li>
+                                        <li>Los diseñadores podrán gestionar diseños y productos.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -271,28 +312,25 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Mejorar la visualización del select de usuarios
-    const userSelect = document.getElementById('idUser');
-    
-    // Agregar evento para mostrar información adicional del usuario seleccionado
-    userSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        if (selectedOption.value) {
-            // Aquí podrías agregar lógica adicional si necesitas mostrar más información
-            console.log('Usuario seleccionado:', selectedOption.text);
-        }
-    });
-    
     // Validación adicional del formulario
     const form = document.querySelector('form');
     form.addEventListener('submit', function(e) {
-        const idUser = document.getElementById('idUser').value;
-        const cargo = document.getElementById('cargo').value.trim();
-        const rol = document.getElementById('rol').value;
+        const password = document.getElementById('password').value;
+        const passwordConfirmation = document.getElementById('password_confirmation').value;
         
-        if (!idUser || !cargo || !rol) {
+        // Validar que las contraseñas coincidan
+        if (password !== passwordConfirmation) {
             e.preventDefault();
-            alert('Por favor complete todos los campos obligatorios.');
+            alert('Las contraseñas no coinciden. Por favor verifique.');
+            document.getElementById('password').focus();
+            return false;
+        }
+        
+        // Validar longitud mínima de contraseña
+        if (password.length < 8) {
+            e.preventDefault();
+            alert('La contraseña debe tener al menos 8 caracteres.');
+            document.getElementById('password').focus();
             return false;
         }
     });

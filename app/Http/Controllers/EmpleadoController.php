@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class EmpleadoController extends Controller
 {
@@ -20,13 +21,13 @@ class EmpleadoController extends Controller
         // Filtro por búsqueda
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('cargo', 'like', "%{$search}%")
-                  ->orWhere('rol', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('primerApellido', 'like', "%{$search}%");
-                  });
+                    ->orWhere('rol', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('primerApellido', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -60,7 +61,7 @@ class EmpleadoController extends Controller
     public function create()
     {
         // Usuarios que no son empleados
-        $usuariosDisponibles = User::whereNotIn('idUser', function($query) {
+        $usuariosDisponibles = User::whereNotIn('idUser', function ($query) {
             $query->select('idEmpleado')->from('empleados');
         })->get();
 
@@ -74,33 +75,62 @@ class EmpleadoController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'idEmpleado' => 'required|exists:users,idUser|unique:empleados,idEmpleado',
-            'cargo' => 'required|string|max:45',
-            'rol' => 'required|in:administrador,diseñador,operador,cliente,vendedor',
-            'estado' => 'boolean'
+        // Primero validar datos del usuario
+        $userValidator = Validator::make($request->all(), [
+            'ci' => 'required|string|max:255|unique:users,ci',
+            'name' => 'required|string|max:255',
+            'primerApellido' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'telefono' => 'nullable|string|max:255',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
-        try {
-            DB::beginTransaction();
+        // Validar datos del empleado
+        $empleadoValidator = Validator::make($request->all(), [
+            'cargo' => 'required|string|max:45',
+            'rol' => 'required|in:administrador,diseñador,operador,cliente,vendedor',
+        ]);
 
+        if ($userValidator->fails() || $empleadoValidator->fails()) {
+            return redirect()->back()
+                ->withErrors(array_merge(
+                    $userValidator->errors()->toArray(),
+                    $empleadoValidator->errors()->toArray()
+                ))
+                ->withInput();
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. PRIMERO crear el User
+            $user = User::create([
+                'ci' => $request->ci,
+                'name' => $request->name,
+                'primerApellido' => $request->primerApellido,
+                'segundApellido' => $request->segundApellido,
+                'email' => $request->email,
+                'telefono' => $request->telefono,
+                'password' => Hash::make($request->password),
+                'estado' => 1,
+            ]);
+
+            // 2. LUEGO crear el Empleado usando el ID del User como idEmpleado
             $empleado = Empleado::create([
-                'idEmpleado' => $request->idEmpleado,
+                'idEmpleado' => $user->idUser, // ← ESTA ES LA CLAVE
                 'cargo' => $request->cargo,
                 'rol' => $request->rol,
-                'estado' => $request->has('estado') ? 1 : 0,
+                'estado' => 1,
             ]);
 
             DB::commit();
 
             return redirect()->route('empleados.index')
                 ->with('success', 'Empleado creado exitosamente.');
-
         } catch (\Exception $e) {
-            DB::rollback();
+            DB::rollBack();
             return redirect()->back()
-                ->withInput()
-                ->with('error', 'Error al crear empleado: ' . $e->getMessage());
+                ->with('error', 'Error al crear el empleado: ' . $e->getMessage())
+                ->withInput();
         }
     }
 
@@ -156,7 +186,6 @@ class EmpleadoController extends Controller
 
             return redirect()->route('empleados.index')
                 ->with('success', 'Empleado actualizado exitosamente.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
@@ -180,7 +209,6 @@ class EmpleadoController extends Controller
 
             return redirect()->route('empleados.index')
                 ->with('success', 'Empleado eliminado exitosamente.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Error al eliminar empleado: ' . $e->getMessage());
@@ -201,7 +229,6 @@ class EmpleadoController extends Controller
 
             return redirect()->back()
                 ->with('success', "Empleado {$estado} exitosamente.");
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Error al cambiar estado: ' . $e->getMessage());
