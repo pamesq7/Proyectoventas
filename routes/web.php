@@ -19,6 +19,8 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\PagoController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -236,3 +238,21 @@ Route::middleware('auth')->group(function () {
 Route::get('/about', function () {
     return view('about');
 })->name('about');
+
+// Rutas de dashboards por rol
+Route::middleware(['auth'])->group(function () {
+    // Dashboard principal (redirige según rol)
+    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    
+    // Dashboards específicos
+    Route::get('/admin/dashboard', [HomeController::class, 'adminDashboard'])->name('dashboard.admin');
+    Route::get('/vendedor/dashboard', [HomeController::class, 'vendedorDashboard'])->name('dashboard.vendedor');
+    Route::get('/disenador/dashboard', [HomeController::class, 'diseñadorDashboard'])->name('dashboard.diseñador');
+    Route::get('/operador/dashboard', [HomeController::class, 'operadorDashboard'])->name('dashboard.operador');
+    Route::get('/cliente/dashboard', [HomeController::class, 'clienteDashboard'])->name('dashboard.cliente');
+});
+
+// Ruta pública
+Route::get('/', function () {
+    return view('welcome');
+})->name('welcome');

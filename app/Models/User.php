@@ -44,6 +44,7 @@ class User extends Authenticatable
     protected $appends = [
         'nombre_completo',
         'tipo_usuario',
+        'rol', // 🔥 NUEVO: Agregamos rol a los appends
     ];
 
     // 🔸 Relación: un usuario puede ser un cliente natural
@@ -89,6 +90,93 @@ class User extends Authenticatable
         return trim($this->name . ' ' . $this->primerApellido . ' ' . $this->segundApellido);
     }
 
+    /**
+     * 🔥 NUEVO: DETERMINAR EL ROL DEL USUARIO
+     */
+    public function getRolAttribute()
+    {
+        // Si es empleado, retornar su rol
+        if ($this->empleado) {
+            return $this->empleado->rol;
+        }
+
+        // Si es cliente natural, retornar 'cliente'
+        if ($this->clienteNatural) {
+            return 'cliente';
+        }
+
+        // Si no es ni empleado ni cliente, es usuario básico
+        return 'usuario';
+    }
+
+    /**
+     * 🔥 NUEVO: VERIFICAR SI TIENE UN ROL ESPECÍFICO
+     */
+    public function hasRol($rol)
+    {
+        return $this->rol === $rol;
+    }
+
+    /**
+     * 🔥 NUEVO: VERIFICAR SI TIENE ALGUNO DE LOS ROLES
+     */
+    public function hasAnyRol($roles)
+    {
+        if (is_array($roles)) {
+            return in_array($this->rol, $roles);
+        }
+        return $this->rol === $roles;
+    }
+
+    /**
+     * 🔥 NUEVO: VERIFICAR SI ES EMPLEADO
+     */
+    public function isEmpleado()
+    {
+        return !is_null($this->empleado);
+    }
+
+    /**
+     * 🔥 NUEVO: VERIFICAR SI ES CLIENTE
+     */
+    public function isCliente()
+    {
+        return !is_null($this->clienteNatural);
+    }
+
+    /**
+     * 🔥 NUEVO: VERIFICAR SI ES USUARIO BÁSICO
+     */
+    public function isUsuarioBasico()
+    {
+        return !$this->isEmpleado() && !$this->isCliente();
+    }
+
+    /**
+     * 🔥 NUEVO: OBTENER ROLES PERMITIDOS PARA EMPLEADOS
+     */
+    public static function getRolesEmpleados()
+    {
+        return ['administrador', 'diseñador', 'operador', 'vendedor'];
+    }
+
+    /**
+     * 🔥 NUEVO: OBTENER ROL EN ESPAÑOL PARA MOSTRAR
+     */
+    public function getRolDisplayAttribute()
+    {
+        $roles = [
+            'administrador' => 'Administrador',
+            'vendedor' => 'Vendedor',
+            'diseñador' => 'Diseñador',
+            'operador' => 'Operador',
+            'cliente' => 'Cliente',
+            'usuario' => 'Usuario'
+        ];
+        
+        return $roles[$this->rol] ?? 'Usuario';
+    }
+
     // 🔸 Método helper: verificar si está activo
     public function estaActivo()
     {
@@ -107,5 +195,23 @@ class User extends Authenticatable
         return $query->where('ci', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('primerApellido', 'like', "%{$search}%");
+    }
+
+    /**
+     * 🔥 NUEVO: Scope para filtrar por rol
+     */
+    public function scopePorRol($query, $rol)
+    {
+        if ($rol === 'empleado') {
+            return $query->whereHas('empleado');
+        } elseif ($rol === 'cliente') {
+            return $query->whereHas('clienteNatural');
+        } elseif (in_array($rol, self::getRolesEmpleados())) {
+            return $query->whereHas('empleado', function($q) use ($rol) {
+                $q->where('rol', $rol);
+            });
+        }
+        
+        return $query;
     }
 }
