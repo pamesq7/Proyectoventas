@@ -17,11 +17,11 @@ class HomeController extends Controller
             
             switch ($user->rol) {
                 case 'administrador':
-                    return redirect()->route('dashboard.admin');
+                    return redirect()->route('dashboard');
                 case 'vendedor':
                     return redirect()->route('dashboard.vendedor');
                 case 'diseñador':
-                    return redirect()->route('dashboard.diseñador');
+                    return redirect()->route('dashboard.disenador');
                 case 'operador':
                     return redirect()->route('dashboard.operador');
                 case 'cliente':
