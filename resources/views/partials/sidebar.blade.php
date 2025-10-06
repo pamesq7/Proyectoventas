@@ -2,24 +2,63 @@
     <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
         <div class="sb-sidenav-menu">
             <div class="nav">
-
                 <hr class="sidebar-divider my-0">
 
                 <!-- Dashboard -->
+                @if(auth()->check() && auth()->user()->rol === 'diseñador')
+                <!-- Menú específico para diseñador -->
+                <a class="nav-link" href="{{ route('dashboard.disenador') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    🏠 Panel del Diseñador
+                </a>
+
+                <div class="sb-sidenav-menu-heading">DISEÑADOR</div>
+
+                <!-- 🎨 Mis Diseños -->
+                <a class="nav-link" href="{{ route('disenos.mis-disenos') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-palette"></i></div>
+                    🎨 Mis Diseños
+                </a>
+
+                <!-- 📦 Pedidos Asignados -->
+                <a class="nav-link" href="{{ route('pedidos.asignados') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
+                    📦 Pedidos Asignados
+                </a>
+
+                <div class="sb-sidenav-menu-heading">CONSULTA</div>
+
+                <!-- 👥 Ver Clientes (solo lectura) -->
+                <a class="nav-link" href="{{ route('clientes.consulta') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
+                    👥 Ver Clientes
+                    <span class="badge bg-secondary ms-2">Solo lectura</span>
+                </a>
+
+                <!-- 📋 Ver Catálogo (solo lectura) -->
+                <a class="nav-link" href="{{ route('catalogo.consulta') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-book"></i></div>
+                    📋 Ver Catálogo
+                    <span class="badge bg-secondary ms-2">Solo lectura</span>
+                </a>
+                @else
+                <!-- Menú para otros roles -->
                 <a class="nav-link" href="{{ route('dashboard') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                     🏠 Dashboard
                 </a>
 
-                
-                <!-- 🔧 GESTION USUARIO -->
+                <!-- Resto del menú para otros roles -->
+                @if(auth()->check() && in_array(auth()->user()->rol, ['administrador', 'vendedor']))
                 <div class="sb-sidenav-menu-heading">🔧 GESTION USUARIOS</div>
 
+                @if(auth()->user()->rol === 'administrador')
                 <!-- Usuarios -->
                 <a class="nav-link" href="{{ route('users.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
                     👤 Usuarios
                 </a>
+                @endif
 
                 <!-- Empleados -->
                 <a class="nav-link {{ request()->routeIs('empleados.*') ? 'active' : '' }}" href="{{ route('empleados.index') }}">
@@ -40,7 +79,9 @@
                         <a class="nav-link" href="{{ route('clienteEstablecimiento.index') }}">🏢 Establecimientos</a>
                     </nav>
                 </div>
+                @endif
 
+                @if(auth()->check() && in_array(auth()->user()->rol, ['administrador', 'vendedor']))
                 <hr class="sidebar-divider">
 
                 <!-- 📦 GESTIÓN DE PRODUCTOS -->
@@ -58,11 +99,13 @@
                     🎨 Diseños
                 </a>
 
+                @if(auth()->user()->rol === 'administrador')
                 <!-- Configuración de Productos -->
                 <a class="nav-link" href="{{ route('configuracion.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>
                     ⚙️ Configuración de Productos
                 </a>
+                @endif
 
                 <hr class="sidebar-divider">
                 <div class="sb-sidenav-menu-heading"><i class="fas fa-clipboard-list me-2"></i>GESTIÓN DE PEDIDOS</div>
@@ -78,8 +121,6 @@
                     <div class="sb-nav-link-icon"><i class="fas fa-magic"></i></div>
                     ✨ Personalizar mi diseño
                 </a>
-
-
 
                 <!-- Pedidos (Administración) -->
                 <a class="nav-link" href="{{ route('pedidos.index') }}">
@@ -102,10 +143,10 @@
                 <div class="collapse" id="collapseVentas" aria-labelledby="headingVentas" data-bs-parent="#sidenavAccordion">
                     <nav class="sb-sidenav-menu-nested nav">
                         <a class="nav-link" href="{{ route('ventas.index') }}">📊 Gestión de Ventas</a>
-                       
                     </nav>
                 </div>
 
+                @if(auth()->user()->rol === 'administrador')
                 <hr class="sidebar-divider">
 
                 <!-- 📊 REPORTES -->
@@ -116,6 +157,9 @@
                     <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
                     📈 Reportes
                 </a>
+                @endif
+                @endif
+                @endif
 
             </div>
         </div>

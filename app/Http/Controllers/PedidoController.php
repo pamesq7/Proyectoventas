@@ -831,15 +831,15 @@ class PedidoController extends Controller
     /**
      * Ver detalle de pedido
      */
-    public function show($idVenta)
+    public function show($pedido)
     {
         $pedido = Venta::with([
             'detalleVentas.talla',
             'clienteNatural',
             'clienteEstablecimiento',
             'empleado'
-        ])->findOrFail($idVenta);
-
+        ])->findOrFail($pedido);
+    
         return view('pedidos.show', compact('pedido'));
     }
 
@@ -1245,5 +1245,28 @@ class PedidoController extends Controller
             Log::error('Error al eliminar (lógico) pedido', ['idVenta' => $idVenta, 'error' => $e->getMessage()]);
             return redirect()->route('pedidos.index')->with('error', 'No se pudo eliminar el pedido: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Mostrar los pedidos asignados al diseñador actual
+     */
+    public function pedidosAsignados(Request $request)
+    {
+        // Obtener el ID del empleado asociado al usuario autenticado
+        $idEmpleado = auth()->user()->empleado->idEmpleado;
+        
+        $query = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'detalles'])
+            ->whereHas('disenos', function($q) use ($idEmpleado) {
+                $q->where('disenos.idEmpleado', $idEmpleado);
+            });
+
+        // Filtros adicionales si son necesarios
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $pedidos = $query->latest()->paginate(10);
+        
+        return view('pedidos.asignados', compact('pedidos'));
     }
 }

@@ -53,6 +53,19 @@ class Venta extends Model
     {
         return $this->hasMany(DetalleVenta::class, 'idVenta');
     }
+    
+    // Relación: diseños asociados a través de los detalles de venta
+    public function disenos()
+    {
+        return $this->hasManyThrough(
+            Diseno::class,
+            DetalleVenta::class,
+            'idVenta', // Clave foránea en la tabla detalle_ventas
+            'iddetalleVenta', // Clave foránea en la tabla disenos
+            'idVenta', // Clave local en la tabla ventas
+            'iddetalleVenta' // Clave local en la tabla detalle_ventas
+        );
+    }
 
     // Relación: transacciones asociadas
     public function transacciones()

@@ -20,6 +20,39 @@ class ProductoController extends Controller
     /**
      * Display a listing of the resource.
      */
+    /**
+     * Muestra el catálogo de productos en modo de solo lectura para diseñadores
+     */
+    public function catalogo(Request $request)
+    {
+        $query = Producto::with(['categoria', 'variante'])
+            ->where('estado', 1)
+            ->orderBy('nombre', 'asc');
+
+        // Búsqueda por nombre o descripción
+        if ($request->filled('buscar')) {
+            $search = $request->buscar;
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'like', "%{$search}%")
+                  ->orWhere('descripcion', 'like', "%{$search}%")
+                  ->orWhere('codigo', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtrar por categoría
+        if ($request->filled('categoria_id') && $request->categoria_id != 'todas') {
+            $query->where('idCategoria', $request->categoria_id);
+        }
+
+        $productos = $query->paginate(12);
+        $categorias = Categoria::where('estado', 1)->orderBy('nombreCategoria')->get();
+
+        return view('catalogo.consulta', compact('productos', 'categorias'));
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
     public function index()
     {
         // Cargar productos con categoría y variante

@@ -44,6 +44,14 @@ class HomeController extends Controller
     }
 
     /**
+     * Dashboard para diseñadores
+     */
+    public function disenadorDashboard()
+    {
+        return view('dashboard.disenador');
+    }
+
+    /**
      * Dashboard para vendedores
      */
     public function vendedorDashboard()
@@ -56,7 +64,7 @@ class HomeController extends Controller
      */
     public function diseñadorDashboard()
     {
-        return view('dashboard.diseñador');
+        return view('dashboard.disenador');
     }
 
     /**

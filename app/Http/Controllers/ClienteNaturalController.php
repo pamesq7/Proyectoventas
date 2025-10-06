@@ -15,6 +15,36 @@ class ClienteNaturalController extends Controller
     /**
      * Display a listing of the resource.
      */
+    /**
+     * Muestra una lista de clientes en modo de solo lectura para diseñadores
+     */
+    public function consulta(Request $request)
+    {
+        $query = ClienteNatural::with(['user'])
+            ->where('estado', 1)
+            ->whereHas('user', function($q) {
+                $q->where('estado', 1);
+            });
+
+        // Búsqueda por nombre, apellido o CI
+        if ($request->filled('buscar')) {
+            $search = $request->buscar;
+            $query->where(function($q) use ($search) {
+                $q->where('nombres', 'like', "%{$search}%")
+                  ->orWhere('apellidoPaterno', 'like', "%{$search}%")
+                  ->orWhere('apellidoMaterno', 'like', "%{$search}%")
+                  ->orWhere('ci', 'like', "%{$search}%");
+            });
+        }
+
+        $clientes = $query->latest()->paginate(15);
+
+        return view('clientes.consulta-natural', compact('clientes'));
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
     public function index()
     {
         // Obtener solo clientes activos con sus usuarios activos

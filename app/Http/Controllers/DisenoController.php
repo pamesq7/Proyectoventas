@@ -14,6 +14,30 @@ class DisenoController extends Controller
     /**
      * Display a listing of the resource.
      */
+    /**
+     * Mostrar los diseños del diseñador actual
+     */
+    public function misDisenos(Request $request)
+    {
+        // Obtener el ID del empleado asociado al usuario autenticado
+        $idEmpleado = auth()->user()->empleado->idEmpleado;
+        
+        $query = Diseno::with('empleado')
+            ->where('idEmpleado', $idEmpleado);
+
+        // Filtro por estado del diseño
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $disenos = $query->latest()->paginate(10);
+        
+        return view('disenos.mis-disenos', compact('disenos'));
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
     public function index(Request $request)
     {
         $query = Diseno::with('empleado');
