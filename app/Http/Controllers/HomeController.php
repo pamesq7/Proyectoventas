@@ -6,49 +6,34 @@ use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    /**
-     * Show the application dashboard.
-     */
     public function index()
     {
-        // Si el usuario está autenticado, redirigir según su rol
         if (auth()->check()) {
             $user = auth()->user();
-            
-            switch ($user->rol) {
-                case 'administrador':
-                    return redirect()->route('dashboard');
-                case 'vendedor':
-                    return redirect()->route('dashboard.vendedor');
-                case 'diseñador':
-                    return redirect()->route('dashboard.disenador');
-                case 'operador':
-                    return redirect()->route('dashboard.operador');
-                case 'cliente':
-                    return redirect()->route('dashboard.cliente');
-                default:
-                    return view('home'); // Usuario básico
+
+            if ($user->empleado) {
+                switch (strtolower(trim($user->empleado->cargo))) {
+                    case 'administrador':
+                        return redirect()->route('dashboard.admin');
+                    case 'diseñador':
+                        return redirect()->route('dashboard.disenador');
+                    case 'vendedor':
+                        return redirect()->route('dashboard.vendedor');
+                    case 'operador':
+                        return redirect()->route('dashboard.operador');
+                    default:
+                        return view('home');
+                }
             }
+
+            return view('home');
         }
-        
-        // Usuario no autenticado - página pública
+
         return view('home');
     }
-
-    /**
-     * Dashboard para administradores
-     */
     public function adminDashboard()
     {
         return view('dashboard.admin');
-    }
-
-    /**
-     * Dashboard para diseñadores
-     */
-    public function disenadorDashboard()
-    {
-        return view('dashboard.disenador');
     }
 
     /**
@@ -62,8 +47,13 @@ class HomeController extends Controller
     /**
      * Dashboard para diseñadores
      */
-    public function diseñadorDashboard()
+    public function disenadorDashboard()
     {
+        // Verificar que el usuario tenga rol de diseñador
+        if (!auth()->user()->empleado || strtolower(auth()->user()->empleado->rol) !== 'diseñador') {
+            abort(403, 'No tienes permiso para acceder a esta sección.');
+        }
+
         return view('dashboard.disenador');
     }
 

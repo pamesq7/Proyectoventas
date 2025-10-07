@@ -15,19 +15,17 @@
         @auth
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-user fa-fw"></i> {{ Auth::user()->name }}
+                <i class="fas fa-user fa-fw"></i>
+                {{ auth()->user()->name ?? auth()->user()->email }}
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Configuración</a></li>
-                <li>
-                    <hr class="dropdown-divider" />
-                </li>
+                <li><a class="dropdown-item" href="#">{{ auth()->user()->name ?? auth()->user()->email }}</a></li>
+                <li><hr class="dropdown-divider" /></li>
                 <li>
                     <form method="POST" action="{{ route('logout') }}" class="d-inline">
                         @csrf
                         <button type="submit" class="dropdown-item">
-                            <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                            <i class="fas fa-sign-out-alt fa-fw"></i> Cerrar Sesión
                         </button>
                     </form>
                 </li>
@@ -35,17 +33,8 @@
         </li>
         @else
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('login') }}">
-                <i class="fas fa-sign-in-alt me-1"></i> Iniciar Sesión
-            </a>
+            <a class="nav-link" href="{{ route('login') }}">Iniciar Sesión</a>
         </li>
-        @if (Route::has('register'))
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('register') }}">
-                <i class="fas fa-user-plus me-1"></i> Registrarse
-            </a>
-        </li>
-        @endif
         @endauth
     </ul>
 </nav>

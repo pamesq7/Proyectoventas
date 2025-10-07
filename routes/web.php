@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ClienteNaturalController;
@@ -20,32 +22,35 @@ use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\PagoController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
-
 // Ruta de inicio
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Rutas de autenticación
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+// Rutas de autenticación (FUERA del middleware auth)
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Rutas protegidas por autenticación
+// Rutas protegidas
 Route::middleware('auth')->group(function () {
-    // Dashboard
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
+    // Dashboards específicos - SIN middleware role
+    Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
+    Route::get('/admin/dashboard', [HomeController::class, 'adminDashboard'])
+        ->name('dashboard.admin')
+        ->middleware('auth');
+    Route::get('/disenador/dashboard', [HomeController::class, 'disenadorDashboard'])
+        ->name('dashboard.disenador')
+        ->middleware('auth');
+    Route::get('/vendedor/dashboard', [HomeController::class, 'vendedorDashboard'])
+        ->name('dashboard.vendedor')
+        ->middleware('auth');
+    Route::get('/operador/dashboard', [HomeController::class, 'operadorDashboard'])
+        ->name('dashboard.operador')
+        ->middleware('auth');
+    Route::get('/cliente/dashboard', [HomeController::class, 'clienteDashboard'])
+        ->name('dashboard.cliente')
+        ->middleware('auth');
     /*
     |--------------------------------------------------------------------------
     | Rutas de Gestión de Ventas
@@ -149,7 +154,6 @@ Route::middleware('auth')->group(function () {
 
     // Rutas para diseños
     Route::resource('disenos', DisenoController::class);
-    
 
     // Exportación de Diseños
     Route::get('/export/disenos/pdf', [ExportController::class, 'exportarDisenos'])->name('export.disenos.pdf');
@@ -164,6 +168,7 @@ Route::middleware('auth')->group(function () {
     */
     // Rutas públicas del catálogo
     Route::get('catalogo', [PedidoController::class, 'catalogo'])->name('pedidos.catalogo');
+    Route::get('catalogo/consulta', [PedidoController::class, 'catalogo'])->name('catalogo.consulta');
     Route::get('producto/{idProducto}/configurar', [PedidoController::class, 'configurarProducto'])->name('pedidos.configurar');
     Route::get('personalizar', [PedidoController::class, 'personalizarDiseno'])->name('pedidos.personalizar');
     Route::post('personalizar/iniciar', [PedidoController::class, 'iniciarPedidoConDiseno'])->name('pedidos.personalizar.iniciar');
@@ -230,9 +235,14 @@ Route::middleware('auth')->group(function () {
 
     // Exportación de Productos
     Route::get('/export/productos/pdf', [ExportController::class, 'exportarProductos'])->name('export.productos.pdf');
-});
+}); // ✅ CIERRE FINAL del middleware auth
 
 // Rutas públicas que no requieren autenticación
 Route::get('/about', function () {
     return view('about');
 })->name('about');
+
+// Ruta temporal para prueba
+Route::get('/test-disenador', function () {
+    return "Ruta de prueba del diseñador funciona";
+})->name('test.disenador');

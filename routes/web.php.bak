@@ -247,7 +247,7 @@ Route::middleware(['auth'])->group(function () {
     // Dashboards específicos
     Route::get('/admin/dashboard', [HomeController::class, 'adminDashboard'])->name('dashboard.admin');
     Route::get('/vendedor/dashboard', [HomeController::class, 'vendedorDashboard'])->name('dashboard.vendedor');
-    Route::get('/disenador/dashboard', [HomeController::class, 'diseñadorDashboard'])->name('dashboard.diseñador');
+    Route::get('/disenador/dashboard', [HomeController::class, 'disenadorDashboard'])->name('dashboard.disenador');
     Route::get('/operador/dashboard', [HomeController::class, 'operadorDashboard'])->name('dashboard.operador');
     Route::get('/cliente/dashboard', [HomeController::class, 'clienteDashboard'])->name('dashboard.cliente');
 });

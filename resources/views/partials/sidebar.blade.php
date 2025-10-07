@@ -5,7 +5,7 @@
                 <hr class="sidebar-divider my-0">
 
                 <!-- Dashboard -->
-                @if(auth()->check() && auth()->user()->rol === 'diseñador')
+                @if(auth()->check() && auth()->user()->empleado && auth()->user()->empleado->rol === 'diseñador')
                 <!-- Menú específico para diseñador -->
                 <a class="nav-link" href="{{ route('dashboard.disenador') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
@@ -14,33 +14,34 @@
 
                 <div class="sb-sidenav-menu-heading">DISEÑADOR</div>
 
-                <!-- 🎨 Mis Diseños -->
-                <a class="nav-link" href="{{ route('disenos.mis-disenos') }}">
+                <!-- 🎨 Mis Diseños - REDIRIGIR A disenos.index -->
+                <a class="nav-link" href="{{ route('disenos.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-palette"></i></div>
                     🎨 Mis Diseños
                 </a>
 
-                <!-- 📦 Pedidos Asignados -->
-                <a class="nav-link" href="{{ route('pedidos.asignados') }}">
+                <!-- 📦 Pedidos - REDIRIGIR A pedidos.index -->
+                <a class="nav-link" href="{{ route('pedidos.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
-                    📦 Pedidos Asignados
+                    📦 Pedidos
                 </a>
 
                 <div class="sb-sidenav-menu-heading">CONSULTA</div>
 
-                <!-- 👥 Ver Clientes (solo lectura) -->
-                <a class="nav-link" href="{{ route('clientes.consulta') }}">
+                <!-- 👥 Ver Clientes - REDIRIGIR A clienteNatural.index -->
+                <a class="nav-link" href="{{ route('clienteNatural.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
                     👥 Ver Clientes
                     <span class="badge bg-secondary ms-2">Solo lectura</span>
                 </a>
 
-                <!-- 📋 Ver Catálogo (solo lectura) -->
-                <a class="nav-link" href="{{ route('catalogo.consulta') }}">
+                <!-- 📋 Ver Catálogo - REDIRIGIR A pedidos.catalogo -->
+                <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-book"></i></div>
                     📋 Ver Catálogo
                     <span class="badge bg-secondary ms-2">Solo lectura</span>
                 </a>
+
                 @else
                 <!-- Menú para otros roles -->
                 <a class="nav-link" href="{{ route('dashboard') }}">
@@ -49,10 +50,14 @@
                 </a>
 
                 <!-- Resto del menú para otros roles -->
-                @if(auth()->check() && in_array(auth()->user()->rol, ['administrador', 'vendedor']))
+                @php
+                    $userRol = auth()->check() && auth()->user()->empleado ? auth()->user()->empleado->rol : null;
+                @endphp
+
+                @if(auth()->check() && in_array($userRol, ['administrador', 'vendedor']))
                 <div class="sb-sidenav-menu-heading">🔧 GESTION USUARIOS</div>
 
-                @if(auth()->user()->rol === 'administrador')
+                @if($userRol === 'administrador')
                 <!-- Usuarios -->
                 <a class="nav-link" href="{{ route('users.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
@@ -81,7 +86,7 @@
                 </div>
                 @endif
 
-                @if(auth()->check() && in_array(auth()->user()->rol, ['administrador', 'vendedor']))
+                @if(auth()->check() && in_array($userRol, ['administrador', 'vendedor']))
                 <hr class="sidebar-divider">
 
                 <!-- 📦 GESTIÓN DE PRODUCTOS -->
@@ -99,7 +104,7 @@
                     🎨 Diseños
                 </a>
 
-                @if(auth()->user()->rol === 'administrador')
+                @if($userRol === 'administrador')
                 <!-- Configuración de Productos -->
                 <a class="nav-link" href="{{ route('configuracion.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>
@@ -146,7 +151,7 @@
                     </nav>
                 </div>
 
-                @if(auth()->user()->rol === 'administrador')
+                @if($userRol === 'administrador')
                 <hr class="sidebar-divider">
 
                 <!-- 📊 REPORTES -->

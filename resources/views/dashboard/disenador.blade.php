@@ -77,7 +77,7 @@
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                 Mis Diseños</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ App\Models\Diseno::where('idEmpleado', auth()->user()->empleado->idEmpleado ?? 0)->count() }}
+                                {{ auth()->user()->empleado ? App\Models\Diseno::where('idEmpleado', auth()->user()->empleado->idEmpleado)->count() : 0 }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -103,7 +103,7 @@
                         </a>
                         <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
                             aria-labelledby="dropdownMenuLink">
-                            <a class="dropdown-item" href="{{ route('disenos.mis-disenos') }}">Ver todos</a>
+                            <a class="dropdown-item" href="{{ route('disenos.index') }}">Ver todos</a>
                             <a class="dropdown-item" href="{{ route('disenos.create') }}">Nuevo diseño</a>
                         </div>
                     </div>
@@ -123,7 +123,8 @@
                             </thead>
                             <tbody>
                                 @php
-                                    $misDisenos = App\Models\Diseno::where('idEmpleado', auth()->user()->empleado->idEmpleado ?? 0)
+                                    $empleadoId = auth()->user()->empleado ? auth()->user()->empleado->idEmpleado : 0;
+                                    $misDisenos = App\Models\Diseno::where('idEmpleado', $empleadoId)
                                         ->latest()
                                         ->take(5)
                                         ->get();

@@ -16,9 +16,6 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    /**
-     * Procesar login
-     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -28,15 +25,34 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            
-            // Redirigir según el rol
+
+            // Obtener el empleado asociado al usuario
             $user = Auth::user();
-            return $this->redirectByRole($user);
+            $empleado = $user->empleado; // Asegúrate de que esta relación exista
+
+            if ($empleado) {
+                // Redirigir según el rol del empleado
+                switch ($empleado->cargo) {
+                    case 'administrador':
+                        return redirect()->route('dashboard.admin');
+                    case 'diseñador':
+                        return redirect()->route('dashboard.disenador');
+                    case 'vendedor':
+                        return redirect()->route('dashboard.vendedor');
+                    case 'operador':
+                        return redirect()->route('dashboard.operador');
+                    default:
+                        return redirect()->route('home'); // Redirigir a la página de inicio si el cargo no coincide
+                }
+            }
+
+            // Si no tiene empleado asociado, redirigir a la página de inicio
+            return redirect()->route('home');
         }
 
         return back()->withErrors([
             'email' => 'Las credenciales no coinciden con nuestros registros.',
-        ])->onlyInput('email');
+        ]);
     }
 
     /**
@@ -86,17 +102,19 @@ class AuthController extends Controller
      */
     private function redirectByRole($user)
     {
-        switch ($user->rol) {
+        if (!$user->empleado) {
+            return redirect()->route('home');
+        }
+
+        switch (strtolower(trim($user->empleado->cargo))) {
             case 'administrador':
                 return redirect()->route('dashboard.admin');
             case 'vendedor':
                 return redirect()->route('dashboard.vendedor');
             case 'diseñador':
-                return redirect()->route('dashboard.diseñador');
+                return redirect()->route('dashboard.disenador');
             case 'operador':
                 return redirect()->route('dashboard.operador');
-            case 'cliente':
-                return redirect()->route('dashboard.cliente');
             default:
                 return redirect()->route('home');
         }
