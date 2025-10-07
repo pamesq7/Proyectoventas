@@ -62,6 +62,11 @@ class HomeController extends Controller
      */
     public function operadorDashboard()
     {
+        // Verificar que el usuario tenga rol de operador
+        if (!auth()->user()->empleado || strtolower(auth()->user()->empleado->rol) !== 'operador') {
+            abort(403, 'No tienes permiso para acceder a esta sección.');
+        }
+
         return view('dashboard.operador');
     }
 

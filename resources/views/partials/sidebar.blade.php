@@ -41,7 +41,30 @@
                     📋 Ver Catálogo
                     <span class="badge bg-secondary ms-2">Solo lectura</span>
                 </a>
+                @elseif(auth()->check() && auth()->user()->empleado && auth()->user()->empleado->rol === 'operador')
+                <!-- Menú específico para operador -->
+                <a class="nav-link" href="{{ route('dashboard.operador') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    🏠 Panel del Operador
+                </a>
 
+                <div class="sb-sidenav-menu-heading">OPERACIONES</div>
+
+                <!-- Pedidos -->
+                <a class="nav-link" href="{{ route('pedidos.index') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-clipboard-list"></i></div>
+                    📦 Pedidos
+                </a>
+
+                <!-- Catálogo -->
+                <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
+                    🛒 Catálogo
+                </a>
+
+
+
+           
                 @else
                 <!-- Menú para otros roles -->
                 <a class="nav-link" href="{{ route('dashboard') }}">
@@ -51,7 +74,7 @@
 
                 <!-- Resto del menú para otros roles -->
                 @php
-                    $userRol = auth()->check() && auth()->user()->empleado ? auth()->user()->empleado->rol : null;
+                $userRol = auth()->check() && auth()->user()->empleado ? auth()->user()->empleado->rol : null;
                 @endphp
 
                 @if(auth()->check() && in_array($userRol, ['administrador', 'vendedor']))
@@ -114,7 +137,7 @@
 
                 <hr class="sidebar-divider">
                 <div class="sb-sidenav-menu-heading"><i class="fas fa-clipboard-list me-2"></i>GESTIÓN DE PEDIDOS</div>
-                
+
                 <!-- Catálogo de Productos -->
                 <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
