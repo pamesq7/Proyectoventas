@@ -30,7 +30,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
-            
+
             // REDIRIGIR SEGÚN EL ROL DEL EMPLEADO
             return $this->redirectToDashboard($user);
         }
@@ -53,21 +53,27 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        // VALIDACIÓN (ci es opcional)
         $request->validate([
+            'ci' => 'nullable|string|max:20|unique:users', // ✅ nullable
             'name' => 'required|string|max:255',
+            'primerApellido' => 'required|string|max:255',
+            'segundoApellido' => 'nullable|string|max:255', // ✅ nullable
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        // CREACIÓN DEL USUARIO
         $user = User::create([
+            'ci' => $request->ci, // ✅ Puede ser NULL
             'name' => $request->name,
+            'primerApellido' => $request->primerApellido,
+            'segundoApellido' => $request->segundoApellido, // ✅ Puede ser NULL
             'email' => $request->email,
             'password' => bcrypt($request->password),
         ]);
 
         Auth::login($user);
-
-        // Usar el mismo método de redirección
         return $this->redirectToDashboard($user);
     }
 
