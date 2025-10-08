@@ -16,6 +16,9 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
+    /**
+     * Procesar login
+     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -26,28 +29,10 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
-            // Obtener el empleado asociado al usuario
             $user = Auth::user();
-            $empleado = $user->empleado; // Asegúrate de que esta relación exista
-
-            if ($empleado) {
-                // Redirigir según el rol del empleado
-                switch ($empleado->cargo) {
-                    case 'administrador':
-                        return redirect()->route('dashboard.admin');
-                    case 'diseñador':
-                        return redirect()->route('dashboard.disenador');
-                    case 'vendedor':
-                        return redirect()->route('dashboard.vendedor');
-                    case 'operador':
-                        return redirect()->route('dashboard.operador');
-                    default:
-                        return redirect()->route('home'); // Redirigir a la página de inicio si el cargo no coincide
-                }
-            }
-
-            // Si no tiene empleado asociado, redirigir a la página de inicio
-            return redirect()->route('home');
+            
+            // REDIRIGIR SEGÚN EL ROL DEL EMPLEADO
+            return $this->redirectToDashboard($user);
         }
 
         return back()->withErrors([
@@ -82,7 +67,8 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return $this->redirectByRole($user);
+        // Usar el mismo método de redirección
+        return $this->redirectToDashboard($user);
     }
 
     /**
@@ -98,25 +84,33 @@ class AuthController extends Controller
     }
 
     /**
-     * Redirigir según el rol del usuario
+     * Redirigir según el rol del empleado
      */
-    private function redirectByRole($user)
+    private function redirectToDashboard($user)
     {
-        if (!$user->empleado) {
-            return redirect()->route('home');
-        }
+        // Obtener el empleado relacionado con el usuario
+        $empleado = $user->empleado;
 
-        switch (strtolower(trim($user->empleado->cargo))) {
-            case 'administrador':
-                return redirect()->route('dashboard.admin');
-            case 'vendedor':
-                return redirect()->route('dashboard.vendedor');
-            case 'diseñador':
-                return redirect()->route('dashboard.disenador');
-            case 'operador':
-                return redirect()->route('dashboard.operador');
-            default:
-                return redirect()->route('home');
+        if ($empleado) {
+            // Verifica el campo 'rol' del empleado y redirige al dashboard correspondiente
+            switch ($empleado->rol) {
+                case 'administrador':
+                    return redirect()->route('dashboard.admin');
+                case 'diseñador':
+                    return redirect()->route('dashboard.disenador');
+                case 'vendedor':
+                    return redirect()->route('dashboard.vendedor');
+                case 'operador':
+                    return redirect()->route('dashboard.operador');
+                case 'cliente':
+                    return redirect()->route('dashboard.cliente');
+                default:
+                    // Si no tiene rol definido, redirigir a un dashboard genérico
+                    return redirect('/dashboard');
+            }
+        } else {
+            // Si no tiene empleado relacionado, redirigir a la página de inicio
+            return redirect()->route('home');
         }
     }
 }
