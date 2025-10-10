@@ -17,7 +17,7 @@ class User extends Authenticatable
     public $incrementing = true;
     protected $keyType = 'int';
     public $timestamps = true;
-    
+
     protected $fillable = [
         'ci',
         'name',
@@ -173,7 +173,7 @@ class User extends Authenticatable
             'cliente' => 'Cliente',
             'usuario' => 'Usuario'
         ];
-        
+
         return $roles[$this->rol] ?? 'Usuario';
     }
 
@@ -193,8 +193,8 @@ class User extends Authenticatable
     public function scopeBuscar($query, $search)
     {
         return $query->where('ci', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%")
-                    ->orWhere('primerApellido', 'like', "%{$search}%");
+            ->orWhere('name', 'like', "%{$search}%")
+            ->orWhere('primerApellido', 'like', "%{$search}%");
     }
 
     /**
@@ -207,11 +207,15 @@ class User extends Authenticatable
         } elseif ($rol === 'cliente') {
             return $query->whereHas('clienteNatural');
         } elseif (in_array($rol, self::getRolesEmpleados())) {
-            return $query->whereHas('empleado', function($q) use ($rol) {
+            return $query->whereHas('empleado', function ($q) use ($rol) {
                 $q->where('rol', $rol);
             });
         }
-        
+
         return $query;
+    }
+    public function pedidos()
+    {
+        return $this->hasMany(Venta::class, 'idCliente', 'id');
     }
 }

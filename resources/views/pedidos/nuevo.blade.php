@@ -10,18 +10,25 @@
     </ol>
 
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    @endif
+    @if(session('info'))
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        {{ session('info') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     @endif
 
     <div class="card mb-4">
@@ -52,7 +59,7 @@
                                 <input type="text" name="lugarEntrega" class="form-control" value="{{ old('lugarEntrega','Recojo en tienda') }}" required>
                             </div>
 
-                            <hr class="mt-3"/>
+                            <hr class="mt-3" />
 
                             <div class="col-12">
                                 <div class="card shadow-sm border-0">
@@ -66,9 +73,9 @@
                                                 <select name="idProducto" id="idProducto" class="form-select" required>
                                                     <option value="">Seleccionar producto</option>
                                                     @foreach($productos as $p)
-                                                        <option value="{{ $p->idProducto }}" data-nombre="{{ strtolower($p->nombre) }}" data-precio="{{ $p->precioVenta ?? 0 }}" {{ old('idProducto')==$p->idProducto ? 'selected' : '' }}>
-                                                            [#{{ $p->idProducto }}] {{ $p->nombre }}
-                                                        </option>
+                                                    <option value="{{ $p->idProducto }}" data-nombre="{{ strtolower($p->nombre) }}" data-precio="{{ $p->precioVenta ?? 0 }}" {{ old('idProducto')==$p->idProducto ? 'selected' : '' }}>
+                                                        [#{{ $p->idProducto }}] {{ $p->nombre }}
+                                                    </option>
                                                     @endforeach
                                                 </select>
                                                 <small class="text-muted">Selecciona el producto. La variante se resolverá automáticamente.</small>
@@ -114,7 +121,7 @@
                                                     <select name="idTalla[]" class="form-select form-select-sm sel-talla" required>
                                                         <option value="">Seleccionar talla</option>
                                                         @foreach($tallas as $t)
-                                                            <option value="{{ $t->idTalla }}">{{ $t->nombre }}</option>
+                                                        <option value="{{ $t->idTalla }}">{{ $t->nombre }}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>
@@ -147,9 +154,9 @@
                                     <div>
                                         Tu diseño ya fue subido y será aplicado a este pedido.
                                         @if(session('disenoTemporal'))
-                                            <div class="mt-2">
-                                                <img src="{{ asset('storage/' . session('disenoTemporal')) }}" alt="Diseño" class="img-thumbnail" style="max-height:140px;object-fit:contain;">
-                                            </div>
+                                        <div class="mt-2">
+                                            <img src="{{ asset('storage/' . session('disenoTemporal')) }}" alt="Diseño" class="img-thumbnail" style="max-height:140px;object-fit:contain;">
+                                        </div>
                                         @endif
                                     </div>
                                 </div>
@@ -181,21 +188,21 @@
                                                 <option value="">Seleccione un cliente</option>
                                                 <optgroup label="Clientes naturales"></optgroup>
                                                 @foreach($clientesNaturales as $c)
-                                                    @php($val = 'natural:' . $c->idCliente)
-                                                    @php($doc = $c->user->ci ?? ($c->nit ?? ''))
-                                                    @php($tel = $c->user->telefono ?? '')
-                                                    @php($nom = $c->user->name ?? 'Cliente')
-                                                    @php($label = trim(($doc ? 'CI: '.$doc.' - ' : '') . $nom . ($tel ? ' - Tel: '.$tel : '')))
-                                                    <option value="{{ $val }}" data-ci="{{ $doc }}" data-telefono="{{ $tel }}" {{ $oldClienteSel === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                                @php($val = 'natural:' . $c->idCliente)
+                                                @php($doc = $c->user->ci ?? ($c->nit ?? ''))
+                                                @php($tel = $c->user->telefono ?? '')
+                                                @php($nom = $c->user->name ?? 'Cliente')
+                                                @php($label = trim(($doc ? 'CI: '.$doc.' - ' : '') . $nom . ($tel ? ' - Tel: '.$tel : '')))
+                                                <option value="{{ $val }}" data-ci="{{ $doc }}" data-telefono="{{ $tel }}" {{ $oldClienteSel === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                 @endforeach
                                                 <optgroup label="Establecimientos"></optgroup>
                                                 @foreach($clientesEstablecimientos as $e)
-                                                    @php($val = 'establecimiento:' . $e->idEstablecimiento)
-                                                    @php($doc = $e->nit ?? '')
-                                                    @php($tel = $e->representante->telefono ?? '')
-                                                    @php($nom = $e->razonSocial ?? 'Establecimiento')
-                                                    @php($label = trim(($doc ? 'NIT: '.$doc.' - ' : '') . $nom . ($tel ? ' - Tel: '.$tel : '')))
-                                                    <option value="{{ $val }}" data-ci="{{ $doc }}" data-telefono="{{ $tel }}" {{ $oldClienteSel === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                                @php($val = 'establecimiento:' . $e->idEstablecimiento)
+                                                @php($doc = $e->nit ?? '')
+                                                @php($tel = $e->representante->telefono ?? '')
+                                                @php($nom = $e->razonSocial ?? 'Establecimiento')
+                                                @php($label = trim(($doc ? 'NIT: '.$doc.' - ' : '') . $nom . ($tel ? ' - Tel: '.$tel : '')))
+                                                <option value="{{ $val }}" data-ci="{{ $doc }}" data-telefono="{{ $tel }}" {{ $oldClienteSel === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -210,7 +217,7 @@
                                         <option value="transferencia">Transferencia bancaria</option>
                                     </select>
                                 </div>
-                                
+
                                 <div class="mb-1" id="efectivoGroup">
                                     <label class="form-label">Efectivo recibido</label>
                                     <input type="number" class="form-control" id="efectivoRecibido" placeholder="Cantidad de efectivo recibida" step="0.01" min="0">
@@ -219,7 +226,7 @@
                                     <input class="form-check-input" type="checkbox" id="efectivoExacto">
                                     <label class="form-check-label" for="efectivoExacto">Efectivo Exacto</label>
                                 </div>
-                                <hr/>
+                                <hr />
                                 <div class="d-flex justify-content-between"><small>Cantidad total</small><small id="uiCantTotal">0</small></div>
                                 <div class="mt-1">
                                     <small class="text-muted d-block">Desglose por talla</small>
@@ -236,7 +243,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between"><small>Adelanto</small><small id="uiAdelanto">Bs 0.00</small></div>
                                 <div class="d-flex justify-content-between"><small><strong>Saldo</strong></small><small id="uiSaldo"><strong>Bs 0.00</strong></small></div>
-                                <hr/>
+                                <hr />
                                 <div class="d-flex justify-content-between text-success"><small>Monto Efectivo</small><small id="uiEfectivo">Bs 0.00</small></div>
                                 <div class="d-flex justify-content-between text-danger"><small>Vuelto</small><small id="uiVuelto">Bs 0.00</small></div>
                             </div>
@@ -278,7 +285,8 @@
                 select.appendChild(placeholder);
                 (op.caracteristicas || []).forEach(c => {
                     const o = document.createElement('option');
-                    o.value = c.idCaracteristica; o.textContent = c.nombre;
+                    o.value = c.idCaracteristica;
+                    o.textContent = c.nombre;
                     select.appendChild(o);
                 });
                 col.appendChild(label);
@@ -300,8 +308,15 @@
         if (!idProducto) return;
         try {
             const urlOpts = `{{ url('api/producto') }}/${idProducto}/opciones`;
-            const res = await fetch(urlOpts, { headers: { 'Accept': 'application/json' } });
-            if (!res.ok) { console.error('Error opciones por producto', await res.text()); return; }
+            const res = await fetch(urlOpts, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            if (!res.ok) {
+                console.error('Error opciones por producto', await res.text());
+                return;
+            }
             const data = await res.json();
             const opciones = data.opciones || [];
             opciones.forEach(op => {
@@ -319,7 +334,8 @@
                 select.appendChild(placeholder);
                 (op.caracteristicas || []).forEach(c => {
                     const o = document.createElement('option');
-                    o.value = c.idCaracteristica; o.textContent = c.nombre;
+                    o.value = c.idCaracteristica;
+                    o.textContent = c.nombre;
                     select.appendChild(o);
                 });
                 col.appendChild(label);
@@ -340,8 +356,15 @@
         if (!idProducto) return;
         try {
             const url = `{{ url('api/producto') }}/${idProducto}/tallas-precios`;
-            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-            if (!res.ok) { console.error('Error tallas-precios', await res.text()); return; }
+            const res = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            if (!res.ok) {
+                console.error('Error tallas-precios', await res.text());
+                return;
+            }
             const data = await res.json();
             (data.precios || []).forEach(p => {
                 tallaPriceMap.set(String(p.idTalla), Number(p.precioUnitario || 0));
@@ -360,10 +383,13 @@
     });
 
     // Al cargar, si viene producto seleccionado, cargar sus características
-    (function initOnLoad(){
+    (function initOnLoad() {
         const sel = document.getElementById('idProducto');
         toggleNumeroByProducto();
-        if (sel && sel.value) { onProductoChange(sel.value); loadTallaPrecios(sel.value); }
+        if (sel && sel.value) {
+            onProductoChange(sel.value);
+            loadTallaPrecios(sel.value);
+        }
         // Inicializar UI de pago
         updatePagoUI();
         recalcTotales();
@@ -371,33 +397,54 @@
 
     // --- Búsqueda AJAX de clientes por CI / nombre / teléfono ---
     function debounce(fn, delay) {
-        let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
+        let t;
+        return (...args) => {
+            clearTimeout(t);
+            t = setTimeout(() => fn.apply(null, args), delay);
+        };
     }
-    (function initClienteFilter(){
+    (function initClienteFilter() {
         const input = document.getElementById('clienteFilter');
         const select = document.getElementById('clienteSelect');
         if (!input || !select) return;
         const renderResults = (results) => {
             // Reconstruir opciones: placeholder + optgroups
             select.innerHTML = '';
-            const ph = document.createElement('option'); ph.value=''; ph.textContent='Seleccione un cliente';
+            const ph = document.createElement('option');
+            ph.value = '';
+            ph.textContent = 'Seleccione un cliente';
             select.appendChild(ph);
-            const grpNat = document.createElement('optgroup'); grpNat.label = 'Clientes naturales';
-            const grpEst = document.createElement('optgroup'); grpEst.label = 'Establecimientos';
+            const grpNat = document.createElement('optgroup');
+            grpNat.label = 'Clientes naturales';
+            const grpEst = document.createElement('optgroup');
+            grpEst.label = 'Establecimientos';
             (results || []).forEach(r => {
                 const o = document.createElement('option');
-                o.value = r.value; o.textContent = r.label;
-                if (r.type === 'natural') grpNat.appendChild(o); else grpEst.appendChild(o);
+                o.value = r.value;
+                o.textContent = r.label;
+                if (r.type === 'natural') grpNat.appendChild(o);
+                else grpEst.appendChild(o);
             });
-            select.appendChild(grpNat); select.appendChild(grpEst);
+            select.appendChild(grpNat);
+            select.appendChild(grpEst);
         };
         const search = debounce(async () => {
             const q = input.value.trim();
-            if (!q) { renderResults([]); return; }
+            if (!q) {
+                renderResults([]);
+                return;
+            }
             try {
-                const url = `{{ url('api/clients') }}`.replace('clients','clientes') + `/search?q=${encodeURIComponent(q)}`;
-                const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-                if (!res.ok) { console.error('buscar clientes', await res.text()); return; }
+                const url = `{{ url('api/clients') }}`.replace('clients', 'clientes') + `/search?q=${encodeURIComponent(q)}`;
+                const res = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!res.ok) {
+                    console.error('buscar clientes', await res.text());
+                    return;
+                }
                 const data = await res.json();
                 renderResults(data.results || []);
             } catch (e) {
@@ -408,7 +455,7 @@
     })();
 
     // Mapear selección de cliente al backend (tipoCliente, idCliente/idEstablecimiento)
-    (function initClienteSelection(){
+    (function initClienteSelection() {
         const select = document.getElementById('clienteSelect');
         const tipo = document.getElementById('tipoCliente');
         const idCli = document.getElementById('idCliente');
@@ -416,7 +463,9 @@
         if (!select || !tipo || !idCli || !idEst) return;
         const apply = () => {
             const v = String(select.value || '');
-            tipo.value = ''; idCli.value = ''; idEst.value = '';
+            tipo.value = '';
+            idCli.value = '';
+            idEst.value = '';
             if (v.startsWith('natural:')) {
                 tipo.value = 'natural';
                 idCli.value = v.split(':')[1] || '';
@@ -465,7 +514,9 @@
     });
     // Recalcular al cambiar tallas en cualquier fila
     tbody.addEventListener('change', (e) => {
-        if (e.target.classList.contains('sel-talla')) { recalcTotales(); }
+        if (e.target.classList.contains('sel-talla')) {
+            recalcTotales();
+        }
     });
 
     function addRow() {
@@ -514,8 +565,12 @@
         // Validación extra de mapeo
         if (selCli && selCli.value) {
             const v = selCli.value;
-            if (v.startsWith('natural:') && !tipo.value) { tipo.value = 'natural'; }
-            if (v.startsWith('establecimiento:') && !tipo.value) { tipo.value = 'establecimiento'; }
+            if (v.startsWith('natural:') && !tipo.value) {
+                tipo.value = 'natural';
+            }
+            if (v.startsWith('establecimiento:') && !tipo.value) {
+                tipo.value = 'establecimiento';
+            }
         }
     });
 
@@ -558,12 +613,17 @@
         }
         return getPrecioUnitarioBase();
     }
+
     function getTotalCantidad() {
         const inputs = document.querySelectorAll('#tbodyItems .inp-cantidad');
         let total = 0;
-        inputs.forEach(i => { const v = parseInt(i.value || '0'); if (!isNaN(v)) total += v; });
+        inputs.forEach(i => {
+            const v = parseInt(i.value || '0');
+            if (!isNaN(v)) total += v;
+        });
         return total;
     }
+
     function getBreakdownPorTalla() {
         const rows = document.querySelectorAll('#tbodyItems tr.item-row');
         const map = {};
@@ -596,7 +656,11 @@
             if (isNaN(cant) || cant <= 0) return;
             const unit = precioUnitarioPorTalla(idTalla, nombreTalla);
             if (!map.has(nombreTalla)) {
-                map.set(nombreTalla, { nombre: nombreTalla, cant: 0, unit });
+                map.set(nombreTalla, {
+                    nombre: nombreTalla,
+                    cant: 0,
+                    unit
+                });
             }
             const agg = map.get(nombreTalla);
             agg.cant += cant;
@@ -604,24 +668,31 @@
             agg.unit = unit;
         });
         // Orden por talla (letras más comunes primero, luego alfabético)
-        const pref = ['XXXL','XXL','XL','L','M','S','XS'];
+        const pref = ['XXXL', 'XXL', 'XL', 'L', 'M', 'S', 'XS'];
         const arr = Array.from(map.values());
-        arr.sort((a,b)=>{
+        arr.sort((a, b) => {
             const ia = pref.indexOf(a.nombre.toUpperCase());
             const ib = pref.indexOf(b.nombre.toUpperCase());
             if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
             return a.nombre.localeCompare(b.nombre);
         });
-        return arr.map(it => ({ ...it, subtotal: it.unit * it.cant }));
+        return arr.map(it => ({
+            ...it,
+            subtotal: it.unit * it.cant
+        }));
     }
+
     function renderBreakdown(map) {
         const cont = document.getElementById('uiBreakdownTallas');
         if (!cont) return;
         const nombres = Object.keys(map);
-        if (nombres.length === 0) { cont.innerHTML = '<span class="text-muted">—</span>'; return; }
+        if (nombres.length === 0) {
+            cont.innerHTML = '<span class="text-muted">—</span>';
+            return;
+        }
         // Orden opcional: XS,S,M,L,XL,XXL,XXXL al inicio si existen, luego el resto alfabético
-        const pref = ['XXXL','XXL','XL','L','M','S','XS'];
-        nombres.sort((a,b)=>{
+        const pref = ['XXXL', 'XXL', 'XL', 'L', 'M', 'S', 'XS'];
+        nombres.sort((a, b) => {
             const ia = pref.indexOf(a.toUpperCase());
             const ib = pref.indexOf(b.toUpperCase());
             if (ia !== -1 || ib !== -1) {
@@ -635,11 +706,41 @@
             </div>
         `).join('');
     }
-    function formatear(n) { return 'Bs ' + (Number(n).toFixed(2)); }
+
+    function formatear(n) {
+        return 'Bs ' + (Number(n).toFixed(2));
+    }
+
     function recalcTotales() {
         // Recorrer filas para calcular por grupo
         const rows = document.querySelectorAll('#tbodyItems tr.item-row');
-        const grupos = { letras: {cant:0, unit:0, total:0}, '2xl_plus': {cant:0, unit:0, total:0}, '14_12': {cant:0, unit:0, total:0}, '10_8': {cant:0, unit:0, total:0}, '6_4': {cant:0, unit:0, total:0} };
+        const grupos = {
+            letras: {
+                cant: 0,
+                unit: 0,
+                total: 0
+            },
+            '2xl_plus': {
+                cant: 0,
+                unit: 0,
+                total: 0
+            },
+            '14_12': {
+                cant: 0,
+                unit: 0,
+                total: 0
+            },
+            '10_8': {
+                cant: 0,
+                unit: 0,
+                total: 0
+            },
+            '6_4': {
+                cant: 0,
+                unit: 0,
+                total: 0
+            }
+        };
         let cantTotal = 0;
         rows.forEach(tr => {
             const sel = tr.querySelector('.sel-talla');
@@ -747,7 +848,9 @@
     }
     // Delegar cambios en cantidades
     document.getElementById('tbodyItems').addEventListener('input', (e) => {
-        if (e.target.classList.contains('inp-cantidad')) { recalcTotales(); }
+        if (e.target.classList.contains('inp-cantidad')) {
+            recalcTotales();
+        }
     });
     document.getElementById('efectivoRecibido').addEventListener('input', recalcTotales);
     document.getElementById('efectivoExacto').addEventListener('change', recalcTotales);
@@ -757,7 +860,10 @@
     });
     // Cambios de adelanto
     ['montoAdelanto']
-        .forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', recalcTotales); });
+    .forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', recalcTotales);
+    });
 
     function updatePagoUI() {
         const tipo = (document.getElementById('tipoPago')?.value || '').toLowerCase();

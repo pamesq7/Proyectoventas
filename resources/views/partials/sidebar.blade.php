@@ -41,6 +41,7 @@
                     📋 Ver Catálogo
                     <span class="badge bg-secondary ms-2">Solo lectura</span>
                 </a>
+
                 @elseif(auth()->check() && auth()->user()->empleado && auth()->user()->empleado->rol === 'operador')
                 <!-- Menú específico para operador -->
                 <a class="nav-link" href="{{ route('dashboard.operador') }}">
@@ -62,11 +63,27 @@
                     🛒 Catálogo
                 </a>
 
+                @elseif(auth()->check() && !auth()->user()->empleado)
+                <!-- 🆕 MENÚ PARA CLIENTES -->
+                <div class="sb-sidenav-menu-heading">👤 MI CUENTA</div>
 
+                <a class="nav-link" href="{{ route('dashboard.cliente') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
+                    🏠 Mi Dashboard
+                </a>
 
-           
+                <a class="nav-link" href="{{ route('cliente.pedidos') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-shopping-bag"></i></div>
+                    📦 Mis Pedidos
+                </a>
+
+                <a class="nav-link" href="{{ route('cliente.productos') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>
+                    🛍️ Productos
+                </a>
+
                 @else
-                <!-- Menú para otros roles -->
+                <!-- Menú para otros roles (admin, vendedor) -->
                 <a class="nav-link" href="{{ route('dashboard') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                     🏠 Dashboard

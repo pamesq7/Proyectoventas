@@ -112,11 +112,11 @@ class AuthController extends Controller
                     return redirect()->route('dashboard.cliente');
                 default:
                     // Si no tiene rol definido, redirigir a un dashboard genérico
-                    return redirect('/dashboard');
+                    return redirect('/home');
             }
         } else {
             // Si no tiene empleado relacionado, redirigir a la página de inicio
-            return redirect()->route('home');
+            return redirect()->route('dashboard.cliente');
         }
     }
 }

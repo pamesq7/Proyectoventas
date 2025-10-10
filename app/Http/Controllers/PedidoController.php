@@ -252,21 +252,32 @@ class PedidoController extends Controller
      */
     public function nuevoPedido()
     {
-        if (!session()->has('disenoTemporal')) {
+        $user = auth()->user();
+
+        // ✅ SOLUCIÓN MEJORADA: Lógica diferenciada por rol
+        $esAdministrador = optional($user->empleado)->rol === 'administrador';
+        $tieneDiseno = session()->has('disenoTemporal');
+
+        if (!$tieneDiseno && !$esAdministrador) {
             return redirect()->route('pedidos.personalizar')
                 ->with('error', 'Primero sube tu diseño.');
         }
 
         $productos = Producto::where('estado', 1)
-            ->whereBetween('idProducto', [1, 4]) // ← FILTRO AÑADIDO
+            ->whereBetween('idProducto', [1, 4])
             ->orderBy('idProducto')
             ->get();
-        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
 
+        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
         $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
         $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
 
-        // Sin depender de la BD para métodos de pago
+        // Mensaje informativo para admins sin diseño
+        $mensaje = null;
+        if ($esAdministrador && !$tieneDiseno) {
+            session()->flash('info', 'Modo administrador: Puedes crear pedidos sin diseño. Los clientes normales necesitarán subir un diseño.');
+        }
+
         return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos'));
     }
 
@@ -839,7 +850,7 @@ class PedidoController extends Controller
             'clienteEstablecimiento',
             'empleado'
         ])->findOrFail($pedido);
-    
+
         return view('pedidos.show', compact('pedido'));
     }
 
@@ -999,7 +1010,7 @@ class PedidoController extends Controller
                 ->selectRaw('COALESCE(SUM(cantidad * precioUnitario),0) as s')
                 ->value('s');
             $pedido->subtotal = $nuevoSubtotal;
-            $pedido->total = $nuevoSubtotal; 
+            $pedido->total = $nuevoSubtotal;
 
             // Registrar adelanto opcional
             $montoAd = (float) ($request->montoAdelanto ?? 0);
@@ -1123,7 +1134,7 @@ class PedidoController extends Controller
 
             $pedido = Venta::findOrFail($idVenta);
             $estadoAnterior = $pedido->estadoPedido;
-            
+
             // Actualizar el estado
             $pedido->estadoPedido = $request->estadoPedido;
             $pedido->save();
@@ -1254,9 +1265,9 @@ class PedidoController extends Controller
     {
         // Obtener el ID del empleado asociado al usuario autenticado
         $idEmpleado = auth()->user()->empleado->idEmpleado;
-        
+
         $query = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'detalles'])
-            ->whereHas('disenos', function($q) use ($idEmpleado) {
+            ->whereHas('disenos', function ($q) use ($idEmpleado) {
                 $q->where('disenos.idEmpleado', $idEmpleado);
             });
 
@@ -1266,7 +1277,7 @@ class PedidoController extends Controller
         }
 
         $pedidos = $query->latest()->paginate(10);
-        
+
         return view('pedidos.asignados', compact('pedidos'));
     }
 }
