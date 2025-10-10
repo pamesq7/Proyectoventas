@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 class Venta extends Model
 {
@@ -46,14 +47,25 @@ class Venta extends Model
     public function clienteEstablecimiento()
     {
         return $this->belongsTo(ClienteEstablecimiento::class, 'idEstablecimiento');
+                // Establecimiento: razón social o nombreEstablecimiento
+                if ($this->clienteEstablecimiento) {
+                    return $this->clienteEstablecimiento->razonSocial
+                        ?? $this->clienteEstablecimiento->razonSocial
+                        ?? 'Establecimiento';
+                }
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'idCliente', 'idUser');
+    }
+
 
     // Relación: detalles de venta
     public function detalleVentas()
     {
         return $this->hasMany(DetalleVenta::class, 'idVenta');
     }
-    
+
     // Relación: diseños asociados a través de los detalles de venta
     public function disenos()
     {

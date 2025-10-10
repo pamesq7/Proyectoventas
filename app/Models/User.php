@@ -216,6 +216,6 @@ class User extends Authenticatable
     }
     public function pedidos()
     {
-        return $this->hasMany(Venta::class, 'idCliente', 'id');
+        return $this->hasMany(Venta::class, 'idCliente', 'idUser');
     }
 }

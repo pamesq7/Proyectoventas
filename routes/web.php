@@ -108,7 +108,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/cliente/pedidos/historial', [PedidoController::class, 'historialCliente'])->name('pedidos.historial');
     Route::get('/cliente/perfil', [UserController::class, 'perfil'])->name('perfil.cliente');
     Route::put('/cliente/perfil/actualizar', [UserController::class, 'actualizarPerfil'])->name('perfil.actualizar');
-    
+    Route::get('/cliente/pedido/{idVenta}', [ClienteDashboardController::class, 'detallePedido'])->name('cliente.pedido.detalle');
+    Route::get('/cliente/pedido/{idVenta}/detalle', [ClienteDashboardController::class, 'detallePedido'])->name('cliente.pedido.detalle');
+   
     // RUTA CORREGIDA PARA HISTORIAL DE CLIENTE
     Route::get('/cliente/pedidos', [ClienteDashboardController::class, 'historial'])->name('cliente.pedidos');
 

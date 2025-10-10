@@ -10,6 +10,7 @@ use App\Models\ClienteNatural;
 use App\Models\ClienteEstablecimiento;
 use Illuminate\Support\Facades\DB;
 
+
 class ClienteDashboardController extends Controller
 {
     /**
@@ -75,7 +76,7 @@ class ClienteDashboardController extends Controller
             ->with(['detalleVentas.producto', 'detalleVentas.talla', 'transacciones'])
             ->firstOrFail();
 
-        return view('cliente.detalle-pedido', compact('venta'));
+        return view('clientes.detalle-pedido', compact('venta'));
     }
 
     /**
