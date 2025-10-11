@@ -50,4 +50,8 @@ class DetalleVenta extends Model
     {
         return $this->estado == 1 ? 'Activo' : 'Anulado';
     }
+    public function diseno()
+    {
+        return $this->hasOne(Diseno::class, 'iddetalleVenta'); // Ajusta clave foránea si aplica
+    }
 }

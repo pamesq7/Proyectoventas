@@ -22,18 +22,18 @@ class ClienteNaturalController extends Controller
     {
         $query = ClienteNatural::with(['user'])
             ->where('estado', 1)
-            ->whereHas('user', function($q) {
+            ->whereHas('user', function ($q) {
                 $q->where('estado', 1);
             });
 
         // Búsqueda por nombre, apellido o CI
         if ($request->filled('buscar')) {
             $search = $request->buscar;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nombres', 'like', "%{$search}%")
-                  ->orWhere('apellidoPaterno', 'like', "%{$search}%")
-                  ->orWhere('apellidoMaterno', 'like', "%{$search}%")
-                  ->orWhere('ci', 'like', "%{$search}%");
+                    ->orWhere('apellidoPaterno', 'like', "%{$search}%")
+                    ->orWhere('apellidoMaterno', 'like', "%{$search}%")
+                    ->orWhere('ci', 'like', "%{$search}%");
             });
         }
 
@@ -48,17 +48,17 @@ class ClienteNaturalController extends Controller
     public function index()
     {
         // Obtener solo clientes activos con sus usuarios activos
-        $clientes = ClienteNatural::with(['user' => function($query) {
+        $clientes = ClienteNatural::with(['user' => function ($query) {
             $query->where('estado', 1);
         }])
-        ->where('estado', 1)
-        ->whereHas('user', function($query) {
-            $query->where('estado', 1);
-        })
-        ->get();
+            ->where('estado', 1)
+            ->whereHas('user', function ($query) {
+                $query->where('estado', 1);
+            })
+            ->get();
 
         // Inicializar estadísticas básicas
-        $clientes->each(function($cliente) {
+        $clientes->each(function ($cliente) {
             $cliente->total_ventas = 0;
             $cliente->monto_total = 0;
             $cliente->ultima_compra = null;
@@ -149,7 +149,6 @@ class ClienteNaturalController extends Controller
 
             return redirect()->route('clienteNatural.index')
                 ->with('success', 'Cliente natural creado exitosamente.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
@@ -177,8 +176,10 @@ class ClienteNaturalController extends Controller
 
         // Últimas ventas
         $ultimasVentas = $clienteNatural->ventas()
-            ->with(['detalleVentas.producto'])
-            ->orderBy('fechaVenta', 'desc')
+            ->with(['detalleVentas.producto' => function ($query) {
+                $query->select('id', 'nombre'); // Selecciona solo campos necesarios para eficiencia
+            }])
+            ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
@@ -263,7 +264,6 @@ class ClienteNaturalController extends Controller
 
             return redirect()->route('clienteNatural.index')
                 ->with('success', 'Cliente natural actualizado exitosamente.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
@@ -286,7 +286,7 @@ class ClienteNaturalController extends Controller
                 $clienteNatural->update(['estado' => 0]);
                 $clienteNatural->user->update(['estado' => 0]);
                 DB::commit();
-                
+
                 return redirect()->route('clienteNatural.index')
                     ->with('warning', 'El cliente "' . $clienteNatural->user->nombre_completo . '" ha sido desactivado. No se puede eliminar completamente porque tiene ' . $ventasActivas . ' venta(s) asociada(s).');
             }
@@ -301,7 +301,6 @@ class ClienteNaturalController extends Controller
 
             return redirect()->route('clienteNatural.index')
                 ->with('success', 'El cliente "' . $clienteNatural->user->nombre_completo . '" ha sido eliminado correctamente.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->route('clienteNatural.index')
@@ -357,7 +356,6 @@ class ClienteNaturalController extends Controller
 
             $mensaje = $nuevoEstado == 1 ? 'Cliente activado exitosamente.' : 'Cliente desactivado exitosamente.';
             return redirect()->back()->with('success', $mensaje);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Error al cambiar el estado: ' . $e->getMessage());
