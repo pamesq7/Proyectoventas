@@ -13,6 +13,8 @@ use App\Models\Caracteristica;
 use App\Models\ClienteNatural;
 use App\Models\ClienteEstablecimiento;
 use App\Models\Transaccion;
+use App\Models\Empleado;
+use App\Models\Diseno;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -383,6 +385,15 @@ class PedidoController extends Controller
                 ]);
             }
 
+            // Guardar diseño en la tabla diseños si existe
+            if ($rutaDiseno) {
+                Diseno::create([
+                    'archivo' => $rutaDiseno,
+                    'idVenta' => $venta->idVenta,
+                    'estado' => 1, // Agregar estado requerido
+                ]);
+            }
+
             // Crear detalles por cada fila
             foreach ($itemsCalculados as $it) {
                 DetalleVenta::create([
@@ -397,6 +408,18 @@ class PedidoController extends Controller
                     'idVenta' => $venta->idVenta,
                     'idEmpleado' => $idEmpleadoSeguro,
                 ]);
+            }
+
+            // Guardar diseño en la tabla diseños si existe (asociado al primer detalle)
+            if ($rutaDiseno) {
+                $primerDetalle = DetalleVenta::where('idVenta', $venta->idVenta)->first();
+                if ($primerDetalle) {
+                    Diseno::create([
+                        'archivo' => $rutaDiseno,
+                        'iddetalleVenta' => $primerDetalle->iddetalleVenta,
+                        'estado' => 1,
+                    ]);
+                }
             }
 
             // Si estamos anexando a una venta existente, recalcular subtotal/total/saldo sumando los nuevos ítems
@@ -826,7 +849,8 @@ class PedidoController extends Controller
             'clienteNatural',
             'clienteEstablecimiento',
             'empleado',
-            'detalleVentas'
+            'detalleVentas',
+            'disenos' // Agregar relación con diseños para mostrar imágenes en la tabla
         ])->where('estado', 1)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -867,7 +891,7 @@ class PedidoController extends Controller
      */
     public function edit($idVenta)
     {
-        $pedido = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla'])
+        $pedido = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla', 'disenos'])
             ->findOrFail($idVenta);
 
         // Estados posibles para select
@@ -895,7 +919,14 @@ class PedidoController extends Controller
             ['id' => null, 'nombre' => 'Transferencia bancaria', 'codigo' => 'transferencia'],
         ]);
 
-        return view('pedidos.edit', compact('pedido', 'estados', 'tallas', 'productos', 'metodosPago'));
+        // Clientes naturales y establecimientos para el select
+        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
+
+        // Empleados para el select
+        $empleados = Empleado::with('user')->where('estado', 1)->get();
+
+        return view('pedidos.edit', compact('pedido', 'estados', 'tallas', 'productos', 'metodosPago', 'clientesNaturales', 'clientesEstablecimientos', 'empleados'));
     }
 
     /**
@@ -903,21 +934,78 @@ class PedidoController extends Controller
      */
     public function update(Request $request, $idVenta)
     {
+        // Validación de los campos del pedido
         $request->validate([
             'fechaEntrega' => 'required|date',
             'lugarEntrega' => 'required|string|max:200',
             'estadoPedido' => 'required|in:0,1,2,3,4',
+            'imagenPedido' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Validación de la imagen
+            'tipoCliente' => 'nullable|string',
+            'idEmpleado' => 'nullable|exists:empleados,idEmpleado',
+            'observaciones' => 'nullable|string|max:500',
         ]);
 
+        // Buscar el pedido
         $pedido = Venta::findOrFail($idVenta);
 
+        // Actualizar los datos del pedido
         $pedido->fechaEntrega = $request->fechaEntrega;
         $pedido->lugarEntrega = $request->lugarEntrega;
         $pedido->estadoPedido = (string) $request->estadoPedido;
+
+        // Manejar cliente si se cambió
+        if ($request->filled('tipoCliente')) {
+            if (str_starts_with($request->tipoCliente, 'natural:')) {
+                $pedido->idCliente = explode(':', $request->tipoCliente)[1];
+                $pedido->idEstablecimiento = null;
+            } elseif (str_starts_with($request->tipoCliente, 'establecimiento:')) {
+                $pedido->idEstablecimiento = explode(':', $request->tipoCliente)[1];
+                $pedido->idCliente = null;
+            }
+        }
+
+        // Actualizar empleado si se cambió
+        if ($request->filled('idEmpleado')) {
+            $pedido->idEmpleado = $request->idEmpleado;
+        }
+
+        // Manejar la carga de la nueva imagen
+        if ($request->hasFile('imagenPedido')) {
+            // Eliminar el diseño antiguo si existe
+            $disenoAntiguo = $pedido->disenos->first();
+            if ($disenoAntiguo) {
+                Storage::delete('public/' . $disenoAntiguo->archivo);
+                $disenoAntiguo->delete();
+            }
+
+            // Subir la nueva imagen
+            $imagen = $request->file('imagenPedido');
+            $path = $imagen->store('imagenes_pedidos', 'public');
+
+            // Crear nuevo diseño
+            $primerDetalle = DetalleVenta::where('idVenta', $pedido->idVenta)->first();
+            if ($primerDetalle) {
+                Diseno::create([
+                    'archivo' => $path,
+                    'iddetalleVenta' => $primerDetalle->iddetalleVenta,
+                    'estado' => 1,
+                ]);
+            }
+        } elseif ($request->boolean('delete_imagen')) {
+            // Eliminar diseño si se marca el checkbox
+            $diseno = $pedido->disenos->first();
+            if ($diseno) {
+                Storage::delete('public/' . $diseno->archivo);
+                $diseno->delete();
+            }
+        }
+
+        // Guardar los cambios
         $pedido->save();
 
         return redirect()->route('pedidos.index')->with('success', 'Pedido actualizado correctamente.');
     }
+
 
     /**
      * Actualizar detalles del pedido (crear/actualizar/eliminar en lote)

@@ -61,6 +61,7 @@
                         <tr>
                             <th>#</th> <!-- Columna para el número consecutivo -->
                             <th>Cliente</th>
+                            <th>Imagen</th> <!-- Nueva columna para la imagen del diseño -->
                             <th>Total</th>
                             <th>Pago</th>
                             <th>Fecha Entrega</th>
@@ -86,6 +87,14 @@
                                 }
                                 @endphp
                                 {{ $nombreCliente }}
+                            </td>
+                            <td>
+                                {{-- Mostrar imagen del diseño si existe --}}
+                                @if($pedido->disenos && $pedido->disenos->first() && $pedido->disenos->first()->archivo)
+                                    <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}" alt="Diseño del pedido" style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 4px;">
+                                @else
+                                    <span class="text-muted">Sin imagen</span>
+                                @endif
                             </td>
                             <td>
                                 <span class="fw-bold text-success">${{ number_format($pedido->total, 0) }}</span>

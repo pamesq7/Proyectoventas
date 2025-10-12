@@ -69,14 +69,7 @@ class Venta extends Model
     // Relación: diseños asociados a través de los detalles de venta
     public function disenos()
     {
-        return $this->hasManyThrough(
-            Diseno::class,
-            DetalleVenta::class,
-            'idVenta', // Clave foránea en la tabla detalle_ventas
-            'iddetalleVenta', // Clave foránea en la tabla disenos
-            'idVenta', // Clave local en la tabla ventas
-            'iddetalleVenta' // Clave local en la tabla detalle_ventas
-        );
+        return $this->hasManyThrough(Diseno::class, DetalleVenta::class, 'idVenta', 'iddetalleVenta');
     }
 
     // Relación: transacciones asociadas

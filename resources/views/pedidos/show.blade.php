@@ -64,15 +64,18 @@
                 </div>
             </div>
 
-            {{-- Mostrar diseño si existe --}}
-            @if ($disenoUrl)
-            <div>
-                <h3>Diseño elegido:</h3>
-                <img src="{{ $disenoUrl }}" alt="Diseño personalizado" style="max-width: 100%; height: auto;">
-            </div>
-            @else
-            <div>
-                <p>No se ha elegido un diseño todavía.</p>
+            {{-- Mostrar imagen del pedido si existe --}}
+            @if ($pedido->imagenPedido)
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-image me-2"></i>
+                        Imagen del Pedido
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <img src="{{ asset('storage/' . $pedido->imagenPedido) }}" alt="Imagen del pedido" class="img-fluid" style="max-width: 100%; height: auto;">
+                </div>
             </div>
             @endif
 

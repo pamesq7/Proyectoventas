@@ -83,7 +83,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('pedidos.update', $pedido->idVenta) }}" method="POST" class="row g-3">
+            <form action="{{ route('pedidos.update', $pedido->idVenta) }}" method="POST" enctype="multipart/form-data" class="row g-3">
                 @csrf
                 @method('PUT')
 
@@ -109,6 +109,28 @@
                             <option value="{{ $k }}" {{ old('estadoPedido', (string)$pedido->estadoPedido) === (string)$k ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
+                </div>
+
+                <div class="col-12">
+                    <label for="imagenPedido" class="form-label">Imagen del Pedido</label>
+                    <input type="file" id="imagenPedido" name="imagenPedido" class="form-control" accept="image/*">
+                    {{-- Mostrar imagen desde diseños --}}
+                    @if($pedido->disenos && $pedido->disenos->first() && $pedido->disenos->first()->archivo)
+                        <div class="mt-2 position-relative" style="display: inline-block;">
+                            <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}" alt="Imagen del pedido" class="img-thumbnail" style="max-width: 200px; height: auto;">
+                            <button type="button" class="btn btn-sm btn-outline-danger position-absolute" style="top: 5px; right: 5px; padding: 2px 6px;" onclick="confirmDeleteImage()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="delete_imagen" name="delete_imagen" value="1" style="display: none;">
+                            <label class="form-check-label" for="delete_imagen">
+                                Eliminar imagen actual (se activa al confirmar)
+                            </label>
+                        </div>
+                    @else
+                        <p><small>No hay imagen asociada a este pedido desde diseños.</small></p>
+                    @endif
                 </div>
 
                 <div class="col-12 d-flex justify-content-end mt-2">
@@ -425,6 +447,14 @@
                 initBloqueEvents(bloque);
             });
         })();
+    </script>
+
+    <script>
+        function confirmDeleteImage() {
+            if (confirm('¿Estás seguro de que deseas eliminar la imagen actual?')) {
+                document.getElementById('delete_imagen').checked = true;
+            }
+        }
     </script>
     @endpush
 </div>
