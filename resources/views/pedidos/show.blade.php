@@ -64,6 +64,18 @@
                 </div>
             </div>
 
+            {{-- Mostrar diseño si existe --}}
+            @if ($disenoUrl)
+            <div>
+                <h3>Diseño elegido:</h3>
+                <img src="{{ $disenoUrl }}" alt="Diseño personalizado" style="max-width: 100%; height: auto;">
+            </div>
+            @else
+            <div>
+                <p>No se ha elegido un diseño todavía.</p>
+            </div>
+            @endif
+
             {{-- Detalles del Pedido --}}
             <div class="card">
                 <div class="card-header">
@@ -219,6 +231,7 @@
                             </li>
                             @endif
                             
+
                             @if($pedido->cliente->telefono)
                             <li class="mb-2">
                                 <i class="fas fa-phone me-2 text-muted"></i>
@@ -227,26 +240,15 @@
                                 </a>
                             </li>
                             @endif
-                            
+
                             @if($pedido->cliente->direccion)
                             <li class="mb-2">
                                 <i class="fas fa-map-marker-alt me-2 text-muted"></i>
                                 {{ $pedido->cliente->direccion }}
                             </li>
                             @endif
-                            
-                            @if($pedido->cliente->tipo === 'empresarial' && $pedido->cliente->ruc)
-                            <li class="mb-2">
-                                <i class="fas fa-building me-2 text-muted"></i>
-                                RUC: {{ $pedido->cliente->ruc }}
-                            </li>
-                            @endif
                         </ul>
                         
-                        <a href="{{ $pedido->cliente->tipo === 'natural' ? route('clienteNatural.show', $pedido->cliente->idCliente) : route('clienteEstablecimiento.show', $pedido->cliente->idCliente) }}" 
-                           class="btn btn-sm btn-outline-primary w-100 mt-2">
-                            <i class="fas fa-user-circle me-1"></i> Ver perfil del cliente
-                        </a>
                     @else
                         <div class="text-center py-3">
                             <i class="fas fa-user-slash fa-2x text-muted mb-2"></i>
@@ -307,152 +309,4 @@
         </div>
     </div>
 </div>
-
-{{-- Modal para confirmar cambio de estado a Completado --}}
-<div class="modal fade" id="marcarComoCompletadoModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-check-circle me-2"></i>
-                    Confirmar Pedido Completado
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>¿Estás seguro de marcar este pedido como <strong>completado</strong>?</p>
-                <p class="mb-0">Esta acción no se puede deshacer.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i> Cancelar
-                </button>
-                <form action="{{ route('pedidos.actualizar-estado', $pedido->idVenta) }}" method="POST" class="d-inline">
-                    @csrf
-                    @method('PATCH')
-                    <input type="hidden" name="estado" value="completado">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-check me-1"></i> Sí, marcar como completado
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Modal para confirmar cancelación --}}
-<div class="modal fade" id="cancelarPedidoModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Confirmar Cancelación
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>¿Estás seguro de cancelar este pedido?</p>
-                <div class="mb-3">
-                    <label for="motivoCancelacion" class="form-label">Motivo de cancelación (opcional):</label>
-                    <textarea class="form-control" id="motivoCancelacion" name="motivo" rows="3" placeholder="Especifica el motivo de la cancelación"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i> No, mantener pedido
-                </button>
-                <form action="{{ route('pedidos.actualizar-estado', $pedido->idVenta) }}" method="POST" class="d-inline">
-                    @csrf
-                    @method('PATCH')
-                    <input type="hidden" name="estado" value="cancelado">
-                    <input type="hidden" name="motivo_cancelacion" id="motivoCancelacionHidden">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-ban me-1"></i> Sí, cancelar pedido
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-@push('styles')
-<style>
-    /* Estilos para la línea de tiempo */
-    .timeline {
-        position: relative;
-        padding-left: 30px;
-    }
-    
-    .timeline:before {
-        content: '';
-        position: absolute;
-        left: 10px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background-color: #e9ecef;
-    }
-    
-    .timeline-item {
-        position: relative;
-        padding-bottom: 20px;
-    }
-    
-    .timeline-item:last-child {
-        padding-bottom: 0;
-    }
-    
-    .timeline-icon {
-        position: absolute;
-        left: -30px;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 12px;
-    }
-    
-    .timeline-content {
-        padding-left: 15px;
-    }
-    
-    .timeline-item.completed .timeline-content {
-        opacity: 0.7;
-    }
-    
-    .timeline-item.future .timeline-content {
-        opacity: 0.5;
-    }
-    
-    .timeline-item.active .timeline-content {
-        font-weight: 500;
-    }
-    
-    /* Estilos para el avatar del cliente */
-    .avatar {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-    }
-</style>
-@endpush
-
-@push('scripts')
-<script>
-    // Capturar el motivo de cancelación y asignarlo al campo oculto
-    document.getElementById('cancelarPedidoModal').addEventListener('show.bs.modal', function () {
-        const motivoInput = document.getElementById('motivoCancelacion');
-        const motivoHidden = document.getElementById('motivoCancelacionHidden');
-        
-        motivoInput.addEventListener('input', function() {
-            motivoHidden.value = this.value;
-        });
-    });
-</script>
-@endpush
 @endsection

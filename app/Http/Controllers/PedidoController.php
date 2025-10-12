@@ -846,12 +846,20 @@ class PedidoController extends Controller
     {
         $pedido = Venta::with([
             'detalleVentas.talla',
+            'detalleVentas.diseno',
             'clienteNatural',
             'clienteEstablecimiento',
             'empleado'
         ])->findOrFail($pedido);
 
-        return view('pedidos.show', compact('pedido'));
+        // Verificar si hay un diseño temporal cargado en la sesión
+        $disenoUrl = null;
+        if (session()->has('disenoTemporal')) {
+            $disenoUrl = asset('storage/' . session()->get('disenoTemporal'));
+        }
+
+        return view('pedidos.show', compact('pedido', 'disenoUrl')); // Pasamos disenoUrl a la vista
+
     }
 
     /**
