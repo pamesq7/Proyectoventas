@@ -24,7 +24,22 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label text-muted">Cliente:</label>
-                                <p class="mb-0">{{ $pedido->cliente->nombre ?? 'Cliente no especificado' }}</p>
+                                <p class="mb-0">
+                                    @php
+                                    if ($pedido->clienteNatural && $pedido->clienteNatural->user) {
+                                        $nombreCliente = trim($pedido->clienteNatural->user->name . ' ' .
+                                        $pedido->clienteNatural->user->primerApellido . ' ' .
+                                        ($pedido->clienteNatural->user->segundApellido ?? ''));
+                                    } elseif ($pedido->clienteEstablecimiento) {
+                                        $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ??
+                                        $pedido->clienteEstablecimiento->razonSocial ??
+                                        'Establecimiento';
+                                    } else {
+                                        $nombreCliente = 'Cliente no especificado';
+                                    }
+                                    @endphp
+                                    {{ $nombreCliente }}
+                                </p>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted">Fecha de creación:</label>
@@ -65,7 +80,7 @@
             </div>
 
             {{-- Mostrar imagen del pedido si existe --}}
-            @if ($pedido->imagenPedido)
+            @if ($pedido->disenos && $pedido->disenos->first() && $pedido->disenos->first()->archivo)
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -74,7 +89,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <img src="{{ asset('storage/' . $pedido->imagenPedido) }}" alt="Imagen del pedido" class="img-fluid" style="max-width: 100%; height: auto;">
+                    <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}" alt="Imagen del pedido" class="img-fluid" style="max-width: 100%; height: auto;">
                 </div>
             </div>
             @endif
@@ -104,27 +119,27 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             @if($detalle->producto && $detalle->producto->foto)
-                                                <img src="{{ asset('storage/' . $detalle->producto->foto) }}" 
-                                                     alt="{{ $detalle->producto->nombre }}" 
-                                                     class="me-2" 
+                                                <img src="{{ asset('storage/' . $detalle->producto->foto) }}"
+                                                     alt="{{ $detalle->producto->nombre }}"
+                                                     class="me-2"
                                                      style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
                                             @else
-                                                <div class="bg-light d-flex align-items-center justify-content-center me-2" 
+                                                <div class="bg-light d-flex align-items-center justify-content-center me-2"
                                                      style="width: 40px; height: 40px; border-radius: 4px;">
                                                     <i class="fas fa-box text-muted"></i>
                                                 </div>
                                             @endif
                                             <div>
                                                 <div class="fw-semibold">{{ $detalle->producto->nombre ?? 'Producto no disponible' }}</div>
-                                                @if($detalle->descripcion_adicional)
-                                                    <small class="text-muted">{{ $detalle->descripcion_adicional }}</small>
+                                                @if($detalle->descripcion)
+                                                    <small class="text-muted">{{ $detalle->descripcion }}</small>
                                                 @endif
                                             </div>
                                         </div>
                                     </td>
                                     <td class="text-center align-middle">{{ $detalle->cantidad }}</td>
-                                    <td class="text-end align-middle">${{ number_format($detalle->precio_unitario, 2) }}</td>
-                                    <td class="text-end align-middle fw-semibold">${{ number_format($detalle->precio_unitario * $detalle->cantidad, 2) }}</td>
+                                    <td class="text-end align-middle">${{ number_format($detalle->precioUnitario, 2) }}</td>
+                                    <td class="text-end align-middle fw-semibold">${{ number_format($detalle->precioUnitario * $detalle->cantidad, 2) }}</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -140,12 +155,6 @@
                                     <th colspan="3" class="text-end">Subtotal:</th>
                                     <th class="text-end">${{ number_format($pedido->subtotal, 2) }}</th>
                                 </tr>
-                                @if($pedido->descuento > 0)
-                                <tr>
-                                    <th colspan="3" class="text-end">Descuento:</th>
-                                    <th class="text-end text-danger">-${{ number_format($pedido->descuento, 2) }}</th>
-                                </tr>
-                                @endif
                                 <tr class="table-active">
                                     <th colspan="3" class="text-end">Total:</th>
                                     <th class="text-end">${{ number_format($pedido->total, 2) }}</th>
@@ -208,46 +217,66 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if($pedido->cliente)
+                    @if($pedido->clienteNatural || $pedido->clienteEstablecimiento)
                         <div class="d-flex align-items-center mb-3">
                             <div class="flex-shrink-0">
-                                <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
                                      style="width: 50px; height: 50px; font-size: 1.25rem;">
-                                    {{ substr($pedido->cliente->nombre, 0, 1) }}
+                                    {{ substr($nombreCliente, 0, 1) }}
                                 </div>
                             </div>
                             <div class="ms-3">
-                                <h6 class="mb-0">{{ $pedido->cliente->nombre }}</h6>
+                                <h6 class="mb-0">{{ $nombreCliente }}</h6>
                                 <small class="text-muted">
-                                    {{ $pedido->cliente->tipo === 'natural' ? 'Cliente Natural' : 'Cliente Empresarial' }}
+                                    @if($pedido->clienteNatural)
+                                        Cliente Natural
+                                    @elseif($pedido->clienteEstablecimiento)
+                                        Cliente Empresarial
+                                    @else
+                                        Cliente no especificado
+                                    @endif
                                 </small>
                             </div>
                         </div>
                         
                         <ul class="list-unstyled">
-                            @if($pedido->cliente->email)
+                            @php
+                            $email = null;
+                            $telefono = null;
+                            $direccion = null;
+                            if ($pedido->clienteNatural && $pedido->clienteNatural->user) {
+                                $email = $pedido->clienteNatural->user->email;
+                                $telefono = $pedido->clienteNatural->user->telefono;
+                                $direccion = $pedido->clienteNatural->user->direccion;
+                            } elseif ($pedido->clienteEstablecimiento) {
+                                $email = $pedido->clienteEstablecimiento->email;
+                                $telefono = $pedido->clienteEstablecimiento->telefono;
+                                $direccion = $pedido->clienteEstablecimiento->direccion;
+                            }
+                            @endphp
+
+                            @if($email)
                             <li class="mb-2">
                                 <i class="fas fa-envelope me-2 text-muted"></i>
-                                <a href="mailto:{{ $pedido->cliente->email }}" class="text-decoration-none">
-                                    {{ $pedido->cliente->email }}
+                                <a href="mailto:{{ $email }}" class="text-decoration-none">
+                                    {{ $email }}
                                 </a>
                             </li>
                             @endif
-                            
 
-                            @if($pedido->cliente->telefono)
+                            @if($telefono)
                             <li class="mb-2">
                                 <i class="fas fa-phone me-2 text-muted"></i>
-                                <a href="tel:{{ $pedido->cliente->telefono }}" class="text-decoration-none">
-                                    {{ $pedido->cliente->telefono }}
+                                <a href="tel:{{ $telefono }}" class="text-decoration-none">
+                                    {{ $telefono }}
                                 </a>
                             </li>
                             @endif
 
-                            @if($pedido->cliente->direccion)
+                            @if($direccion)
                             <li class="mb-2">
                                 <i class="fas fa-map-marker-alt me-2 text-muted"></i>
-                                {{ $pedido->cliente->direccion }}
+                                {{ $direccion }}
                             </li>
                             @endif
                         </ul>

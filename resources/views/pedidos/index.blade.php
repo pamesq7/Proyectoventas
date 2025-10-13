@@ -168,18 +168,21 @@
 
 @push('scripts')
 <script>
-    // Inicializar DataTable
-    $(document).ready(function() {
-        $('#pedidosTable').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
-            },
-            "responsive": true,
-            "order": [
-                [0, "desc"]
-            ],
-            "pageLength": 25
-        });
+    // Inicializar Simple DataTable
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('pedidosTable')) {
+            new DataTable(document.getElementById('pedidosTable'), {
+                responsive: true,
+                paging: true,
+                searching: true,
+                ordering: true,
+                order: [[0, 'desc']],
+                pageLength: 25,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json'
+                }
+            });
+        }
     });
 </script>
 @endpush

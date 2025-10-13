@@ -192,6 +192,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('pedidos/{idVenta}/estado', [PedidoController::class, 'actualizarEstado'])->name('pedidos.actualizar-estado');
     Route::put('pedidos/{idVenta}/detalles', [PedidoController::class, 'updateDetalles'])->name('pedidos.update-detalles');
     Route::delete('pedidos/{idVenta}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
+    Route::delete('pedidos/{idVenta}/eliminar-imagen', [PedidoController::class, 'eliminarImagen'])->name('pedidos.eliminar-imagen');
     
     /*
      |--------------------------------------------------------------------------
