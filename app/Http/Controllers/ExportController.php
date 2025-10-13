@@ -308,15 +308,15 @@ class ExportController extends Controller
         $fechaFin = $request->get('fechaFin');
         $idEmpleado = $request->get('idEmpleado');
 
-        // Query base para pedidos (ventas)
+        // Query base para pedidos (ventas) - solo en estado 1
         $query = Venta::with([
             'empleado.user', 
             'clienteNatural.user', 
             'clienteEstablecimiento', 
             'detalleVentas.talla'
-        ]);
+        ])->where('estado', 1);
 
-        // Aplicar filtros
+        // Aplicar filtros adicionales
         if ($estadoPedido) {
             $query->where('estadoPedido', $estadoPedido);
         }

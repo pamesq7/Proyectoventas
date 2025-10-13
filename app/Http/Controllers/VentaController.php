@@ -20,6 +20,7 @@ class VentaController extends Controller
     public function index(Request $request)
     {
         $query = Venta::with(['empleado', 'clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla', 'transacciones'])
+            ->where('estado', 1) // Solo mostrar ventas en estado 1
             ->orderBy('created_at', 'desc');
 
         // Filtro por estado de pago
