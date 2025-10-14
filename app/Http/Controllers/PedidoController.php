@@ -1156,10 +1156,13 @@ class PedidoController extends Controller
                 ]);
             }
 
-            $pagos = $pedido->transacciones
+            // Recalcular pagos acumulados desde la base de datos (datos más actualizados)
+            $pagosAcumulados = Transaccion::where('idVenta', $pedido->idVenta)
                 ->where('tipoTransaccion', 'pago')
                 ->sum('monto');
-            $pedido->saldo = max($pedido->total - (float) $pagos, 0);
+
+            // Calcular saldo correctamente con datos frescos
+            $pedido->saldo = max($pedido->total - (float) $pagosAcumulados, 0);
             $pedido->save();
 
             DB::commit();

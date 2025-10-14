@@ -179,8 +179,8 @@
                                 <div class="card-body">
                                     <h6 class="card-title">Información del Sistema</h6>
                                     <p><strong>ID:</strong> #{{ $producto->idProducto }}</p>
-                                    <p><strong>Creado:</strong> {{ $producto->created_at->format('d/m/Y H:i') }}</p>
-                                    <p><strong>Actualizado:</strong> {{ $producto->updated_at->format('d/m/Y H:i') }}</p>
+                                    <p><strong>Creado:</strong> {{ $producto->created_at ? $producto->created_at->format('d/m/Y H:i') : 'No disponible' }}</p>
+                                    <p><strong>Actualizado:</strong> {{ $producto->updated_at ? $producto->updated_at->format('d/m/Y H:i') : 'No disponible' }}</p>
                                     <p><strong>Estado:</strong> 
                                         <span class="badge {{ $producto->estado ? 'bg-success' : 'bg-danger' }}">
                                             {{ $producto->estado ? 'Activo' : 'Inactivo' }}
