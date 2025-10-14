@@ -51,7 +51,7 @@
                                         <table class="table table-striped">
                                             <thead>
                                                 <tr>
-                                                    <th>ID</th>
+                                                    <th>N°</th>
                                                     <th>Fecha</th>
                                                     <th>Total</th>
                                                     <th>Estado</th>
@@ -60,7 +60,7 @@
                                             <tbody>
                                                 @forelse (App\Models\Venta::latest()->take(5)->get() as $venta)
                                                     <tr>
-                                                        <td>{{ $venta->idVenta }}</td>
+                                                        <td>{{ $loop->iteration }}</td>
                                                         <td>{{ $venta->fechaEntrega->format('d/m/Y') }}</td>
                                                         <td>{{ number_format($venta->total, 2) }} Bs.</td>
                                                         <td><span class="badge bg-{{ $venta->estado == 'completado' ? 'success' : 'warning' }}">{{ ucfirst($venta->estado) }}</span></td>

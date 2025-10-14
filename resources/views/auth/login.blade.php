@@ -7,13 +7,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ asset('css/auth.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background-image: url("{{ asset('storage/images/fondo.jpg') }}"); /* Imagen de fondo subida por el usuario (ajusta el nombre si es diferente, ej. fondo.png) */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+    </style>
 </head>
 <body>
     <div class="auth-container">
         <div class="logo">
-            <img src="{{ asset('img/logo.png') }}" alt="Logo">
-            <h1>Iniciar Sesión</h1>
-            <p class="text-muted">Ingresa tus credenciales para acceder</p>
+            <i class="fas fa-user-circle fa-2x text-primary mb-2"></i> <!-- Ícono de usuario en lila -->
+            <img src="{{ asset('img/logo.png') }}" alt="Logo" onerror="this.style.display='none';">
+            <h1>Iniciar Sesión <i class="fas fa-shield-alt text-primary"></i></h1>
+            <p class="text-muted">Ingresa tus credenciales para acceder al portal</p>
         </div>
 
         @if(session('status'))
@@ -38,7 +47,7 @@
                         required 
                         autocomplete="email" 
                         autofocus
-                        placeholder="Ingresa tu correo electrónico"
+                        placeholder="tucorreo@ejemplo.com"
                     >
                     @error('email')
                         <div class="invalid-feedback">
@@ -66,7 +75,7 @@
                         name="password" 
                         required 
                         autocomplete="current-password"
-                        placeholder="Ingresa tu contraseña"
+                        placeholder="••••••••"
                     >
                     <button class="btn btn-outline-secondary toggle-password" type="button">
                         <i class="far fa-eye"></i>
@@ -87,12 +96,12 @@
             </div>
 
             <button type="submit" class="btn btn-login btn-auth mb-3">
-                <i class="fas fa-sign-in-alt me-2"></i> Iniciar Sesión
+                <i class="fas fa-sign-in-alt me-2"></i> Entrar al Portal
             </button>
 
             <div class="auth-links">
                 ¿No tienes una cuenta? 
-                <a href="{{ route('register') }}">Regístrate aquí</a>
+                <a href="{{ route('register') }}">Regístrate Aquí</a>
             </div>
         </form>
 

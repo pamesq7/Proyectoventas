@@ -60,6 +60,7 @@ class ProductoController extends Controller
             'categoria',
             'variante'
         ])->where('estado', 1)
+          ->whereNotIn('idProducto', [1, 2, 3, 4])  // Excluir productos con IDs 1, 2, 3, 4
           ->orderBy('nombre', 'asc')
           ->get();
           

@@ -87,10 +87,9 @@
                                             name="tipoEstablecimiento"
                                             required>
                                         <option value="">Seleccione el tipo</option>
-                                        <option value="Empresa Privada" {{ old('tipoEstablecimiento') == 'Empresa Privada' ? 'selected' : '' }}>Empresa Privada</option>
-                                        <option value="Institución Pública" {{ old('tipoEstablecimiento') == 'Institución Pública' ? 'selected' : '' }}>Institución Pública</option>
-                                        <option value="ONG" {{ old('tipoEstablecimiento') == 'ONG' ? 'selected' : '' }}>ONG</option>
-                                        <option value="Cooperativa" {{ old('tipoEstablecimiento') == 'Cooperativa' ? 'selected' : '' }}>Cooperativa</option>
+                                        <option value="Colegio" {{ old('tipoEstablecimiento') == 'Colegio' ? 'selected' : '' }}>Colegio</option>
+                                        <option value="Institución Alcaldía" {{ old('tipoEstablecimiento') == 'Institución Alcaldía' ? 'selected' : '' }}>Institución Alcaldía</option>
+                                        <option value="Escuela de Fútbol o Basket" {{ old('tipoEstablecimiento') == 'Escuela de Fútbol o Basket' ? 'selected' : '' }}>Escuela de Fútbol o Basket</option>
                                         <option value="Otro" {{ old('tipoEstablecimiento') == 'Otro' ? 'selected' : '' }}>Otro</option>
                                     </select>
                                     @error('tipoEstablecimiento')

@@ -1,12 +1,18 @@
 /* Estilos generales para páginas de autenticación */
 body {
-    background-color: #f8f9fa;
+    background: linear-gradient(135deg, #28a745 0%, #1e3c72 100%); /* Gradiente deportivo verde/negro */
     height: 100vh;
     display: flex;
     align-items: center;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 15px;
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .auth-container {
@@ -14,9 +20,22 @@ body {
     width: 100%;
     margin: 0 auto;
     padding: 2.5rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.95); /* Fondo semi-transparente para resaltar */
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px); /* Efecto vidrio */
+    animation: slideIn 0.8s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .logo {
@@ -47,8 +66,8 @@ body {
 }
 
 .form-control:focus {
-    border-color: #4e73df;
-    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    border-color: #6f42c1; /* Lila para focus */
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
 }
 
 .form-group {
@@ -75,13 +94,14 @@ body {
 }
 
 .btn-login {
-    background-color: #4e73df;
+    background-color: #6f42c1; /* Lila para login */
     color: white;
 }
 
 .btn-login:hover {
-    background-color: #2e59d9;
-    transform: translateY(-1px);
+    background-color: #5a359a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .btn-register {
@@ -91,7 +111,8 @@ body {
 
 .btn-register:hover {
     background-color: #17a673;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .auth-footer {
@@ -107,14 +128,14 @@ body {
 }
 
 .auth-links a {
-    color: #4e73df;
+    color: #6f42c1; /* Lila para enlaces */
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s ease;
 }
 
 .auth-links a:hover {
-    color: #2e59d9;
+    color: #218838;
     text-decoration: underline;
 }
 
@@ -174,8 +195,8 @@ body {
 }
 
 .form-check-input:checked {
-    background-color: #4e73df;
-    border-color: #4e73df;
+    background-color: #6f42c1; /* Lila para checkbox */
+    border-color: #6f42c1;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
 }
 
