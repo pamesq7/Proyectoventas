@@ -51,10 +51,10 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    
+
     // Dashboard principal
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    
+
     /*
      |--------------------------------------------------------------------------
      | Gestión de Ventas
@@ -67,26 +67,26 @@ Route::middleware('auth')->group(function () {
     Route::post('ventas', [VentaController::class, 'store'])->name('ventas.store');
     Route::get('ventas/{id}', [VentaController::class, 'show'])->name('ventas.show');
     Route::post('ventas/{id}/estado', [VentaController::class, 'actualizarEstado'])->name('ventas.actualizar-estado');
-    
+
     // Gestión de pagos
     Route::get('pagos', [PagoController::class, 'index'])->name('pagos.index');
     Route::get('pagos/{id}/edit', [PagoController::class, 'editPago'])->name('pagos.edit');
     Route::put('pagos/{id}', [PagoController::class, 'updatePago'])->name('pagos.update');
-    
+
     /*
      |--------------------------------------------------------------------------
      | Reportes
      |--------------------------------------------------------------------------
      */
     Route::get('reportes', [ReporteController::class, 'index'])->name('reportes.index');
-    
+
     /*
      |--------------------------------------------------------------------------
      | Gestión de Usuarios
      |--------------------------------------------------------------------------
      */
     Route::resource('users', UserController::class);
-    
+
     /*
      |--------------------------------------------------------------------------
      | Gestión de Clientes
@@ -96,19 +96,19 @@ Route::middleware('auth')->group(function () {
     Route::resource('clienteNatural', ClienteNaturalController::class);
     Route::get('clienteNatural/{clienteNatural}/estadisticas', [ClienteNaturalController::class, 'estadisticas'])->name('clienteNatural.estadisticas');
     Route::patch('clienteNatural/{clienteNatural}/toggle-estado', [ClienteNaturalController::class, 'toggleEstado'])->name('clienteNatural.toggleEstado');
-    
+
     // Clientes Establecimientos
     Route::resource('clienteEstablecimiento', ClienteEstablecimientoController::class);
     Route::get('clienteEstablecimiento/{clienteEstablecimiento}/estadisticas', [ClienteEstablecimientoController::class, 'estadisticas'])->name('clienteEstablecimiento.estadisticas');
     Route::patch('clienteEstablecimiento/{clienteEstablecimiento}/toggle-estado', [ClienteEstablecimientoController::class, 'toggleEstado'])->name('clienteEstablecimiento.toggleEstado');
-    
+
     /*
      |--------------------------------------------------------------------------
      | Configuración
      |--------------------------------------------------------------------------
      */
     Route::get('configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
-    
+
     /*
      |--------------------------------------------------------------------------
      | Gestión de Productos y Sistema
@@ -117,19 +117,21 @@ Route::middleware('auth')->group(function () {
     // Categorías
     Route::resource('categorias', CategoriaController::class);
     Route::patch('categorias/{categoria}/toggle', [CategoriaController::class, 'toggleEstado'])->name('categorias.toggleEstado');
-    
+    Route::delete('/productos/{producto}/eliminar-imagen', [ProductoController::class, 'eliminarImagen'])->name('productos.eliminar-imagen');
+   
+   
     // Opciones
     Route::resource('opciones', OpcionController::class)->parameters(['opciones' => 'opcion']);
     Route::patch('opciones/{opcion}/toggle-estado', [OpcionController::class, 'toggleEstado'])->name('opciones.toggleEstado');
-    
+
     // Características
     Route::resource('caracteristicas', CaracteristicaController::class)->parameters(['caracteristicas' => 'caracteristica']);
     Route::get('api/opciones/{idOpcion}/caracteristicas', [CaracteristicaController::class, 'getByOpcion'])->name('api.caracteristicas.by-opcion');
     Route::get('caracteristicas/por-opcion/{idOpcion}', [CaracteristicaController::class, 'getByOpcion'])->name('caracteristicas.por-opcion');
-    
+
     // Variantes
     Route::resource('variantes', VarianteController::class);
-    
+
     // Productos
     Route::resource('productos', ProductoController::class);
     Route::post('productos/{producto}/variantes/attach', [ProductoController::class, 'attachVariante'])->name('productos.attachVariante');
@@ -140,16 +142,16 @@ Route::middleware('auth')->group(function () {
     Route::post('productos/variante', [ProductoController::class, 'storeVariante'])->name('productos.storeVariante');
     Route::delete('productos/variante/{variante}', [ProductoController::class, 'deleteVariante'])->name('productos.deleteVariante');
     Route::get('productos/caracteristicas/{opcion}', [ProductoController::class, 'getCaracteristicasByOpcion'])->name('productos.caracteristicasByOpcion');
-    
+
     // Diseños
     Route::resource('disenos', DisenoController::class);
-    
+
     // Exportación de Diseños
     Route::get('/export/disenos/pdf', [ExportController::class, 'exportarDisenos'])->name('export.disenos.pdf');
-    
+
     // Exportación de Pedidos
     Route::get('/export/pedidos/pdf', [ExportController::class, 'exportarPedidos'])->name('export.pedidos.pdf');
-    
+
     /*
      |--------------------------------------------------------------------------
      | Gestión de Pedidos
@@ -160,11 +162,11 @@ Route::middleware('auth')->group(function () {
     Route::get('producto/{idProducto}/configurar', [PedidoController::class, 'configurarProducto'])->name('pedidos.configurar');
     Route::get('personalizar', [PedidoController::class, 'personalizarDiseno'])->name('pedidos.personalizar');
     Route::post('personalizar/iniciar', [PedidoController::class, 'iniciarPedidoConDiseno'])->name('pedidos.personalizar.iniciar');
-    
+
     // Nuevo pedido
     Route::get('pedidos/nuevo', [PedidoController::class, 'nuevoPedido'])->name('pedidos.nuevo');
     Route::post('pedidos/guardar-nuevo', [PedidoController::class, 'guardarNuevoPedido'])->name('pedidos.guardar-nuevo');
-    
+
     // APIs para UI dinámica
     Route::get('api/producto/{idProducto}/variantes', [PedidoController::class, 'apiVariantesPorProducto'])->name('api.variantes.producto');
     Route::get('api/producto/{idProducto}/opciones', [PedidoController::class, 'apiOpcionesPorProducto'])->name('api.opciones.producto');
@@ -173,7 +175,7 @@ Route::middleware('auth')->group(function () {
     Route::get('api/variante/{idVariante}/productos', [PedidoController::class, 'apiProductosPorVariante'])->name('api.variante.productos');
     Route::get('api/producto/{idProducto}/tallas-precios', [PedidoController::class, 'apiTallasPreciosPorProducto'])->name('api.producto.tallas-precios');
     Route::get('api/clientes/search', [PedidoController::class, 'apiBuscarClientes'])->name('api.clientes.search');
-    
+
     // Carrito y checkout
     Route::post('carrito/agregar', [PedidoController::class, 'agregarAlCarrito'])->name('pedidos.agregar-carrito');
     Route::get('carrito', [PedidoController::class, 'carrito'])->name('pedidos.carrito');
@@ -183,7 +185,7 @@ Route::middleware('auth')->group(function () {
     Route::get('pedido/{idVenta}/confirmacion', [PedidoController::class, 'confirmacion'])->name('pedidos.confirmacion');
     Route::post('pedidos/{idVenta}/detalle', [PedidoController::class, 'agregarDetalle'])->name('pedidos.detalle.agregar');
     Route::post('pedido/{idVenta}/pagos', [PedidoController::class, 'registrarPago'])->name('pedidos.registrar-pago');
-    
+
     // Administración de pedidos
     Route::get('pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
     Route::get('pedidos/{idVenta}', [PedidoController::class, 'show'])->name('pedidos.show');
@@ -193,7 +195,7 @@ Route::middleware('auth')->group(function () {
     Route::put('pedidos/{idVenta}/detalles', [PedidoController::class, 'updateDetalles'])->name('pedidos.update-detalles');
     Route::delete('pedidos/{idVenta}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
     Route::delete('pedidos/{idVenta}/eliminar-imagen', [PedidoController::class, 'eliminarImagen'])->name('pedidos.eliminar-imagen');
-    
+
     /*
      |--------------------------------------------------------------------------
      | Gestión de Empleados
@@ -202,7 +204,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('empleados', EmpleadoController::class);
     Route::patch('/empleados/{empleado}/toggle-estado', [EmpleadoController::class, 'toggleEstado'])->name('empleados.toggleEstado');
     Route::get('/empleados/{empleado}/estadisticas', [EmpleadoController::class, 'estadisticas'])->name('empleados.estadisticas');
-    
+
     /*
      |--------------------------------------------------------------------------
      | Exportación PDF

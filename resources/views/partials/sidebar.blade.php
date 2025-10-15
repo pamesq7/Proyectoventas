@@ -161,12 +161,6 @@
                     🛒 Catálogo
                 </a>
 
-                <!-- Personalizar mi diseño -->
-                <a class="nav-link" href="{{ route('pedidos.personalizar') }}">
-                    <div class="sb-nav-link-icon"><i class="fas fa-magic"></i></div>
-                    ✨ Personalizar mi diseño
-                </a>
-
                 <!-- Pedidos (Administración) -->
                 <a class="nav-link" href="{{ route('pedidos.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-clipboard-list"></i></div>

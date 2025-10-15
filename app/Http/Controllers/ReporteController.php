@@ -57,9 +57,67 @@ class ReporteController extends Controller
             'pendientes' => Venta::where('saldo', '>', 0)->count(),
         ];
 
-        return view('reportes.index', compact(
-            'estadisticas', 'ventasMesActual', 'topProductos', 
-            'estadosPedidos', 'estadosPago'
-        ));
+    /**
+     * Reporte de ventas mensuales
+     */
+    public function ventasMensuales(Request $request)
+    {
+        $añoSeleccionado = $request->get('año', date('Y'));
+
+        // Obtener años disponibles
+        $añosDisponibles = Venta::selectRaw('YEAR(created_at) as año')
+            ->distinct()
+            ->orderBy('año', 'desc')
+            ->pluck('año');
+
+        // Ventas mensuales del año seleccionado
+        $ventasMensuales = Venta::selectRaw('
+                MONTH(created_at) as mes_numero,
+                SUM(total) as total,
+                COUNT(*) as cantidad_ventas
+            ')
+            ->whereYear('created_at', $añoSeleccionado)
+            ->groupBy('mes_numero')
+            ->orderBy('mes_numero')
+            ->get();
+
+        // Crear array con todos los meses
+        $meses = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        $ventasCompletas = [];
+        foreach ($meses as $index => $mes) {
+            $ventaMes = $ventasMensuales->where('mes_numero', $index + 1)->first();
+            $ventasCompletas[] = [
+                'mes' => $mes,
+                'total' => $ventaMes ? $ventaMes->total : 0,
+                'cantidad_ventas' => $ventaMes ? $ventaMes->cantidad_ventas : 0
+            ];
+        }
+
+        // Cálculos
+        $totalAnual = array_sum(array_column($ventasCompletas, 'total'));
+        $promedioMensual = count($ventasCompletas) > 0 ? $totalAnual / count($ventasCompletas) : 0;
+
+        // Mes con mayor venta
+        $mesMayorVenta = collect($ventasCompletas)->sortByDesc('total')->first();
+        $mesMayorVenta = $mesMayorVenta ?: ['mes' => 'N/A', 'total' => 0];
+
+        // Mes con menor venta
+        $mesMenorVenta = collect($ventasCompletas)->sortBy('total')->first();
+        $mesMenorVenta = $mesMenorVenta ?: ['mes' => 'N/A', 'total' => 0];
+
+        $reporte = [
+            'ventasMensuales' => $ventasCompletas,
+            'totalAnual' => $totalAnual,
+            'promedioMensual' => $promedioMensual,
+            'mesMayorVenta' => $mesMayorVenta,
+            'mesMenorVenta' => $mesMenorVenta,
+            'añoSeleccionado' => $añoSeleccionado,
+            'añosDisponibles' => $añosDisponibles
+        ];
+
+        return view('reportes.ventas-mensuales', compact('reporte'));
     }
-}

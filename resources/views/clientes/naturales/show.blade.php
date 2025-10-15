@@ -126,92 +126,6 @@
                 </div>
             </div>
 
-            {{-- Historial de Ventas --}}
-            @if($ultimasVentas->count() > 0)
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-shopping-cart me-1"></i>
-                        Últimas Ventas ({{ $ultimasVentas->count() }})
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Productos</th>
-                                    <th>Subtotal</th>
-                                    <th>Total</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($ultimasVentas as $venta)
-                                <tr>
-                                    <td>
-                                        <div>{{ \Carbon\Carbon::parse($venta->fechaVenta)->format('d/m/Y') }}</div>
-                                        <small class="text-muted">{{ \Carbon\Carbon::parse($venta->fechaVenta)->format('H:i') }}</small>
-                                    </td>
-                                    <td>
-                                        <div>
-                                            @foreach($venta->detalleVentas->take(3) as $detalle)
-                                            <div class="small">
-                                                {{ $detalle->cantidad }}x {{ $detalle->producto ? $detalle->producto->nombre : 'Producto no disponible' }}
-                                            </div>
-                                            @endforeach
-                                            @if($venta->detalleVentas->count() > 3)
-                                            <small class="text-muted">
-                                                +{{ $venta->detalleVentas->count() - 3 }} más...
-                                            </small>
-                                            @endif
-                                        </div>
-                                    </td>
-                                    <td>Bs. {{ number_format($venta->subtotal, 2) }}</td>
-                                    <td>
-                                        <strong>Bs. {{ number_format($venta->total, 2) }}</strong>
-                                    </td>
-                                    <td>
-                                        @switch($venta->estado)
-                                        @case('pendiente')
-                                        <span class="badge bg-warning">Pendiente</span>
-                                        @break
-                                        @case('confirmado')
-                                        <span class="badge bg-info">Confirmado</span>
-                                        @break
-                                        @case('entregado')
-                                        <span class="badge bg-success">Entregado</span>
-                                        @break
-                                        @case('cancelado')
-                                        <span class="badge bg-danger">Cancelado</span>
-                                        @break
-                                        @default
-                                        <span class="badge bg-secondary">{{ ucfirst($venta->estado) }}</span>
-                                        @endswitch
-                                    </td>
-                                    <td>
-                                        <a href="#" class="btn btn-sm btn-outline-info" title="Ver detalles">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @if($estadisticas['total_ventas'] > 5)
-                    <div class="text-center mt-3">
-                        <a href="#" class="btn btn-outline-primary">
-                            <i class="fas fa-list me-1"></i>
-                            Ver Todas las Ventas ({{ $estadisticas['total_ventas'] }})
-                        </a>
-                    </div>
-                    @endif
-                </div>
-            </div>
-            @endif
         </div>
 
         {{-- Panel de Información del Sistema --}}
@@ -269,38 +183,10 @@
                             Editar Cliente
                         </a>
 
-                        {{-- Botón Nueva Venta --}}
-                        <a href="#" class="btn btn-success">
-                            <i class="fas fa-plus me-1"></i>
-                            Nueva Venta
-                        </a>
-
-                        {{-- Botón Ver Todas las Ventas --}}
-                        @if($estadisticas['total_ventas'] > 0)
-                        <a href="#" class="btn btn-info">
-                            <i class="fas fa-list me-1"></i>
-                            Ver Todas las Ventas
-                        </a>
-                        @endif
-
                         <a href="{{ route('clienteNatural.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-1"></i>
                             Volver a la Lista
                         </a>
-
-                        {{-- Botón Eliminar --}}
-                        <form action="{{ route('clienteNatural.destroy', $clienteNatural->idCliente) }}"
-                            method="POST"
-                            class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit"
-                                class="btn btn-danger w-100"
-                                onclick="return confirm('¿Estás seguro de que deseas eliminar el cliente {{ addslashes($clienteNatural->user->nombre_completo) }}? Se marcará como inactivo.')">
-                                <i class="fas fa-trash me-1"></i>
-                                Eliminar Cliente
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>

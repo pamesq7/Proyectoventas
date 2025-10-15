@@ -57,27 +57,29 @@
             @if($productos->count() > 0)
             <div class="table-responsive">
                 <table class="table table-striped table-hover" id="productosTable">
-                    <thead class="table-dark">
+                    <thead>
                         <tr>
-                            <th>Foto</th>
+                            <th>N°</th>
                             <th>SKU</th>
                             <th>Nombre</th>
                             <th>Categoría</th>
-                            <th>Variante</th>
                             <th>Precio Venta</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
                             <th>Fecha Creación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($productos as $producto)
+                        @php $contador = ($productos->currentPage() - 1) * $productos->perPage() + 1; @endphp
+                        @forelse($productos as $producto)
                         <tr>
+                            <td>{{ $contador++ }}</td>
                             <td>
-                            @php
+                                @php
                                     $imagenSrc = null;
                                     $altText = $producto->nombre;
 
-                                    // Solo una imagen: foto del producto O imagen del diseño (no ambas)
                                     if ($producto->foto) {
                                         $imagenSrc = asset('storage/' . $producto->foto);
                                         $altText = $producto->nombre;

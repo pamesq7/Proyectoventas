@@ -106,6 +106,7 @@
                         <table class="table table-bordered table-striped">
                             <thead class="thead-dark">
                                 <tr>
+                                    <th>N°</th>
                                     <th>Fecha</th>
                                     <th>Cliente</th>
                                     <th>Total</th>
@@ -115,8 +116,10 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php $contador = ($ventas->currentPage() - 1) * $ventas->perPage() + 1; @endphp
                                 @forelse($ventas as $venta)
                                 <tr>
+                                    <td>{{ $contador++ }}</td>
                                     <td>{{ $venta->created_at->format('d/m/Y') }}</td>
                                     <td>
                                         <strong>{{ $venta->nombre_cliente }}</strong>

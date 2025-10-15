@@ -32,10 +32,10 @@ class ProductoController extends Controller
         // Búsqueda por nombre o descripción
         if ($request->filled('buscar')) {
             $search = $request->buscar;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
-                  ->orWhere('descripcion', 'like', "%{$search}%")
-                  ->orWhere('codigo', 'like', "%{$search}%");
+                    ->orWhere('descripcion', 'like', "%{$search}%")
+                    ->orWhere('codigo', 'like', "%{$search}%");
             });
         }
 
@@ -60,10 +60,9 @@ class ProductoController extends Controller
             'categoria',
             'variante'
         ])->where('estado', 1)
-          ->whereNotIn('idProducto', [1, 2, 3, 4])  // Excluir productos con IDs 1, 2, 3, 4
-          ->orderBy('nombre', 'asc')
-          ->get();
-          
+            ->orderBy('nombre', 'asc')
+            ->paginate(10);  // Removí la exclusión de IDs 1,2,3,4 para mostrar todos los productos
+
         return view('productos.index', compact('productos'));
     }
 
@@ -74,10 +73,10 @@ class ProductoController extends Controller
     {
         $categorias = Categoria::where('estado', 1)->get();
         $variantes = \App\Models\Variante::where('estado', 1)->get();
-        $opciones = Opcion::with(['caracteristicas' => function($query) {
+        $opciones = Opcion::with(['caracteristicas' => function ($query) {
             $query->where('estado', 1);
         }])->where('estado', 1)->get();
-        
+
         return view('productos.create', compact('categorias', 'variantes', 'opciones'));
     }
 
@@ -88,7 +87,7 @@ class ProductoController extends Controller
     {
         Log::info('=== INICIO STORE PRODUCTO ===');
         Log::info('Datos recibidos:', $request->all());
-        
+
         try {
             // Validación de datos
             $validator = Validator::make($request->all(), [
@@ -172,10 +171,10 @@ class ProductoController extends Controller
                 if ($request->filled('disenos_vinculados')) {
                     $disenosIds = explode(',', $request->disenos_vinculados);
                     $disenosIds = array_filter($disenosIds); // Remover valores vacíos
-                    
+
                     if (!empty($disenosIds)) {
                         Log::info('Vinculando diseños:', $disenosIds);
-                        
+
                         // Preparar datos para la tabla pivot
                         $pivotData = [];
                         foreach ($disenosIds as $index => $disenoId) {
@@ -188,7 +187,7 @@ class ProductoController extends Controller
                                 'updated_at' => now()
                             ];
                         }
-                        
+
                         $producto->disenos()->attach($pivotData);
                         Log::info('Diseños vinculados exitosamente');
                     }
@@ -202,7 +201,6 @@ class ProductoController extends Controller
                     ->with('error', 'Error al crear el producto.')
                     ->withInput();
             }
-
         } catch (\Exception $e) {
             Log::error('EXCEPCIÓN en store():', [
                 'mensaje' => $e->getMessage(),
@@ -226,12 +224,12 @@ class ProductoController extends Controller
             'categoria',
             'variante.varianteCaracteristicas.caracteristica.opcion'
         ]);
-        
+
         // Cargar opciones para el modal de nueva variante (si es necesario)
-        $opciones = \App\Models\Opcion::with(['caracteristicas' => function($query) {
+        $opciones = \App\Models\Opcion::with(['caracteristicas' => function ($query) {
             $query->where('estado', 1)->orderBy('nombre');
         }])->where('estado', 1)->orderBy('nombre')->get();
-        
+
         return view('productos.show', compact('producto', 'opciones'));
     }
 
@@ -243,10 +241,10 @@ class ProductoController extends Controller
         $producto = Producto::with(['categoria', 'variante.varianteCaracteristicas.caracteristica.opcion'])->findOrFail($id);
         $categorias = Categoria::where('estado', 1)->get();
         $variantes = \App\Models\Variante::where('estado', 1)->get(); // Para el dropdown de selección
-        $opciones = Opcion::with(['caracteristicas' => function($query) {
+        $opciones = Opcion::with(['caracteristicas' => function ($query) {
             $query->where('estado', 1);
         }])->where('estado', 1)->get();
-        
+
         return view('productos.edit', compact('producto', 'categorias', 'variantes', 'opciones'));
     }
 
@@ -290,14 +288,14 @@ class ProductoController extends Controller
 
         try {
             $fotoPath = $producto->foto; // Mantener foto actual por defecto
-            
+
             // Manejar subida de nueva imagen
             if ($request->hasFile('foto')) {
                 // Eliminar foto anterior si existe
                 if ($producto->foto && Storage::disk('public')->exists($producto->foto)) {
                     Storage::disk('public')->delete($producto->foto);
                 }
-                
+
                 $foto = $request->file('foto');
                 $nombreArchivo = time() . '_' . Str::slug($request->nombre) . '.' . $foto->getClientOriginalExtension();
                 $fotoPath = $foto->storeAs('productos', $nombreArchivo, 'public');
@@ -325,6 +323,32 @@ class ProductoController extends Controller
     }
 
     /**
+     * Eliminar imagen del producto vía AJAX
+     */
+    public function eliminarImagen($idProducto)
+    {
+        try {
+            $producto = Producto::findOrFail($idProducto);
+
+            if ($producto->foto) {
+                // Eliminar archivo físico
+                Storage::delete('public/' . $producto->foto);
+
+                // Actualizar registro en BD
+                $producto->foto = null;
+                $producto->save();
+
+                Log::info('Imagen eliminada vía AJAX', ['idProducto' => $idProducto]);
+                return response()->json(['success' => true, 'message' => 'Imagen eliminada correctamente']);
+            } else {
+                return response()->json(['success' => false, 'message' => 'No se encontró imagen asociada'], 404);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error al eliminar imagen vía AJAX', ['idProducto' => $idProducto, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error al eliminar la imagen'], 500);
+        }
+    }
+    /**
      * Remove the specified resource from storage (Soft Delete).
      */
     public function destroy(Producto $producto)
@@ -333,7 +357,7 @@ class ProductoController extends Controller
             // Verificar si el producto tiene ventas asociadas
             // Aquí puedes agregar lógica para verificar si tiene detalles de venta
             // $ventasAsociadas = $producto->detalleVentas()->count();
-            
+
             // Eliminación lógica: cambiar estado a inactivo
             $producto->update(['estado' => 0]);
 
@@ -350,7 +374,7 @@ class ProductoController extends Controller
         $caracteristicas = Caracteristica::where('idOpcion', $opcionId)
             ->where('estado', 1)
             ->get();
-            
+
         return response()->json($caracteristicas);
     }
 
@@ -397,7 +421,7 @@ class ProductoController extends Controller
             foreach ($combinaciones as $combinacion) {
                 // Verificar si ya existe una variante con esta combinación
                 $varianteExistente = $this->verificarVarianteExistente($producto->idProducto, $combinacion);
-                
+
                 if ($varianteExistente) {
                     $variantesExistentes++;
                     continue;
@@ -439,7 +463,6 @@ class ProductoController extends Controller
                 'variantes_creadas' => $variantesCreadas,
                 'variantes_existentes' => $variantesExistentes
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -566,23 +589,24 @@ class ProductoController extends Controller
     private function generarCombinaciones($caracteristicasPorOpcion)
     {
         $opciones = $caracteristicasPorOpcion->values()->toArray();
-        
+
         if (empty($opciones)) {
             return [];
         }
 
         // Función recursiva para generar combinaciones
-        function combinar($arrays, $i = 0, $current = []) {
+        function combinar($arrays, $i = 0, $current = [])
+        {
             if ($i == count($arrays)) {
                 return [$current];
             }
-            
+
             $result = [];
             foreach ($arrays[$i] as $caracteristica) {
                 $newCombinations = combinar($arrays, $i + 1, array_merge($current, [$caracteristica->idCaracteristica]));
                 $result = array_merge($result, $newCombinations);
             }
-            
+
             return $result;
         }
 
@@ -601,7 +625,7 @@ class ProductoController extends Controller
         foreach ($variantes as $variante) {
             $caracteristicasVariante = $variante->caracteristicas->pluck('idCaracteristica')->sort()->values()->toArray();
             $combinacionOrdenada = collect($combinacion)->sort()->values()->toArray();
-            
+
             if ($caracteristicasVariante === $combinacionOrdenada) {
                 return true;
             }
@@ -619,7 +643,7 @@ class ProductoController extends Controller
             ->with('opcion')
             ->get();
 
-        $nombres = $caracteristicas->map(function($caracteristica) {
+        $nombres = $caracteristicas->map(function ($caracteristica) {
             return $caracteristica->nombre;
         })->toArray();
 
@@ -634,7 +658,7 @@ class ProductoController extends Controller
         $caracteristicas = Caracteristica::whereIn('idCaracteristica', $combinacion)
             ->get();
 
-        $sufijos = $caracteristicas->map(function($caracteristica) {
+        $sufijos = $caracteristicas->map(function ($caracteristica) {
             return strtoupper(substr($caracteristica->nombre, 0, 2));
         })->toArray();
 

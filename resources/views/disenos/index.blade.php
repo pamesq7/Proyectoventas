@@ -60,7 +60,7 @@
                         <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>N°</th>
                                     <th>Imagen</th>
                                     <th>Comentario</th>
                                     <th>Estado Diseño</th>
@@ -72,9 +72,10 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php $contador = ($disenos->currentPage() - 1) * $disenos->perPage() + 1; @endphp
                                 @forelse($disenos as $diseno)
                                     <tr>
-                                        <td>{{ $diseno->idDiseno }}</td>
+                                        <td>{{ $contador++ }}</td>
                                         <td style="width: 120px;">
                                             @if($diseno->archivo)
                                                 @php

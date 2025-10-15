@@ -41,42 +41,44 @@
                     @if($productos->count() > 0)
                         <div class="row">
                             @foreach($productos as $producto)
-                                <div class="col-md-3 mb-4">
-                                    <div class="card h-100 shadow-sm">
-                                        @if($producto->foto)
-                                            <img src="{{ asset('storage/' . $producto->foto) }}" 
-                                                 class="card-img-top" 
-                                                 alt="{{ $producto->nombre }}"
-                                                 style="height: 200px; object-fit: cover;">
-                                        @else
-                                            <div class="text-center py-5 bg-light">
-                                                <i class="fas fa-box-open fa-4x text-muted"></i>
-                                                <p class="mt-2 mb-0">Sin imagen</p>
+                                @if($loop->iteration > 4)
+                                    <div class="col-md-3 mb-4">
+                                        <div class="card h-100 shadow-sm">
+                                            @if($producto->foto)
+                                                <img src="{{ asset('storage/' . $producto->foto) }}" 
+                                                     class="card-img-top" 
+                                                     alt="{{ $producto->nombre }}"
+                                                     style="height: 200px; object-fit: cover;">
+                                            @else
+                                                <div class="text-center py-5 bg-light">
+                                                    <i class="fas fa-box-open fa-4x text-muted"></i>
+                                                    <p class="mt-2 mb-0">Sin imagen</p>
+                                                </div>
+                                            @endif
+                                            
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ $producto->nombre }}</h5>
+                                                <p class="card-text text-muted small">
+                                                    {{ Str::limit($producto->descripcion, 100, '...') }}
+                                                </p>
+                                                <p class="card-text">
+                                                    <strong>Código:</strong> {{ $producto->codigo }}<br>
+                                                    <strong>Categoría:</strong> {{ $producto->categoria->nombre ?? 'Sin categoría' }}
+                                                </p>
                                             </div>
-                                        @endif
-                                        
-                                        <div class="card-body">
-                                            <h5 class="card-title">{{ $producto->nombre }}</h5>
-                                            <p class="card-text text-muted small">
-                                                {{ Str::limit($producto->descripcion, 100, '...') }}
-                                            </p>
-                                            <p class="card-text">
-                                                <strong>Código:</strong> {{ $producto->codigo }}<br>
-                                                <strong>Categoría:</strong> {{ $producto->categoria->nombre ?? 'Sin categoría' }}
-                                            </p>
-                                        </div>
-                                        <div class="card-footer bg-white">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="h5 mb-0 text-primary">
-                                                    S/ {{ number_format($producto->precio, 2) }}
-                                                </span>
-                                                <span class="badge bg-{{ $producto->estado ? 'success' : 'secondary' }}">
-                                                    {{ $producto->estado ? 'Disponible' : 'No disponible' }}
-                                                </span>
+                                            <div class="card-footer bg-white">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="h5 mb-0 text-primary">
+                                                        S/ {{ number_format($producto->precio, 2) }}
+                                                    </span>
+                                                    <span class="badge bg-{{ $producto->estado ? 'success' : 'secondary' }}">
+                                                        {{ $producto->estado ? 'Disponible' : 'No disponible' }}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                @endif
                             @endforeach
                         </div>
 
