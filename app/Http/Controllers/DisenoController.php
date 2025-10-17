@@ -43,7 +43,11 @@ class DisenoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Diseno::with('empleado');
+        $query = Diseno::with([
+            'empleado.user',
+            'detalleVenta.venta.clienteNatural.user',
+            'detalleVenta.venta.clienteEstablecimiento.representante'
+        ]);
 
         // Filtro por estado del diseño
         if ($request->filled('estadoDiseno')) {

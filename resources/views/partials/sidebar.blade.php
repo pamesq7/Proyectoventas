@@ -196,6 +196,13 @@
                     <div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>
                     📈 Reportes
                 </a>
+                <!-- En tu sidebar o navbar -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('reportes.ventas-mensuales') }}">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Reportes de Ventas
+                    </a>
+                </li>
                 @endif
                 @endif
                 @endif

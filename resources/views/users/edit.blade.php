@@ -396,7 +396,7 @@
                                             <option value="vendedor" {{ old('rol', $user->empleado->rol) == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
                                             <option value="disenador" {{ old('rol', $user->empleado->rol) == 'disenador' ? 'selected' : '' }}>Diseñador</option>
                                             <option value="administrador" {{ old('rol', $user->empleado->rol) == 'administrador' ? 'selected' : '' }}>Administrador</option>
-                                            <option value="gerente" {{ old('rol', $user->empleado->rol) == 'gerente' ? 'selected' : '' }}>Gerente</option>
+                                            <option value="operador" {{ old('rol', $user->empleado->rol) == 'operador' ? 'selected' : '' }}>Operador</option>
                                         </select>
                                         @error('rol')
                                             <div class="invalid-feedback">{{ $message }}</div>

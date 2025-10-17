@@ -79,6 +79,13 @@ Route::middleware('auth')->group(function () {
      |--------------------------------------------------------------------------
      */
     Route::get('reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::prefix('reportes')->group(function () {
+        Route::get('/ventas-mensuales', [ReporteController::class, 'ventasMensuales'])->name('reportes.ventas-mensuales');
+        Route::get('/ventas-rango', [ReporteController::class, 'ventasRangoFechas'])->name('reportes.ventas-rango');
+        Route::get('/comparativa-anual', [ReporteController::class, 'comparativaAnual'])->name('reportes.comparativa-anual');
+    });
+
+
 
     /*
      |--------------------------------------------------------------------------
@@ -118,8 +125,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('categorias', CategoriaController::class);
     Route::patch('categorias/{categoria}/toggle', [CategoriaController::class, 'toggleEstado'])->name('categorias.toggleEstado');
     Route::delete('/productos/{producto}/eliminar-imagen', [ProductoController::class, 'eliminarImagen'])->name('productos.eliminar-imagen');
-   
-   
+
+
     // Opciones
     Route::resource('opciones', OpcionController::class)->parameters(['opciones' => 'opcion']);
     Route::patch('opciones/{opcion}/toggle-estado', [OpcionController::class, 'toggleEstado'])->name('opciones.toggleEstado');
