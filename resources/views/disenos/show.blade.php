@@ -39,7 +39,7 @@
                                 </tr>
                                 <tr>
                                     <th>ID Diseñador:</th>
-                                    <td>{{ $diseno->idDiseñador }}</td>
+                                    <td>{{ $diseno->idEmpleado}}</td>
                                 </tr>
                                 <tr>
                                     <th>Empleado:</th>

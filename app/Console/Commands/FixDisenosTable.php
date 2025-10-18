@@ -19,7 +19,7 @@ class FixDisenosTable extends Command
      *
      * @var string
      */
-    protected $description = 'Fix disenos table to make idEmpleado and idDiseñador nullable';
+    protected $description = 'Fix disenos table to make idEmpleado and idEmpleado nullable';
 
     /**
      * Execute the console command.
@@ -33,14 +33,14 @@ class FixDisenosTable extends Command
             DB::statement('ALTER TABLE disenos MODIFY COLUMN idEmpleado BIGINT UNSIGNED NULL');
             $this->info('✓ Campo idEmpleado modificado a nullable');
             
-            DB::statement('ALTER TABLE disenos MODIFY COLUMN idDiseñador BIGINT UNSIGNED NULL');
-            $this->info('✓ Campo idDiseñador modificado a nullable');
+            DB::statement('ALTER TABLE disenos MODIFY COLUMN idEmpleado BIGINT UNSIGNED NULL');
+            $this->info('✓ Campo idEmpleado modificado a nullable');
             
             // Verificar la estructura
             $columns = DB::select('DESCRIBE disenos');
             $this->info('Estructura actual de la tabla disenos:');
             foreach ($columns as $column) {
-                if (in_array($column->Field, ['idEmpleado', 'idDiseñador'])) {
+                if (in_array($column->Field, ['idEmpleado', 'idEmpleado'])) {
                     $this->line("- {$column->Field}: {$column->Type} | Null: {$column->Null}");
                 }
             }

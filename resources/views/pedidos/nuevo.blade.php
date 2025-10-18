@@ -62,11 +62,11 @@
                             {{-- 🔥 NUEVO CAMPO - ASIGNAR DISEÑADOR --}}
                             <div class="col-md-6">
                                 <label class="form-label">Asignar Diseñador *</label>
-                                <select name="idDiseñador" class="form-select" required>
+                                <select name="idEmpleado" class="form-select" required>
                                     <option value="">Seleccionar diseñador</option>
                                     @foreach($diseñadores as $diseñador)
                                     <option value="{{ $diseñador->idEmpleado }}"
-                                        {{ old('idDiseñador') == $diseñador->idEmpleado ? 'selected' : '' }}>
+                                        {{ old('idEmpleado') == $diseñador->idEmpleado ? 'selected' : '' }}>
                                         {{ $diseñador->user->name }} {{ $diseñador->user->primerApellido }}
                                         @if($diseñador->user->segundApellido)
                                         {{ $diseñador->user->segundApellido }}
@@ -76,6 +76,7 @@
                                 </select>
                                 <small class="text-muted">Diseñador responsable de este pedido</small>
                             </div>
+
 
                             <hr class="mt-3" />
 

@@ -95,7 +95,7 @@ class DisenoController extends Controller
         $validator = Validator::make($request->all(), [
             'comentario' => 'nullable|string|max:45',
             'estado' => 'required|integer|in:0,1',
-            'idDiseñador' => 'nullable|integer',
+            'idEmpleado' => 'nullable|integer',
             'estadoDiseño' => 'required|in:no realizado,en proceso,terminado',
             'idEmpleado' => 'nullable|exists:empleados,idEmpleado',
             'archivo' => 'nullable|file|mimes:svg,ai,psd,pdf,zip,jpg,png|max:10240'
@@ -127,7 +127,7 @@ class DisenoController extends Controller
                 'archivo' => $archivoPath,
                 'comentario' => $request->comentario,
                 'estado' => $request->estado,
-                'idDiseñador' => $request->idDiseñador,
+                'idEmpleado' => $request->idEmpleado,
                 'estadoDiseño' => $request->estadoDiseño,
                 'iddetalleVenta' => $request->iddetalleVenta, // nullable
                 'idEmpleado' => $request->idEmpleado
@@ -200,7 +200,7 @@ class DisenoController extends Controller
         $validator = Validator::make($request->all(), [
             'comentario' => 'nullable|string|max:45',
             'estado' => 'required|integer|in:0,1',
-            'idDiseñador' => 'nullable|integer',
+            'idEmpleado' => 'nullable|integer',
             'estadoDiseño' => 'required|in:no realizado,en proceso,terminado',
             'idEmpleado' => 'nullable|exists:empleados,idEmpleado',
             'archivo' => 'nullable|file|mimes:svg,ai,psd,pdf,zip,jpg,png|max:10240'
@@ -235,7 +235,7 @@ class DisenoController extends Controller
             $diseno->update([
                 'comentario' => $request->comentario,
                 'estado' => $request->estado,
-                'idDiseñador' => $request->idDiseñador,
+                'idEmpleado' => $request->idEmpleado,
                 'estadoDiseño' => $request->estadoDiseño,
                 'iddetalleVenta' => $request->iddetalleVenta,
                 'idEmpleado' => $request->idEmpleado

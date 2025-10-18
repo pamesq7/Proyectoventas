@@ -74,17 +74,17 @@
                     <tbody>
                         @foreach($pedidos as $pedido)
                         <tr>
-                        <td>{{ $pedido->contador }}</td>
+                            <td>{{ $pedido->contador }}</td>
                             <td>
                                 @php
                                 if ($pedido->clienteNatural && $pedido->clienteNatural->user) {
-                                    $nombreCliente = trim($pedido->clienteNatural->user->name . ' ' . 
-                                                         $pedido->clienteNatural->user->primerApellido . ' ' . 
-                                                         ($pedido->clienteNatural->user->segundApellido ?? ''));
+                                $nombreCliente = trim($pedido->clienteNatural->user->name . ' ' .
+                                $pedido->clienteNatural->user->primerApellido . ' ' .
+                                ($pedido->clienteNatural->user->segundApellido ?? ''));
                                 } elseif ($pedido->clienteEstablecimiento) {
-                                    $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ?? '—';
+                                $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ?? '—';
                                 } else {
-                                    $nombreCliente = '—';
+                                $nombreCliente = '—';
                                 }
                                 @endphp
                                 {{ $nombreCliente }}
@@ -92,9 +92,9 @@
                             <td>
                                 {{-- Mostrar imagen del diseño si existe --}}
                                 @if($pedido->disenos && $pedido->disenos->first() && $pedido->disenos->first()->archivo)
-                                    <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}" alt="Diseño del pedido" style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 4px;">
+                                <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}" alt="Diseño del pedido" style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 4px;">
                                 @else
-                                    <span class="text-muted">Sin imagen</span>
+                                <span class="text-muted">Sin imagen</span>
                                 @endif
                             </td>
                             <td>
@@ -102,11 +102,14 @@
                                 @php
                                 $diseno = $pedido->disenos->first();
                                 $nombreDiseñador = $diseno && $diseno->empleado && $diseno->empleado->user
-                                    ? trim($diseno->empleado->user->name . ' ' . $diseno->empleado->user->primerApellido . ' ' . ($diseno->empleado->user->segundApellido ?? ''))
-                                    : 'No asignado';
+                                ? trim($diseno->empleado->user->name . ' ' . $diseno->empleado->user->primerApellido . ' ' . ($diseno->empleado->user->segundApellido ?? ''))
+                                : 'No asignado';
                                 @endphp
                                 {{ $nombreDiseñador }}
                             </td>
+
+
+
                             <td>
                                 <span class="fw-bold text-success">${{ number_format($pedido->total, 0) }}</span>
                             </td>
@@ -118,11 +121,11 @@
                             <td>
                                 @php
                                 $estados = [
-                                    '0' => ['nombre' => 'En Diseño', 'badge' => 'info', 'icon' => '🎨'],
-                                    '1' => ['nombre' => 'Producción', 'badge' => 'warning', 'icon' => '⚙️'],
-                                    '2' => ['nombre' => 'Terminado', 'badge' => 'success', 'icon' => '✅'],
-                                    '3' => ['nombre' => 'Entregado', 'badge' => 'primary', 'icon' => '📦'],
-                                    '4' => ['nombre' => 'Cancelado', 'badge' => 'danger', 'icon' => '❌']
+                                '0' => ['nombre' => 'En Diseño', 'badge' => 'info', 'icon' => '🎨'],
+                                '1' => ['nombre' => 'Producción', 'badge' => 'warning', 'icon' => '⚙️'],
+                                '2' => ['nombre' => 'Terminado', 'badge' => 'success', 'icon' => '✅'],
+                                '3' => ['nombre' => 'Entregado', 'badge' => 'primary', 'icon' => '📦'],
+                                '4' => ['nombre' => 'Cancelado', 'badge' => 'danger', 'icon' => '❌']
                                 ];
                                 $estadoKey = (string)($pedido->estadoPedido ?? '0');
                                 $estadoActual = $estados[$estadoKey] ?? $estados['0'];
@@ -187,7 +190,9 @@
                 paging: true,
                 searching: true,
                 ordering: true,
-                order: [[0, 'desc']],
+                order: [
+                    [0, 'desc']
+                ],
                 pageLength: 25,
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json'

@@ -133,7 +133,7 @@
                                             {{ ucfirst($diseno->estadoDiseño) }}
                                         </span>
                                     </td>
-                                    <td>{{ $diseno->idDiseñador ?? 'N/A' }}</td>
+                                    <td>{{ $diseno->idEmpleado ?? 'N/A' }}</td>
 
                                     <td>
                                         @if($diseno->detalleVenta && $diseno->detalleVenta->venta)
