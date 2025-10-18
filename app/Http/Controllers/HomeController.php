@@ -11,8 +11,8 @@ class HomeController extends Controller
         if (auth()->check()) {
             $user = auth()->user();
 
-            if ($user->empleado) {
-                switch (strtolower(trim($user->empleado->cargo))) {
+            if ($user->empleado)
+                switch (strtolower(trim($user->empleado->rol))) {
                     case 'administrador':
                         return redirect()->route('dashboard.admin');
                     case 'diseñador':
@@ -24,13 +24,12 @@ class HomeController extends Controller
                     default:
                         return view('home');
                 }
-            }
-
-            return view('home');
+        } else {
+            // Si no es empleado, es cliente
+            return redirect()->route('dashboard.cliente');
         }
-
-        return view('home');
     }
+
     public function adminDashboard()
     {
         return view('dashboard.admin');

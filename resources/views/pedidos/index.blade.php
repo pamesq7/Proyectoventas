@@ -62,6 +62,7 @@
                             <th>#</th> <!-- Columna para el número consecutivo -->
                             <th>Cliente</th>
                             <th>Imagen</th> <!-- Nueva columna para la imagen del diseño -->
+                            <th>Diseñador</th> <!-- Columna para el diseñador asignado -->
                             <th>Total</th>
                             <th>Pago</th>
                             <th>Fecha Entrega</th>
@@ -95,6 +96,16 @@
                                 @else
                                     <span class="text-muted">Sin imagen</span>
                                 @endif
+                            </td>
+                            <td>
+                                {{-- Mostrar diseñador asignado --}}
+                                @php
+                                $diseno = $pedido->disenos->first();
+                                $nombreDiseñador = $diseno && $diseno->empleado && $diseno->empleado->user
+                                    ? trim($diseno->empleado->user->name . ' ' . $diseno->empleado->user->primerApellido . ' ' . ($diseno->empleado->user->segundApellido ?? ''))
+                                    : 'No asignado';
+                                @endphp
+                                {{ $nombreDiseñador }}
                             </td>
                             <td>
                                 <span class="fw-bold text-success">${{ number_format($pedido->total, 0) }}</span>

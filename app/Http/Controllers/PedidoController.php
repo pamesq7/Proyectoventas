@@ -274,13 +274,19 @@ class PedidoController extends Controller
         $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
         $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
 
+        // Obtener solo empleados con rol 'diseñador'
+        $diseñadores = Empleado::with('user')
+            ->where('rol', 'diseñador')
+            ->where('estado', 1)
+            ->get();
+
         // Mensaje informativo para admins sin diseño
         $mensaje = null;
         if ($esAdministrador && !$tieneDiseno) {
             session()->flash('info', 'Modo administrador: Puedes crear pedidos sin diseño. Los clientes normales necesitarán subir un diseño.');
         }
 
-        return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos'));
+        return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos', 'diseñadores'));
     }
 
     /**
@@ -293,25 +299,8 @@ class PedidoController extends Controller
                 ->with('error', 'No se encontró el diseño subido.');
         }
 
-        $request->validate([
-            'tipoCliente' => 'required|in:natural,establecimiento',
-            'idCliente' => 'required_if:tipoCliente,natural',
-            'idEstablecimiento' => 'required_if:tipoCliente,establecimiento',
-            'fechaEntrega' => 'required|date|after:today',
-            'lugarEntrega' => 'required|string|max:200',
-            'idProducto' => 'required|exists:productos,idProducto',
-            // Arrays de items
-            'idTalla' => 'required|array|min:1',
-            'idTalla.*' => 'required|exists:tallas,idTalla',
-            'cantidad' => 'required|array|min:1',
-            'cantidad.*' => 'required|integer|min:1',
-            'nombrePersonalizado' => 'nullable|array',
-            'numeroPersonalizado' => 'nullable|array',
-            'observaciones' => 'nullable|array',
-            // Pago
-            'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
-            'montoAdelanto' => 'nullable|numeric|min:0',
-        ]);
+            // Obtener el idDiseñador seleccionado
+            $idDiseñador = $request->input('idDiseñador');
 
         $producto = Producto::findOrFail($request->idProducto);
         $rutaDiseno = session()->get('disenoTemporal');
@@ -391,6 +380,7 @@ class PedidoController extends Controller
                     'archivo' => $rutaDiseno,
                     'idVenta' => $venta->idVenta,
                     'estado' => 1, // Agregar estado requerido
+                    'idEmpleado' => $idDiseñador, // Asignar diseñador
                 ]);
             }
 
@@ -418,6 +408,7 @@ class PedidoController extends Controller
                         'archivo' => $rutaDiseno,
                         'iddetalleVenta' => $primerDetalle->iddetalleVenta,
                         'estado' => 1,
+                        'idEmpleado' => $idDiseñador, // Asignar diseñador
                     ]);
                 }
             }
@@ -871,7 +862,7 @@ class PedidoController extends Controller
             'clienteEstablecimiento',
             'empleado',
             'detalleVentas',
-            'disenos' // Agregar relación con diseños para mostrar imágenes en la tabla
+            'disenos.empleado' // Agregar relación con diseños para mostrar imágenes en la tabla y diseñador asignado
         ])->where('estado', 1)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -1046,22 +1037,24 @@ class PedidoController extends Controller
         $pedido = Venta::with('transacciones')->findOrFail($idVenta);
 
         $request->validate([
-            'row_id' => 'required|array|min:1',
-            'row_id.*' => 'nullable|integer',
+            'tipoCliente' => 'required|in:natural,establecimiento',
+            'idCliente' => 'required_if:tipoCliente,natural',
+            'idEstablecimiento' => 'required_if:tipoCliente,establecimiento',
+            'fechaEntrega' => 'required|date|after:today',
+            'lugarEntrega' => 'required|string|max:200',
+            'idProducto' => 'required|exists:productos,idProducto',
+            'idDiseñador' => 'nullable|exists:empleados,idEmpleado', // Validar diseñador
+            // Arrays de items
             'idTalla' => 'required|array|min:1',
             'idTalla.*' => 'required|exists:tallas,idTalla',
             'cantidad' => 'required|array|min:1',
             'cantidad.*' => 'required|integer|min:1',
-            'precioUnitario' => 'required|array|min:1',
-            'precioUnitario.*' => 'required|numeric|min:0',
             'nombrePersonalizado' => 'nullable|array',
             'numeroPersonalizado' => 'nullable|array',
-            'observacion' => 'nullable|array',
-            'descripcion' => 'nullable|array',
-            // Pago opcional
+            'observaciones' => 'nullable|array',
+            // Pago
             'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
             'montoAdelanto' => 'nullable|numeric|min:0',
-            // delete_ids puede venir como array o como CSV string
         ]);
 
         DB::beginTransaction();
@@ -1409,5 +1402,27 @@ class PedidoController extends Controller
         $pedidos = $query->latest()->paginate(10);
 
         return view('pedidos.asignados', compact('pedidos'));
+    }
+    public function create()
+    {
+        // Obtener solo empleados con rol 'diseñador'
+        $diseñadores = Empleado::with('user')
+            ->where('rol', 'diseñador')
+            ->where('estado', 1)
+            ->get();
+
+        // Tus otras variables existentes
+        $productos = Producto::where('estado', 1)->get();
+        $tallas = Talla::where('estado', 1)->get();
+        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
+
+        return view('pedidos.nuevo', compact(
+            'productos',
+            'tallas',
+            'clientesNaturales',
+            'clientesEstablecimientos',
+            'diseñadores'
+        ));
     }
 }

@@ -59,6 +59,24 @@
                                 <input type="text" name="lugarEntrega" class="form-control" value="{{ old('lugarEntrega','Recojo en tienda') }}" required>
                             </div>
 
+                            {{-- 🔥 NUEVO CAMPO - ASIGNAR DISEÑADOR --}}
+                            <div class="col-md-6">
+                                <label class="form-label">Asignar Diseñador *</label>
+                                <select name="idDiseñador" class="form-select" required>
+                                    <option value="">Seleccionar diseñador</option>
+                                    @foreach($diseñadores as $diseñador)
+                                    <option value="{{ $diseñador->idEmpleado }}"
+                                        {{ old('idDiseñador') == $diseñador->idEmpleado ? 'selected' : '' }}>
+                                        {{ $diseñador->user->name }} {{ $diseñador->user->primerApellido }}
+                                        @if($diseñador->user->segundApellido)
+                                        {{ $diseñador->user->segundApellido }}
+                                        @endif
+                                    </option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Diseñador responsable de este pedido</small>
+                            </div>
+
                             <hr class="mt-3" />
 
                             <div class="col-12">

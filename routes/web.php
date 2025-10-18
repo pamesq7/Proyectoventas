@@ -45,12 +45,24 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 
+
+
 // =========================================================================
 // RUTAS PROTEGIDAS (REQUIEREN AUTENTICACIÓN)
 // =========================================================================
 Route::middleware('auth')->group(function () {
-    // Logout
+    // Logout disponible para TODOS los usuarios autenticados
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::get('/admin/dashboard', [HomeController::class, 'adminDashboard'])->name('dashboard.admin');
+    Route::get('/vendedor/dashboard', [HomeController::class, 'vendedorDashboard'])->name('dashboard.vendedor');
+    Route::get('/disenador/dashboard', [HomeController::class, 'disenadorDashboard'])->name('dashboard.disenador');
+    Route::get('/operador/dashboard', [HomeController::class, 'operadorDashboard'])->name('dashboard.operador');
+    Route::get('/cliente/dashboard', [HomeController::class, 'clienteDashboard'])->name('dashboard.cliente');
+});
+
+Route::middleware(['auth', 'role:administrador'])->group(function () {
+
 
     // Dashboard principal
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
@@ -170,7 +182,8 @@ Route::middleware('auth')->group(function () {
     Route::get('personalizar', [PedidoController::class, 'personalizarDiseno'])->name('pedidos.personalizar');
     Route::post('personalizar/iniciar', [PedidoController::class, 'iniciarPedidoConDiseno'])->name('pedidos.personalizar.iniciar');
 
-    // Nuevo pedido
+    // Nuevo pedido con asignación de diseñador
+    Route::get('pedidos/create', [PedidoController::class, 'create'])->name('pedidos.create');
     Route::get('pedidos/nuevo', [PedidoController::class, 'nuevoPedido'])->name('pedidos.nuevo');
     Route::post('pedidos/guardar-nuevo', [PedidoController::class, 'guardarNuevoPedido'])->name('pedidos.guardar-nuevo');
 
@@ -223,19 +236,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/export/clientes-establecimientos/pdf', [ExportController::class, 'exportarClientesEstablecimientos'])->name('export.clientes-establecimientos.pdf');
     Route::get('/export/clientes-consolidado/pdf', [ExportController::class, 'exportarClientesConsolidado'])->name('export.clientes-consolidado.pdf');
     Route::get('/export/productos/pdf', [ExportController::class, 'exportarProductos'])->name('export.productos.pdf');
-});
-
-// =========================================================================
-// RUTAS DE DASHBOARDS POR ROL (PROTEGIDAS POR AUTH)
-// =========================================================================
-Route::middleware('auth')->group(function () {
-    // Dashboards específicos (redirige según rol en HomeController)
-    Route::get('/home', [HomeController::class, 'index'])->name('home.auth');
-    Route::get('/admin/dashboard', [HomeController::class, 'adminDashboard'])->name('dashboard.admin');
-    Route::get('/vendedor/dashboard', [HomeController::class, 'vendedorDashboard'])->name('dashboard.vendedor');
-    Route::get('/disenador/dashboard', [HomeController::class, 'disenadorDashboard'])->name('dashboard.disenador');
-    Route::get('/operador/dashboard', [HomeController::class, 'operadorDashboard'])->name('dashboard.operador');
-    Route::get('/cliente/dashboard', [HomeController::class, 'clienteDashboard'])->name('dashboard.cliente');
 });
 
 // =========================================================================
