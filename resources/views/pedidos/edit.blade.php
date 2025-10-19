@@ -159,33 +159,23 @@
                     </select>
                 </div>
 
-                {{-- ✅ Asignar Diseñador --}}
                 <div class="col-md-6">
                     <label class="form-label">Asignar Diseñador *</label>
 
-                    {{-- 👇 Usamos name="idEmpleado" para coincidir con PedidoController --}}
                     <select name="idEmpleado" class="form-select" required>
                         <option value="">Seleccionar diseñador</option>
 
                         @foreach($diseñadores as $d)
-                        {{--
-                ✅ Lógica de selección:
-                - Si hay errores de validación → old('idEmpleado')
-                - Si estamos editando → $pedido->idEmpleado
-                - Si es nuevo → queda vacío
-            --}}
                         <option value="{{ $d->idEmpleado }}"
-                            {{ (string)old('idEmpleado', $pedido->idEmpleado ?? '') === (string)$d->idEmpleado ? 'selected' : '' }}>
+                            {{ old('idEmpleado', $pedido->idEmpleado) == $d->idEmpleado ? 'selected' : '' }}>
                             {{ $d->user->name }} {{ $d->user->primerApellido }}
-                            {{ $d->user->segundApellido ? $d->user->segundApellido : '' }}
+                            {{ $d->user->segundApellido ?? '' }}
                         </option>
                         @endforeach
                     </select>
 
                     <small class="text-muted">Diseñador responsable de este pedido</small>
                 </div>
-
-
                 {{-- Imagen del pedido (muestra actual si existe) --}}
                 <div class="col-12">
                     <label for="imagenPedido" class="form-label">Imagen del Pedido</label>
@@ -333,11 +323,7 @@
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mt-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-agregar-bloque">
-                        <i class="fas fa-layer-group me-1"></i> Agregar otro bloque
-                    </button>
-                </div>
+
 
                 <div class="row g-3 mt-3">
                     <div class="col-md-4">

@@ -20,6 +20,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DisenadorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -244,3 +245,22 @@ Route::middleware(['auth', 'role:administrador'])->group(function () {
 Route::get('/about', function () {
     return view('about');
 })->name('about');
+
+
+
+// =========================================================================
+// ROL DISEÑADOR - FLUJO SIMPLIFICADO
+// =========================================================================
+Route::middleware('auth')->group(function () {
+    // Dashboard del Diseñador - Muestra borradores asignados
+    Route::get('/diseñador/dashboard', [DisenadorController::class, 'index'])->name('dashboard.disenador');
+
+    // Trabajar en un diseño específico
+    Route::get('/diseñador/trabajar/{idDiseno}', [DisenadorController::class, 'trabajar'])->name('diseñador.trabajar');
+
+    // Mis Diseños
+    Route::get('/diseñador/mis-disenos', [DisenadorController::class, 'misDisenos'])->name('mis-disenos.index');
+
+    // Subir diseño terminado
+    Route::post('/diseñador/{idDiseno}/subir', [DisenadorController::class, 'subirDisenoTerminado'])->name('diseñador.subir');
+});

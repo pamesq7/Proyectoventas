@@ -1040,6 +1040,7 @@ class PedidoController extends Controller
     }
 
 
+
     /**
      * Actualizar detalles del pedido (crear/actualizar/eliminar en lote)
      */
@@ -1441,5 +1442,40 @@ class PedidoController extends Controller
             'clientesEstablecimientos',
             'diseñadores'
         ));
+    }
+    /**
+     * Método para que el diseñador marque un diseño como "terminado"
+     */
+    public function trabajarEnDiseno(Request $request, $idDiseno)
+    {
+        // Validar el archivo de diseño terminado
+        $request->validate([
+            'disenoTerminado' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // Tamaño máximo de archivo 5MB
+        ]);
+
+        // Buscar el diseño
+        $diseno = Diseno::findOrFail($idDiseno);
+
+        // Verificar que el diseño esté en estado "borrador" antes de marcarlo como terminado
+        if ($diseno->estadoDiseño !== 'borrador') {
+            return back()->with('error', 'Este diseño no está en estado borrador y no puede ser marcado como terminado.');
+        }
+
+        // Subir el archivo de diseño terminado
+        $rutaTerminado = $request->file('disenoTerminado')->store('disenos_terminados', 'public');
+
+        // Marcar diseño como terminado
+        $diseno->archivo = $rutaTerminado; // Actualizamos el archivo
+        $diseno->estadoDiseño = 'terminado'; // Cambiamos el estado del diseño a "terminado"
+        $diseno->save(); // Guardamos los cambios
+
+        // Cambiar el estado del pedido asociado al diseño
+        $venta = $diseno->detalleVenta->venta; // Obtener la venta asociada al detalle de venta del diseño
+        $venta->estadoPedido = '2'; // Cambiar el estado del pedido a "Producción"
+        $venta->save();
+
+        // Redirigir con mensaje de éxito
+        return redirect()->route('pedidos.borradores') // Asegúrate de tener la ruta correspondiente
+            ->with('success', 'El diseño ha sido marcado como terminado y el pedido ha pasado a producción.');
     }
 }

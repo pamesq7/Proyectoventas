@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Venta;
+use App\Models\Diseno;
 
 class HomeController extends Controller
 {
@@ -53,7 +55,16 @@ class HomeController extends Controller
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
 
-        return view('dashboard.disenador');
+        // Obtener el empleado del usuario autenticado
+        $empleadoId = auth()->user()->empleado->idEmpleado;
+
+        // Obtener TODOS los diseños asignados a este diseñador
+        $disenos = Diseno::where('idEmpleado', $empleadoId)
+            ->with('empleado', 'detalleVenta.venta.clienteNatural', 'detalleVenta.venta.clienteEstablecimiento')
+            ->latest()
+            ->get();
+
+        return view('dashboard.disenador', compact('disenos'));
     }
 
     /**

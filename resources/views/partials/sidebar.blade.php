@@ -15,32 +15,14 @@
                 <div class="sb-sidenav-menu-heading">DISEÑADOR</div>
 
                 <!-- 🎨 Mis Diseños - REDIRIGIR A disenos.index -->
-                <a class="nav-link" href="{{ route('disenos.index') }}">
+                <a class="nav-link" href="{{ route('mis-disenos.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-palette"></i></div>
                     🎨 Mis Diseños
                 </a>
 
-                <!-- 📦 Pedidos - REDIRIGIR A pedidos.index -->
-                <a class="nav-link" href="{{ route('pedidos.index') }}">
-                    <div class="sb-nav-link-icon"><i class="fas fa-tasks"></i></div>
-                    📦 Pedidos
-                </a>
 
-                <div class="sb-sidenav-menu-heading">CONSULTA</div>
 
-                <!-- 👥 Ver Clientes - REDIRIGIR A clienteNatural.index -->
-                <a class="nav-link" href="{{ route('clienteNatural.index') }}">
-                    <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
-                    👥 Ver Clientes
-                    <span class="badge bg-secondary ms-2">Solo lectura</span>
-                </a>
-
-                <!-- 📋 Ver Catálogo - REDIRIGIR A pedidos.catalogo -->
-                <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
-                    <div class="sb-nav-link-icon"><i class="fas fa-book"></i></div>
-                    📋 Ver Catálogo
-                    <span class="badge bg-secondary ms-2">Solo lectura</span>
-                </a>
+               
 
                 @elseif(auth()->check() && auth()->user()->empleado && auth()->user()->empleado->rol === 'operador')
                 <!-- Menú específico para operador -->

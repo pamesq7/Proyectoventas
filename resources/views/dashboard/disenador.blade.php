@@ -3,41 +3,38 @@
 @section('content')
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Panel del Diseñador</h1>
+        <h1 class="h3 mb-0 text-gray-800">🎨 Panel del Diseñador</h1>
     </div>
 
-    <!-- Content Row -->
-    <div class="row">
-        <!-- Diseños Pendientes Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Diseños Pendientes</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ App\Models\Diseno::where('estadoDiseño', 'pendiente')->count() }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    @endif
 
-        <!-- Diseños en Proceso Card -->
+    @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session('error') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    @endif
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row">
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                En Proceso</div>
+                                Borradores Asignados</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ App\Models\Diseno::where('estadoDiseño', 'en proceso')->count() }}
+                                {{ $disenos->count() }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -48,16 +45,21 @@
             </div>
         </div>
 
-        <!-- Diseños Completados Card -->
+        <!-- Mostrar la cantidad de diseños terminados -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Completados</div>
+                                Completados
+                            </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ App\Models\Diseno::where('estadoDiseño', 'completado')->count() }}
+                                @php
+                                    $empleadoId = auth()->user()->empleado ? auth()->user()->empleado->idEmpleado : null;
+                                    $terminadosCount = $empleadoId ? App\Models\Diseno::where('idEmpleado', $empleadoId)->where('estadoDiseño', 'terminado')->count() : 0;
+                                @endphp
+                                {{ $terminadosCount }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -68,118 +70,148 @@
             </div>
         </div>
 
-        <!-- Mis Diseños Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Mis Diseños</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ auth()->user()->empleado ? App\Models\Diseno::where('idEmpleado', auth()->user()->empleado->idEmpleado)->count() : 0 }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-palette fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- Content Row -->
-    <div class="row">
-        <!-- Diseños Recientes -->
+    <!-- Borradores Asignados - Tabla de Diseños -->
+    <div class="row mt-4">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Mis Diseños Recientes</h6>
-                    <div class="dropdown no-arrow">
-                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                            aria-labelledby="dropdownMenuLink">
-                            <a class="dropdown-item" href="{{ route('disenos.index') }}">Ver todos</a>
-                            <a class="dropdown-item" href="{{ route('disenos.create') }}">Nuevo diseño</a>
-                        </div>
-                    </div>
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">📦 Mis Diseños Asignados</h6>
+                    <small class="text-muted d-block mt-2">
+                        Total de diseños: {{ $disenos->count() }} | Empleado ID: {{ auth()->user()->empleado->idEmpleado ?? 'N/A' }}
+                    </small>
                 </div>
                 <div class="card-body">
+                    @if($disenos && $disenos->count() > 0)
                     <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
+                        <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Archivo</th>
+                                    <th>N°</th>
+                                    <th>Imagen</th>
                                     <th>Comentario</th>
-                                    <th>Fecha</th>
+                                    <th>Estado Diseño</th>
+                                    <th>Diseñador</th>
+                                    <th>Cliente</th>
                                     <th>Estado</th>
+                                    <th>Fecha Creación</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @php
-                                    $empleadoId = auth()->user()->empleado ? auth()->user()->empleado->idEmpleado : 0;
-                                    $misDisenos = App\Models\Diseno::where('idEmpleado', $empleadoId)
-                                        ->latest()
-                                        ->take(5)
-                                        ->get();
-                                @endphp
-                                
-                                @forelse ($misDisenos as $diseno)
-                                    <tr>
-                                        <td>#{{ $diseno->idDiseno }}</td>
-                                        <td>
-                                            @if($diseno->archivo)
-                                                <a href="{{ asset('storage/' . $diseno->archivo) }}" target="_blank">
-                                                    {{ Str::limit(basename($diseno->archivo), 20) }}
-                                                </a>
-                                            @else
-                                                <span class="text-muted">Sin archivo</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $diseno->comentario ? Str::limit($diseno->comentario, 30) : 'Sin comentario' }}</td>
-                                        <td>{{ $diseno->created_at ? $diseno->created_at->format('d/m/Y H:i') : 'N/A' }}</td>
-                                        <td>
-                                            @php
-                                                $estadoClases = [
-                                                    'pendiente' => 'warning',
-                                                    'en proceso' => 'info',
-                                                    'completado' => 'success',
-                                                    'rechazado' => 'danger'
-                                                ][$diseno->estadoDiseño] ?? 'secondary';
-                                            @endphp
-                                            <span class="badge badge-{{ $estadoClases }}">
-                                                {{ ucfirst($diseno->estadoDiseño) }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <a href="{{ route('disenos.show', $diseno->idDiseno) }}" 
-                                               class="btn btn-info btn-sm" 
-                                               title="Ver detalles">
-                                                <i class="fas fa-eye"></i>
+                                @php $contador = 1; @endphp
+                                @forelse($disenos as $diseno)
+                                <tr>
+                                    <td>{{ $contador++ }}</td>
+                                    <td style="width: 120px;">
+                                        @if($diseno->archivo)
+                                        @php
+                                        $extension = pathinfo($diseno->archivo, PATHINFO_EXTENSION);
+                                        $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                        $imagePath = asset('storage/' . $diseno->archivo);
+                                        @endphp
+
+                                        @if($isImage)
+                                        <div class="text-center">
+                                            <img src="{{ $imagePath }}"
+                                                alt="Diseño"
+                                                class="img-thumbnail"
+                                                style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;"
+                                                onclick="window.open('{{ $imagePath }}', '_blank')"
+                                                onerror="this.style.display='none';">
+                                            <div class="image-fallback" style="display: none;">
+                                                <i class="fas fa-image text-muted"></i>
+                                                <br>
+                                                <small class="text-muted">Imagen no disponible</small>
+                                            </div>
+                                        </div>
+                                        @else
+                                        <div class="text-center">
+                                            <i class="fas fa-file fa-2x text-muted"></i>
+                                            <br>
+                                            <small class="text-muted">{{ strtoupper($extension) }}</small>
+                                            <br>
+                                            <a href="{{ $imagePath }}" target="_blank" class="btn btn-xs btn-outline-info mt-1">
+                                                <i class="fas fa-download"></i>
                                             </a>
-                                            @if($diseno->estadoDiseño != 'completado')
-                                                <a href="{{ route('disenos.edit', $diseno->idDiseno) }}" 
-                                                   class="btn btn-warning btn-sm" 
-                                                   title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            @endif
-                                        </td>
-                                    </tr>
+                                        </div>
+                                        @endif
+                                        @else
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-image fa-2x"></i>
+                                            <br>
+                                            <small>Sin archivo</small>
+                                        </div>
+                                        @endif
+                                    </td>
+                                    <td>{{ $diseno->comentario ?? 'Sin comentario' }}</td>
+                                    <td>
+                                        @php
+                                        $badgeClass = 'secondary';
+                                        if ($diseno->estadoDiseño == 'terminado') {
+                                        $badgeClass = 'success';
+                                        } elseif ($diseno->estadoDiseño == 'borrador') {
+                                        $badgeClass = 'warning';
+                                        } elseif ($diseno->estadoDiseño == 'no realizado') {
+                                        $badgeClass = 'secondary';
+                                        }
+                                        @endphp
+                                        <span class="badge badge-{{ $badgeClass }}" style="color: black;">
+                                            {{ ucfirst($diseno->estadoDiseño) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if($diseno->empleado)
+                                        <span class="badge badge-primary">{{ $diseno->empleado->nombre ?? 'N/A' }}</span>
+                                        @else
+                                        <span class="text-muted">Sin asignar</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @php
+                                        $venta = $diseno->detalleVenta->venta ?? null;
+                                        @endphp
+                                        @if($venta)
+                                        @if($venta->clienteNatural && $venta->clienteNatural->user)
+                                        {{ $venta->clienteNatural->user->name }}
+                                        {{ $venta->clienteNatural->user->primerApellido }}
+                                        @elseif($venta->clienteEstablecimiento)
+                                        {{ $venta->clienteEstablecimiento->razonSocial }}
+                                        @else
+                                        <span class="text-muted">Cliente no especificado</span>
+                                        @endif
+                                        @else
+                                        <span class="text-muted">Sin venta asociada</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-{{ $diseno->estado ? 'success' : 'danger' }}" style="color: black;">
+                                            {{ $diseno->estado ? 'Activo' : 'Inactivo' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $diseno->created_at->format('d/m/Y H:i') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('diseñador.trabajar', $diseno->idDiseno) }}" class="btn btn-sm btn-primary" title="Trabajar en este diseño">
+                                                <i class="fas fa-edit"></i> Trabajar
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
                                 @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center">No tienes diseños asignados.</td>
-                                    </tr>
+                                <tr>
+                                    <td colspan="9" class="text-center">No tienes borradores asignados en este momento.</td>
+                                </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
+                    @else
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle"></i> No tienes borradores asignados en este momento.
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -193,53 +225,47 @@
         border-radius: 10px;
         box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
     }
+
     .card-header {
         background-color: #f8f9fc;
         border-bottom: 1px solid #e3e6f0;
     }
+
     .border-left-primary {
         border-left: 0.25rem solid #4e73df !important;
     }
+
     .border-left-success {
         border-left: 0.25rem solid #1cc88a !important;
     }
+
     .border-left-info {
         border-left: 0.25rem solid #36b9cc !important;
     }
+
     .border-left-warning {
         border-left: 0.25rem solid #f6c23e !important;
     }
+
     .text-xs {
         font-size: 0.7rem;
     }
+
     .text-gray-300 {
         color: #dddfeb !important;
     }
+
     .h5 {
         font-size: 1.25rem;
     }
-    .mb-0, .my-0 {
+
+    .mb-0,
+    .my-0 {
         margin-bottom: 0 !important;
     }
+
     .no-underline {
         text-decoration: none !important;
     }
 </style>
-
-<!-- Page level plugins -->
-<script src="{{ asset('vendor/chart.js/Chart.min.js') }}"></script>
-
-<!-- Page level custom scripts -->
-<script>
-    // Aquí puedes agregar scripts personalizados para gráficos si es necesario
-</script>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection

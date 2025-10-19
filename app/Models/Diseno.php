@@ -11,7 +11,7 @@ class Diseno extends Model
 
     protected $table = 'disenos';
     protected $primaryKey = 'idDiseno';
-    
+
     protected $fillable = [
         'archivo',
         'comentario',
@@ -29,13 +29,13 @@ class Diseno extends Model
     // Relación con empleado (diseñador)
     public function empleado()
     {
-        return $this->belongsTo(Empleado::class, 'idEmpleado', 'idEmpleado');
+        return $this->belongsTo(Empleado::class, 'idEmpleado');
     }
 
     // Relación con detalle de venta (opcional)
     public function detalleVenta()
     {
-        return $this->belongsTo(DetalleVenta::class, 'iddetalleVenta', 'iddetalleVenta');
+        return $this->belongsTo(DetalleVenta::class, 'iddetalleVenta');
     }
 
     // Scope para diseños activos
@@ -47,7 +47,7 @@ class Diseno extends Model
     // Scope para diseños en proceso
     public function scopeEnProceso($query)
     {
-        return $query->where('estadoDiseño', 'en proceso');
+        return $query->where('estadoDiseño', 'borrador');
     }
 
     // Scope para diseños terminados
@@ -66,5 +66,21 @@ class Diseno extends Model
     public function getEstadoTextoAttribute()
     {
         return $this->estado == 1 ? 'Activo' : 'Inactivo';
+    }
+    // Método para marcar diseño como terminado
+    public function marcarComoTerminado($nuevaImagen)
+    {
+        // Actualiza el archivo del diseño y el estado del diseño
+        $this->archivo = $nuevaImagen;
+        $this->estadoDiseño = 'terminado'; // Cambiar de 'borrador' a 'terminado'
+        $this->save();
+        // Actualizar el estado de la venta asociada a este diseño
+        $venta = $this->detalleVenta->venta; // Obtenemos la venta asociada al detalle
+
+        // Cambiar el estado de la venta a 'producción'
+        if ($this->detalleVenta) {
+            $this->detalleVenta->venta->estadoPedido = 2; // '2' es Producción
+            $this->detalleVenta->venta->save();
+        }
     }
 }
