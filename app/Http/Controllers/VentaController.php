@@ -19,6 +19,25 @@ class VentaController extends Controller
      */
     public function index(Request $request)
     {
+        // Tu código para las consultas de ventas
+        $ventas = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'empleado.user'])
+            ->select('ventas.*')
+            ->leftJoin('empleados', 'ventas.idEmpleado', '=', 'empleados.idEmpleado')
+            ->leftJoin('users', 'empleados.idEmpleado', '=', 'users.idUser')
+            ->selectRaw('ventas.*, CONCAT(users.name, " ", users.primerApellido, " ", IFNULL(users.segundApellido, "")) as nombre_empleado')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        // Estadísticas rápidas
+        $estadisticas = [
+            'total_ventas' => Venta::count(),
+            'ventas_saldadas' => Venta::where('saldo', '<=', 0)->count(),
+            'ventas_pendientes' => Venta::where('saldo', '>', 0)->count(),
+            'monto_pendiente' => Venta::where('saldo', '>', 0)->sum('saldo'),
+        ];
+
+        return view('ventas.index', compact('ventas', 'estadisticas'));
+
         $query = Venta::with(['empleado', 'clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla', 'transacciones'])
             ->where('estado', 1) // Solo mostrar ventas en estado 1
             ->orderBy('created_at', 'desc');
@@ -74,9 +93,9 @@ class VentaController extends Controller
     public function show($id)
     {
         $venta = Venta::with([
-            'empleado', 
-            'clienteNatural', 
-            'clienteEstablecimiento', 
+            'empleado',
+            'clienteNatural',
+            'clienteEstablecimiento',
             'detalleVentas.talla',
             'transacciones.user'
         ])->findOrFail($id);

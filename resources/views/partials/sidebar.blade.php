@@ -120,11 +120,6 @@
                     📦 Productos
                 </a>
 
-                <!-- Diseños -->
-                <a class="nav-link" href="{{ route('disenos.index') }}">
-                    <div class="sb-nav-link-icon"><i class="fas fa-palette"></i></div>
-                    🎨 Diseños
-                </a>
 
                 @if($userRol === 'administrador')
                 <!-- Configuración de Productos -->

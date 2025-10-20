@@ -34,7 +34,7 @@ class Venta extends Model
     // Relación: pertenece a un empleado
     public function empleado()
     {
-        return $this->belongsTo(Empleado::class, 'idEmpleado');
+        return $this->belongsTo(Empleado::class, 'idEmpleado', 'idEmpleado');
     }
 
     // Relación: pertenece a un cliente natural (opcional)
@@ -47,16 +47,16 @@ class Venta extends Model
     public function clienteEstablecimiento()
     {
         return $this->belongsTo(ClienteEstablecimiento::class, 'idEstablecimiento');
-                // Establecimiento: razón social o nombreEstablecimiento
-                if ($this->clienteEstablecimiento) {
-                    return $this->clienteEstablecimiento->razonSocial
-                        ?? $this->clienteEstablecimiento->razonSocial
-                        ?? 'Establecimiento';
-                }
+        // Establecimiento: razón social o nombreEstablecimiento
+        if ($this->clienteEstablecimiento) {
+            return $this->clienteEstablecimiento->razonSocial
+                ?? $this->clienteEstablecimiento->razonSocial
+                ?? 'Establecimiento';
+        }
     }
     public function user()
     {
-        return $this->belongsTo(User::class, 'idCliente', 'idUser');
+        return $this->belongsTo(User::class, 'idCliente', 'idEmpleado', 'idUser');
     }
 
 
@@ -176,4 +176,6 @@ class Venta extends Model
     {
         return $this->saldo > 0;
     }
+
+   
 }
