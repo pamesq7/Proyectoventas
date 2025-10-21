@@ -25,11 +25,11 @@
                     </a>
 
                     <div class="sb-sidenav-menu-heading">OPERACIONES</div>
-                    <a class="nav-link" href="{{ route('pedidos.index') }}">
+                    <a class="nav-link" href="{{ route('rolOperador.index') }}">
                         <div class="sb-nav-link-icon"><i class="fas fa-clipboard-list"></i></div>
                         📦 Pedidos
                     </a>
-                    <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
+                    <a class="nav-link" href="{{ route('rolOperador.catalogo') }}">
                         <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
                         🛒 Catálogo
                     </a>
@@ -122,12 +122,6 @@
                     <a class="nav-link" href="{{ route('rolVendedor.dashboard') }}">
                         <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                         🏠 Dashboard Vendedor
-                    </a>
-
-                    <div class="sb-sidenav-menu-heading">📦 PRODUCTOS Y PEDIDOS</div>
-                    <a class="nav-link" href="{{ route('productos.index') }}">
-                        <div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>
-                        📦 Productos
                     </a>
                     <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
                         <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>

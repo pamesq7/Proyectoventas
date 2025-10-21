@@ -22,6 +22,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DisenadorController;
 use App\Http\Controllers\VendedorController;
+use App\Http\Controllers\OperadorController;
 
 
 /*
@@ -249,22 +250,6 @@ Route::get('/about', function () {
 
 
 
-// =========================================================================
-// ROL DISEÑADOR - FLUJO SIMPLIFICADO
-// =========================================================================
-Route::middleware('auth')->group(function () {
-    // Dashboard del Diseñador - Muestra borradores asignados
-    Route::get('/diseñador/dashboard', [DisenadorController::class, 'index'])->name('dashboard.disenador');
-
-    // Trabajar en un diseño específico
-    Route::get('/diseñador/trabajar/{idDiseno}', [DisenadorController::class, 'trabajar'])->name('diseñador.trabajar');
-
-    // Mis Diseños
-    Route::get('/diseñador/mis-disenos', [DisenadorController::class, 'misDisenos'])->name('mis-disenos.index');
-
-    // Subir diseño terminado
-    Route::post('/diseñador/{idDiseno}/subir', [DisenadorController::class, 'subirDisenoTerminado'])->name('diseñador.subir');
-});
 
 // =========================================================================
 // ROL VENDEDOR - GESTIÓN COMPLETA
@@ -446,4 +431,45 @@ Route::middleware('auth')->group(function () {
 
     // En el grupo de rutas para rolVendedor
     Route::get('/rolVendedor/dashboard', [VendedorController::class, 'dashboard'])->name('rolVendedor.dashboard');
+});
+
+
+// =========================================================================
+// ROL DISEÑADOR - FLUJO SIMPLIFICADO
+// =========================================================================
+Route::middleware('auth')->group(function () {
+    // Dashboard del Diseñador - Muestra borradores asignados
+    Route::get('/diseñador/dashboard', [DisenadorController::class, 'index'])->name('dashboard.disenador');
+
+    // Trabajar en un diseño específico
+    Route::get('/diseñador/trabajar/{idDiseno}', [DisenadorController::class, 'trabajar'])->name('diseñador.trabajar');
+
+    // Mis Diseños
+    Route::get('/diseñador/mis-disenos', [DisenadorController::class, 'misDisenos'])->name('mis-disenos.index');
+
+    // Subir diseño terminado
+    Route::post('/diseñador/{idDiseno}/subir', [DisenadorController::class, 'subirDisenoTerminado'])->name('diseñador.subir');
+});
+
+
+
+// =========================================================================
+// ROL OPERADOR - FLUJO SIMPLIFICADO
+// =========================================================================
+
+Route::middleware(['auth'])->group(function () {
+    // Dashboard del Operador
+    Route::get('/operador/dashboard', [OperadorController::class, 'dashboard'])->name('dashboard.operador');
+
+    // Gestión de Pedidos para Operador
+    Route::get('/rolOperador/index', [OperadorController::class, 'index'])->name('rolOperador.index');
+
+    // Catálogo para Operador
+    Route::get('/rolOperador/catalogo', [OperadorController::class, 'catalogo'])->name('rolOperador.catalogo');
+
+    // Catálogo de consulta (ruta adicional para compatibilidad)
+    Route::get('/catalogo/consulta', [OperadorController::class, 'catalogo'])->name('catalogo.consulta');
+
+    // Ver detalle de pedido para Operador
+    Route::get('/rolOperador/{pedido}/show', [OperadorController::class, 'show'])->name('rolOperador.show');
 });

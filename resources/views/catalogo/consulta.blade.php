@@ -6,7 +6,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">Catálogo de Productos (Solo Lectura)</h3>
+                    <h3 class="card-title mb-0">Catálogo de Productos </h3>
                 </div>
 
                 <div class="card-body">

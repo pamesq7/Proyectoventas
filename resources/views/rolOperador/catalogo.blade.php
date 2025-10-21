@@ -6,7 +6,7 @@
         <h1 class="mb-0">
             <i class="fas fa-shopping-cart me-2"></i>Catálogo de Productos
         </h1>
-        <a href="{{ route('pedidos.personalizar') }}" class="btn btn-primary">
+        <a href="{{ route('dashboard.operador') }}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>PERSONALIZAR MI DISEÑO
         </a>
     </div>
@@ -14,6 +14,18 @@
         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item active">Catálogo</li>
     </ol>
+
+    {{-- Carrito flotante --}}
+    <div class="position-fixed" style="top: 100px; right: 20px; z-index: 1000;">
+        <a href="{{ route('dashboard.operador') }}" class="btn btn-primary btn-lg rounded-circle shadow">
+            <i class="fas fa-shopping-cart"></i>
+            @if(session('carrito') && count(session('carrito')) > 0)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ count(session('carrito')) }}
+                </span>
+            @endif
+        </a>
+    </div>
 
     {{-- Filtros por categoría --}}
     <div class="card mb-4">
@@ -107,7 +119,7 @@
                         {{-- Botones de acción --}}
                         <div class="mt-auto">
                             <div class="d-grid gap-2">
-                                <a href="{{ route('pedidos.configurar', $producto->idProducto) }}" 
+                                <a href="{{ route('dashboard.operador') }}" 
                                    class="btn btn-primary">
                                     <i class="fas fa-cog me-2"></i>Configurar y Pedir
                                 </a>
@@ -192,7 +204,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <a href="{{ route('pedidos.configurar', $producto->idProducto) }}" 
+                            <a href="{{ route('dashboard.operador') }}" 
                                class="btn btn-primary">
                                 <i class="fas fa-cog me-2"></i>Configurar y Pedir
                             </a>
