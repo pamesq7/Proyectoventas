@@ -56,8 +56,8 @@
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 @php
-                                    $empleadoId = auth()->user()->empleado ? auth()->user()->empleado->idEmpleado : null;
-                                    $terminadosCount = $empleadoId ? App\Models\Diseno::where('idEmpleado', $empleadoId)->where('estadoDiseño', 'terminado')->count() : 0;
+                                $empleadoId = auth()->user()->empleado ? auth()->user()->empleado->idEmpleado : null;
+                                $terminadosCount = $empleadoId ? App\Models\Diseno::where('idEmpleado', $empleadoId)->where('estadoDiseño', 'terminado')->count() : 0;
                                 @endphp
                                 {{ $terminadosCount }}
                             </div>
@@ -92,7 +92,6 @@
                                     <th>Imagen</th>
                                     <th>Comentario</th>
                                     <th>Estado Diseño</th>
-                                    <th>Diseñador</th>
                                     <th>Cliente</th>
                                     <th>Estado</th>
                                     <th>Fecha Creación</th>
@@ -162,13 +161,6 @@
                                         </span>
                                     </td>
                                     <td>
-                                        @if($diseno->empleado)
-                                        <span class="badge badge-primary">{{ $diseno->empleado->nombre ?? 'N/A' }}</span>
-                                        @else
-                                        <span class="text-muted">Sin asignar</span>
-                                        @endif
-                                    </td>
-                                    <td>
                                         @php
                                         $venta = $diseno->detalleVenta->venta ?? null;
                                         @endphp
@@ -193,7 +185,7 @@
                                     <td>{{ $diseno->created_at->format('d/m/Y H:i') }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ route('diseñador.trabajar', $diseno->idDiseno) }}" class="btn btn-sm btn-primary" title="Trabajar en este diseño">
+                                            <a href="{{ route('diseñador.trabajar', $diseno->idDiseno) }}" class="btn btn-primary btn-sm w-100">
                                                 <i class="fas fa-edit"></i> Trabajar
                                             </a>
                                         </div>

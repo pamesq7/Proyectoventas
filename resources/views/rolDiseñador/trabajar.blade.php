@@ -33,7 +33,6 @@
                 <div class="card-body">
                     @php
                         $venta = $diseno->detalleVenta->venta;
-                        $nombreCliente = 'Cliente no especificado';
                         
                         // Obtener nombre del cliente natural
                         if ($venta->clienteNatural && $venta->clienteNatural->user) {
@@ -49,11 +48,10 @@
                         <strong>Pedido:</strong> #{{ $venta->idVenta }}
                     </p>
                     <p class="mb-2">
-                        <strong>Cliente:</strong> <span class="badge badge-primary">{{ $nombreCliente }}</span>
+                        <strong>Cliente:</strong> {{ $nombreCliente }}
                     </p>
                     <p class="mb-2">
-                        <strong>Estado Actual:</strong>
-                        <span class="badge badge-warning">{{ ucfirst($diseno->estadoDiseño) }}</span>
+                         <strong>Estado Actual:</strong>{{ ucfirst($diseno->estadoDiseño) }}
                     </p>
                     <p class="mb-2">
                         <strong>Fecha Creación:</strong> {{ $diseno->created_at->format('d/m/Y H:i') }}
@@ -76,7 +74,7 @@
                     @if($diseno->archivo)
                     <div class="image-container" style="max-width: 200px;">
                         <img src="{{ asset('storage/' . $diseno->archivo) }}" alt="Borrador" class="img-fluid" style="max-height: 250px;">
-                        <p class="mt-2 text-muted text-center">{{ basename($diseno->archivo) }}</p>
+                       
                     </div>
                     @else
                     <div class="alert alert-warning" role="alert">

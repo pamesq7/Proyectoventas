@@ -35,13 +35,8 @@ class DisenadorController extends Controller
      */
     public function trabajar($idDiseno)
     {
+        // Buscar el diseño
         $diseno = Diseno::findOrFail($idDiseno);
-
-        // Verificar que el diseño esté en estado 'en proceso'
-        if ($diseno->estadoDiseño !== 'en proceso') {
-            return back()->with('error', 'Este diseño no está en estado de trabajo.');
-        }
-
         return view('rolDiseñador.trabajar', compact('diseno'));
     }
 
@@ -62,10 +57,9 @@ class DisenadorController extends Controller
         // Buscar el diseño
         $diseno = Diseno::findOrFail($idDiseno);
 
-        // Verificar que el diseño esté en estado 'en proceso'
-        if ($diseno->estadoDiseño !== 'en proceso') {
-            return back()->with('error', 'Este diseño no está en estado de trabajo.');
-        }
+        // Ya no verificamos el estado, el diseñador puede trabajar en cualquier diseño
+        return view('rolDiseñador.trabajar', compact('diseno'));
+
 
         // Subir el archivo de diseño terminado
         $rutaTerminado = $request->file('disenoTerminado')->store('disenos_terminados', 'public');

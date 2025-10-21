@@ -55,13 +55,15 @@ class ProductoController extends Controller
      */
     public function index()
     {
-        // Cargar productos con categoría y variante
+        // Cargar productos con categoría, variante, diseño directo y diseños vinculados
         $productos = Producto::with([
             'categoria',
-            'variante'
+            'variante',
+            'diseno', // Relación directa one-to-one
+            'disenos' // Relación many-to-many con tabla pivot
         ])->where('estado', 1)
             ->orderBy('nombre', 'asc')
-            ->paginate(10);  // Removí la exclusión de IDs 1,2,3,4 para mostrar todos los productos
+            ->paginate(10);
 
         return view('productos.index', compact('productos'));
     }

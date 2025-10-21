@@ -86,6 +86,15 @@
                                     } elseif ($producto->diseno && $producto->diseno->archivo) {
                                         $imagenSrc = asset('storage/' . $producto->diseno->archivo);
                                         $altText = $producto->diseno->comentario ?? $producto->nombre;
+                                    } elseif ($producto->disenos && $producto->disenos->count() > 0) {
+                                        // Buscar el diseño principal o el primero disponible
+                                        $disenoPrincipal = $producto->disenos->where('pivot.es_principal', true)->first();
+                                        $diseno = $disenoPrincipal ?: $producto->disenos->first();
+
+                                        if ($diseno && $diseno->archivo) {
+                                            $imagenSrc = asset('storage/' . $diseno->archivo);
+                                            $altText = $diseno->comentario ?? $producto->nombre;
+                                        }
                                     }
                                 @endphp
 
