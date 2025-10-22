@@ -23,6 +23,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DisenadorController;
 use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\OperadorController;
+use App\Http\Controllers\ClienteDashboardController;
 
 
 /*
@@ -438,8 +439,6 @@ Route::middleware('auth')->group(function () {
 // ROL DISEÑADOR - FLUJO SIMPLIFICADO
 // =========================================================================
 Route::middleware('auth')->group(function () {
-    // Dashboard del Diseñador - Muestra borradores asignados
-    Route::get('/diseñador/dashboard', [DisenadorController::class, 'index'])->name('dashboard.disenador');
 
     // Trabajar en un diseño específico
     Route::get('/diseñador/trabajar/{idDiseno}', [DisenadorController::class, 'trabajar'])->name('diseñador.trabajar');
@@ -458,8 +457,6 @@ Route::middleware('auth')->group(function () {
 // =========================================================================
 
 Route::middleware(['auth'])->group(function () {
-    // Dashboard del Operador
-    Route::get('/operador/dashboard', [OperadorController::class, 'dashboard'])->name('dashboard.operador');
 
     // Gestión de Pedidos para Operador
     Route::get('/rolOperador/index', [OperadorController::class, 'index'])->name('rolOperador.index');
@@ -472,4 +469,30 @@ Route::middleware(['auth'])->group(function () {
 
     // Ver detalle de pedido para Operador
     Route::get('/rolOperador/{pedido}/show', [OperadorController::class, 'show'])->name('rolOperador.show');
+});
+// =========================================================================
+// ROL CLIENTE - FLUJO SIMPLIFICADO
+// =========================================================================
+
+// Rutas para Clientes
+Route::middleware(['auth'])->group(function () {
+    
+  
+    
+    // Historial de pedidos del cliente
+    Route::get('/rolCliente/historial', [ClienteDashboardController::class, 'historial'])->name('rolCliente.historial');
+    
+    // Detalle de un pedido específico
+    Route::get('/rolCliente/pedido/{idVenta}', [ClienteDashboardController::class, 'detallePedido'])->name('rolCliente.detalle-pedido');
+    
+    // API para estadísticas (si necesitas AJAX)
+    Route::get('/rolCliente/estadisticas', [ClienteDashboardController::class, 'getEstadisticas'])->name('rolCliente.estadisticas');
+    
+    // Vista principal/consulta
+    Route::get('/rolCliente/consulta', [ClienteDashboardController::class, 'consulta'])->name('rolCliente.consulta');
+    
+    
+    // Mostrar perfil del cliente
+    Route::get('/rolCliente/perfil', [ClienteDashboardController::class, 'perfil'])->name('rolCliente.perfil');
+    
 });

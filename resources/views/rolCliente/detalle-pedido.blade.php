@@ -20,7 +20,7 @@
                     </div>
                 </div>
                 <div class="text-end">
-                    <a href="{{ route('cliente.pedidos') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('rolCliente.historial') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>Volver al Historial
                     </a>
                 </div>

@@ -138,7 +138,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <a href="{{ route('cliente.pedido.detalle', $pedido->idVenta) }}" 
+                                            <a href="{{ route('rolCliente.detalle-pedido', $pedido->idVenta) }}" 
                                                class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-eye me-1"></i>Ver
                                             </a>

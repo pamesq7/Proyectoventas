@@ -60,7 +60,7 @@ class ClienteDashboardController extends Controller
             'total_gastado' => $user->pedidos()->sum('total')
         ];
 
-        return view('clientes.historial', compact('pedidos', 'estadisticas'));
+        return view('rolCliente.historial', compact('pedidos', 'estadisticas'));
     }
 
     /**
@@ -76,7 +76,7 @@ class ClienteDashboardController extends Controller
             ->with(['detalleVentas.producto', 'detalleVentas.talla', 'transacciones'])
             ->firstOrFail();
 
-        return view('clientes.detalle-pedido', compact('venta'));
+        return view('rolCliente.detalle-pedido', compact('venta'));
     }
 
     /**
@@ -96,5 +96,59 @@ class ClienteDashboardController extends Controller
         ];
 
         return response()->json($estadisticas);
+    }
+
+    /**
+     * Actualizar perfil del cliente
+     */
+    public function actualizarPerfil(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Validar datos según el tipo de cliente
+        if ($user->clienteNatural) {
+            $request->validate([
+                'nombre' => 'required|string|max:255',
+                'apellido_paterno' => 'required|string|max:255',
+                'apellido_materno' => 'nullable|string|max:255',
+                'telefono' => 'nullable|string|max:20',
+                'email' => 'required|email|unique:users,email,' . $user->idUser . ',idUser',
+            ]);
+            
+            $cliente = $user->clienteNatural;
+            $cliente->update($request->only(['nombre', 'apellido_paterno', 'apellido_materno', 'telefono']));
+        } elseif ($user->clienteEstablecimiento) {
+            $request->validate([
+                'nombre_establecimiento' => 'required|string|max:255',
+                'nit' => 'required|string|max:20',
+                'direccion' => 'required|string|max:500',
+                'telefono' => 'required|string|max:20',
+                'email' => 'required|email|unique:users,email,' . $user->idUser . ',idUser',
+            ]);
+            
+            $establecimiento = $user->clienteEstablecimiento;
+            $establecimiento->update($request->only(['nombre_establecimiento', 'nit', 'direccion', 'telefono']));
+        }
+        
+        // Actualizar email del usuario
+        $user->update(['email' => $request->email]);
+        
+        return redirect()->back()->with('success', 'Perfil actualizado correctamente.');
+    }
+    public function perfil()
+    {
+        $user = Auth::user();
+        $clienteNatural = $user->clienteNatural;
+        $clienteEstablecimiento = $user->clienteEstablecimiento;
+
+        return view('rolCliente.perfil', compact('clienteNatural', 'clienteEstablecimiento'));
+    }
+
+    /**
+     * Vista de consulta general
+     */
+    public function consulta()
+    {
+        return view('rolCliente.consulta');
     }
 }

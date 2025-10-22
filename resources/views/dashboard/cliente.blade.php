@@ -84,7 +84,7 @@
                             <div class="card">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Mis Pedidos Recientes</h5>
-                                    <a href="{{ route('pedidos.historial') }}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{{ route('rolCliente.historial') }}" class="btn btn-sm btn-outline-primary">
                                         Ver Historial Completo
                                     </a>
                                 </div>
@@ -123,7 +123,7 @@
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <a href="{{ route('cliente.pedido.detalle', $pedido->idVenta) }}" class="btn btn-sm btn-outline-primary">
+                                                        <a href="{{ route('rolCliente.detalle-pedido', $pedido->idVenta) }}" class="btn btn-sm btn-outline-primary">
                                                             <i class="fas fa-eye"></i> Ver
                                                         </a>
                                                         @if($pedido->estado == 'pendiente')
@@ -145,7 +145,7 @@
                                         </div>
                                         <h5>No has realizado ningún pedido aún</h5>
                                         <p class="text-muted">Explora nuestros productos y realiza tu primer pedido.</p>
-                                        <a href="{{ route('productos.index') }}" class="btn btn-primary">
+                                        <a href="{{ route('rolOperador.catalogo') }}" class="btn btn-primary">
                                             <i class="fas fa-store"></i> Ver Productos
                                         </a>
                                     </div>
@@ -153,30 +153,6 @@
                                 </div>
                             </div>
 
-                            <!-- Métodos de Pago -->
-                            <div class="card mt-4">
-                                <div class="card-header bg-light">
-                                    <h5 class="mb-0">Métodos de Pago</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div>
-                                            <i class="fas fa-credit-card me-2"></i>
-                                            <span>Tarjeta de Crédito/Débito</span>
-                                        </div>
-                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#agregarTarjetaModal">
-                                            <i class="fas fa-plus"></i> Agregar
-                                        </button>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-money-bill-wave me-2"></i>
-                                            <span>Pago en Efectivo</span>
-                                        </div>
-                                        <span class="badge bg-success">Disponible</span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -185,119 +161,6 @@
     </div>
 </div>
 
-<!-- Modal Editar Perfil -->
-<div class="modal fade" id="editarPerfilModal" tabindex="-1" aria-labelledby="editarPerfilModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editarPerfilModalLabel">Editar Perfil</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editarPerfilForm" action="{{ route('perfil.actualizar') }}" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-body">
-                    @if(auth()->user()->clienteNatural)
-                    @php $cliente = auth()->user()->clienteNatural; @endphp
-                    <div class="mb-3">
-                        <label for="nombre" class="form-label">Nombres</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" value="{{ $cliente->nombre }}" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="apellido_paterno" class="form-label">Apellido Paterno</label>
-                                <input type="text" class="form-control" id="apellido_paterno" name="apellido_paterno" value="{{ $cliente->apellido_paterno }}" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="apellido_materno" class="form-label">Apellido Materno</label>
-                                <input type="text" class="form-control" id="apellido_materno" name="apellido_materno" value="{{ $cliente->apellido_materno }}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="telefono" class="form-label">Teléfono</label>
-                        <input type="tel" class="form-control" id="telefono" name="telefono" value="{{ $cliente->telefono }}">
-                    </div>
-                    @elseif(auth()->user()->clienteEstablecimiento)
-                    @php $establecimiento = auth()->user()->clienteEstablecimiento; @endphp
-                    <div class="mb-3">
-                        <label for="nombre_establecimiento" class="form-label">Nombre del Establecimiento</label>
-                        <input type="text" class="form-control" id="nombre_establecimiento" name="nombre_establecimiento" value="{{ $establecimiento->nombre_establecimiento }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="nit" class="form-label">NIT</label>
-                        <input type="text" class="form-control" id="nit" name="nit" value="{{ $establecimiento->nit }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="direccion" class="form-label">Dirección</label>
-                        <textarea class="form-control" id="direccion" name="direccion" rows="2" required>{{ $establecimiento->direccion }}</textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="telefono" class="form-label">Teléfono</label>
-                        <input type="tel" class="form-control" id="telefono" name="telefono" value="{{ $establecimiento->telefono }}" required>
-                    </div>
-                    @endif
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="email" name="email" value="{{ auth()->user()->email }}" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Agregar Tarjeta -->
-<div class="modal fade" id="agregarTarjetaModal" tabindex="-1" aria-labelledby="agregarTarjetaModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="agregarTarjetaModalLabel">Agregar Tarjeta</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="agregarTarjetaForm">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="numero_tarjeta" class="form-label">Número de Tarjeta</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="numero_tarjeta" placeholder="1234 5678 9012 3456" required>
-                            <span class="input-group-text"><i class="fab fa-cc-visa"></i></span>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="fecha_vencimiento" class="form-label">Fecha de Vencimiento</label>
-                                <input type="text" class="form-control" id="fecha_vencimiento" placeholder="MM/AA" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="cvv" class="form-label">CVV</label>
-                                <input type="text" class="form-control" id="cvv" placeholder="123" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="nombre_tarjeta" class="form-label">Nombre en la Tarjeta</label>
-                        <input type="text" class="form-control" id="nombre_tarjeta" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Agregar Tarjeta</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 @push('styles')
 <style>
