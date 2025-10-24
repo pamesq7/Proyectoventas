@@ -37,12 +37,15 @@
                                             <i class="fas fa-info-circle me-1"></i>
                                             <strong>Tipo actual:</strong> 
                                             @if($user->clienteNatural)
+                                                <input type="hidden" name="tipo_usuario" value="cliente_natural">
                                                 <span class="badge bg-primary">Cliente Natural</span>
                                                 - Persona física individual
                                             @elseif($user->clienteEstablecimiento)
+                                                <input type="hidden" name="tipo_usuario" value="cliente_establecimiento">
                                                 <span class="badge bg-warning">Cliente Establecimiento</span>
                                                 - Empresa o institución
                                             @elseif($user->empleado)
+                                                <input type="hidden" name="tipo_usuario" value="empleado">
                                                 <span class="badge bg-success">Empleado</span>
                                                 - Personal de la empresa
                                             @endif
@@ -393,10 +396,12 @@
                                                 name="rol"
                                                 required>
                                             <option value="">Seleccione el rol</option>
-                                            <option value="vendedor" {{ old('rol', $user->empleado->rol) == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
-                                            <option value="disenador" {{ old('rol', $user->empleado->rol) == 'disenador' ? 'selected' : '' }}>Diseñador</option>
-                                            <option value="administrador" {{ old('rol', $user->empleado->rol) == 'administrador' ? 'selected' : '' }}>Administrador</option>
-                                            <option value="operador" {{ old('rol', $user->empleado->rol) == 'operador' ? 'selected' : '' }}>Operador</option>
+
+                                            <option value="vendedor" {{ strtolower(old('rol', $user->empleado->rol)) == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
+                                            <option value="disenador" {{ strtolower(old('rol', $user->empleado->rol)) == 'diseñador' ? 'selected' : '' }}>Diseñador</option>
+                                            <option value="administrador" {{ strtolower(old('rol', $user->empleado->rol)) == 'administrador' ? 'selected' : '' }}>Administrador</option>
+                                            <option value="operador" {{ strtolower(old('rol', $user->empleado->rol)) == 'operador' ? 'selected' : '' }}>Operador</option>
+
                                         </select>
                                         @error('rol')
                                             <div class="invalid-feedback">{{ $message }}</div>
