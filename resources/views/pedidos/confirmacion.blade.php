@@ -43,7 +43,7 @@
                                 @if($venta->clienteNatural)
                                     {{ $venta->clienteNatural->nombres }} {{ $venta->clienteNatural->apellidos }}
                                 @elseif($venta->clienteEstablecimiento)
-                                    {{ $venta->clienteEstablecimiento->nombreEstablecimiento }}
+                                    {{ $venta->clienteEstablecimiento->razonSocial }}
                                 @else
                                     -
                                 @endif
@@ -142,7 +142,7 @@
 
                         <div class="mb-3">
                             <label class="form-label">Método de pago</label>
-                            <input list="metodos" name="metodoPago" class="form-control" placeholder="Efectivo, Yape, Transferencia, ..." required>
+                            <input list="metodos" name="metodoPago" class="form-control" placeholder="Efectivo, Qr, Transferencia, ..." required>
                             <datalist id="metodos">
                                 @foreach($metodosPago as $mp)
                                     <option value="{{ $mp['nombre'] }}">{{ $mp['nombre'] }}</option>

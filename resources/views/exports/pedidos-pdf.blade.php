@@ -226,7 +226,7 @@
                                     {{ $pedido->clienteNatural->user->primerApellido ?? '' }}
                                     <br><small>(Natural)</small>
                                 @elseif($pedido->clienteEstablecimiento)
-                                    {{ $pedido->clienteEstablecimiento->nombreEstablecimiento ?? 'N/A' }}
+                                    {{ $pedido->clienteEstablecimiento->razonSocial ?? 'N/A' }}
                                     <br><small>(Establecimiento)</small>
                                 @else
                                     N/A

@@ -68,7 +68,7 @@ class ClienteEstablecimientoController extends Controller
             // Datos del establecimiento
             'nit_establecimiento' => 'required|string|max:20|unique:cliente_establecimientos,nit',
             'razonSocial' => 'required|string|max:255',
-            'tipoEstablecimiento' => 'required|string|in:Empresa Privada,Institución Pública,ONG,Cooperativa,Otro',
+            'tipoEstablecimiento' => 'required|string|in:Colegio,Institución Alcaldía,Escuela de Fútbol o Basket,Otro',
             'domicilioFiscal' => 'required|string|max:500',
         ], [
             // Mensajes para representante
@@ -188,7 +188,7 @@ class ClienteEstablecimientoController extends Controller
             'password' => 'nullable|string|min:6|confirmed',
             'nit_establecimiento' => 'required|numeric|digits_between:7,15|unique:cliente_establecimientos,nit,' . $clienteEstablecimiento->idEstablecimiento . ',idEstablecimiento',
             'razonSocial' => 'required|string|max:255',
-            'tipoEstablecimiento' => 'required|string|in:Empresa Privada,Institución Pública,ONG,Cooperativa,Otro',
+            'tipoEstablecimiento' => 'required|string|in:Colegio,Institución Alcaldía,Escuela de Fútbol o Basket,Otro',
             'domicilioFiscal' => 'required|string|max:500',
             'estado' => 'required|boolean',
             'estado_establecimiento' => 'required|boolean',

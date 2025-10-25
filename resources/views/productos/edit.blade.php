@@ -24,7 +24,7 @@
                         <i class="fas fa-info-circle me-1"></i>Datos Básicos
                     </button>
                 </li>
-                
+
             </ul>
 
             <!-- Contenido de las Pestañas -->
@@ -36,19 +36,19 @@
                             <form action="{{ route('productos.update', $producto->idProducto) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 @method('PUT')
-                                
+
                                 {{-- Mostrar errores de validación --}}
                                 @if($errors->any())
-                                    <div class="alert alert-danger">
-                                        <h6><i class="fas fa-exclamation-triangle me-1"></i>Errores de validación:</h6>
-                                        <ul class="mb-0">
-                                            @foreach($errors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
+                                <div class="alert alert-danger">
+                                    <h6><i class="fas fa-exclamation-triangle me-1"></i>Errores de validación:</h6>
+                                    <ul class="mb-0">
+                                        @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                                 @endif
-                                
+
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
@@ -61,9 +61,9 @@
                                             <label for="idCategoria" class="form-label">Categoría *</label>
                                             <select class="form-select" id="idCategoria" name="idCategoria" required>
                                                 @foreach($categorias as $categoria)
-                                                    <option value="{{ $categoria->idCategoria }}" {{ old('idCategoria', $producto->idCategoria) == $categoria->idCategoria ? 'selected' : '' }}>
-                                                        {{ $categoria->nombreCategoria }}
-                                                    </option>
+                                                <option value="{{ $categoria->idCategoria }}" {{ old('idCategoria', $producto->idCategoria) == $categoria->idCategoria ? 'selected' : '' }}>
+                                                    {{ $categoria->nombreCategoria }}
+                                                </option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -74,21 +74,21 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="idVariante" class="form-label">Variante</label>
-                                            <select class="form-select @error('idVariante') is-invalid @enderror" 
-                                                    id="idVariante" name="idVariante">
+                                            <select class="form-select @error('idVariante') is-invalid @enderror"
+                                                id="idVariante" name="idVariante">
                                                 <option value="">Sin variante</option>
                                                 @foreach($variantes as $variante)
-                                                    <option value="{{ $variante->idVariante }}" 
-                                                            {{ old('idVariante', $producto->idVariante) == $variante->idVariante ? 'selected' : '' }}>
-                                                        {{ $variante->nombre }}
-                                                        @if($variante->varianteCaracteristicas->count() > 0)
-                                                            ({{ $variante->varianteCaracteristicas->count() }} características)
-                                                        @endif
-                                                    </option>
+                                                <option value="{{ $variante->idVariante }}"
+                                                    {{ old('idVariante', $producto->idVariante) == $variante->idVariante ? 'selected' : '' }}>
+                                                    {{ $variante->nombre }}
+                                                    @if($variante->varianteCaracteristicas->count() > 0)
+                                                    ({{ $variante->varianteCaracteristicas->count() }} características)
+                                                    @endif
+                                                </option>
                                                 @endforeach
                                             </select>
                                             @error('idVariante')
-                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
                                         </div>
                                     </div>
@@ -130,21 +130,46 @@
 
                                 <div class="mb-3">
                                     <label for="foto" class="form-label">Foto Principal</label>
-                                    @if($producto->foto && file_exists(public_path('storage/' . $producto->foto)))
-                                        <div class="mb-2">
-                                            <img src="{{ asset('storage/' . $producto->foto) }}" alt="{{ $producto->nombre }}" class="img-thumbnail" style="max-width: 200px;">
-                                        </div>
-                                    @elseif($producto->foto)
-                                        <div class="mb-2">
-                                            <div class="alert alert-warning">
-                                                <i class="fas fa-exclamation-triangle me-1"></i>
-                                                Imagen no encontrada: {{ $producto->foto }}
-                                            </div>
-                                        </div>
-                                    @endif
-                                    <input type="file" class="form-control" id="foto" name="foto" accept="image/*">
-                                </div>
 
+                                    {{-- Input para nueva imagen --}}
+                                    <input type="file" class="form-control" id="foto" name="foto" accept="image/*">
+
+                                    {{-- Mostrar imagen actual si existe --}}
+                                    @if($producto->foto && file_exists(public_path('storage/' . $producto->foto)))
+                                    <div class="mt-2 position-relative" style="display:inline-block;">
+                                        <img src="{{ asset('storage/' . $producto->foto) }}"
+                                            alt="{{ $producto->nombre }}"
+                                            class="img-thumbnail"
+                                            style="max-width:200px;height:auto;">
+                                        <button type="button"
+                                            class="btn btn-sm btn-outline-danger position-absolute"
+                                            style="top:5px;right:5px;padding:2px 6px;"
+                                            data-id="{{ $producto->idProducto }}"
+                                            onclick="confirmDeleteImage(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+
+                                    {{-- Checkbox para eliminar imagen al guardar (opcional) --}}
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="delete_imagen" name="delete_imagen" value="1" style="display:none;">
+                                        <label class="form-check-label" for="delete_imagen">
+                                            Eliminar imagen actual (se activa al confirmar)
+                                        </label>
+                                    </div>
+                                    @elseif($producto->foto)
+                                    <div class="alert alert-warning mt-2">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Imagen no encontrada: {{ $producto->foto }}
+                                        <button type="button"
+                                            class="btn btn-sm btn-outline-danger ms-2"
+                                            data-id="{{ $producto->idProducto }}"
+                                            onclick="confirmDeleteImage(this)">
+                                            <i class="fas fa-trash me-1"></i>Eliminar referencia
+                                        </button>
+                                    </div>
+                                    @endif
+                                </div>
                                 <!-- Galería de Diseños -->
                                 <div class="mb-3">
                                     <label class="form-label">Galería de Diseños</label>
@@ -154,7 +179,7 @@
                                             <i class="fas fa-plus"></i> Agregar Diseños
                                         </button>
                                     </div>
-                                    
+
                                     <!-- Diseños seleccionados -->
                                     <div id="disenosSeleccionados" class="border rounded p-3 bg-light">
                                         <div id="noDisenosMessage" class="text-center text-muted py-3" style="display: none;">
@@ -164,7 +189,7 @@
                                         </div>
                                         <div id="disenosGrid" class="row g-2"></div>
                                     </div>
-                                    
+
                                     <!-- Input hidden para enviar los IDs de diseños seleccionados -->
                                     <input type="hidden" name="disenos_vinculados" id="disenosVinculados" value="">
                                 </div>
@@ -179,9 +204,9 @@
                                 <div class="card-body">
                                     <h6 class="card-title">Información del Sistema</h6>
                                     <p><strong>ID:</strong> #{{ $producto->idProducto }}</p>
-                                    <p><strong>Creado:</strong> {{ $producto->created_at->format('d/m/Y H:i') }}</p>
-                                    <p><strong>Actualizado:</strong> {{ $producto->updated_at->format('d/m/Y H:i') }}</p>
-                                    <p><strong>Estado:</strong> 
+                                    <p><strong>Creado:</strong> {{ $producto->created_at ? $producto->created_at->format('d/m/Y H:i') : 'No disponible' }}</p>
+                                    <p><strong>Actualizado:</strong> {{ $producto->updated_at ? $producto->updated_at->format('d/m/Y H:i') : 'No disponible' }}</p>
+                                    <p><strong>Estado:</strong>
                                         <span class="badge {{ $producto->estado ? 'bg-success' : 'bg-danger' }}">
                                             {{ $producto->estado ? 'Activo' : 'Inactivo' }}
                                         </span>
@@ -197,43 +222,6 @@
     </div>
 </div>
 
-<!-- Modal Nueva Variante -->
-<div class="modal fade" id="modalNuevaVariante" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Nueva Variante</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formNuevaVariante">
-                    <input type="hidden" name="producto_id" value="{{ $producto->idProducto }}">
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="variante_nombre" class="form-label">Nombre *</label>
-                                <input type="text" class="form-control" id="variante_nombre" name="nombre" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="variante_descripcion" class="form-label">Descripción *</label>
-                                <input type="text" class="form-control" id="variante_descripcion" name="descripcion" required>
-                            </div>
-                        </div>
-                    </div>
-
-
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="guardarVariante()">Guardar Variante</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Modal para seleccionar diseños -->
 <div class="modal fade" id="disenosModal" tabindex="-1" aria-labelledby="disenosModalLabel" aria-hidden="true">
@@ -256,14 +244,14 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="disenosLoader" class="text-center py-4">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
                     </div>
                     <p class="mt-2">Cargando diseños terminados...</p>
                 </div>
-                
+
                 <div id="disenosTable" style="display: none;">
                     <div class="table-responsive">
                         <table class="table table-hover">
@@ -284,7 +272,7 @@
                         </table>
                     </div>
                 </div>
-                
+
                 <div id="noDisenosFound" class="text-center py-4" style="display: none;">
                     <i class="fas fa-search fa-2x text-muted mb-2"></i>
                     <p class="text-muted">No se encontraron diseños terminados</p>
@@ -304,66 +292,66 @@
 
 @push('scripts')
 <script>
-// Variables globales para diseños
-let disenosSeleccionados = [];
-let disenosDisponibles = [];
+    // Variables globales para diseños
+    let disenosSeleccionados = [];
+    let disenosDisponibles = [];
 
-// Cargar diseños terminados cuando se abre el modal
-document.getElementById('disenosModal').addEventListener('show.bs.modal', function() {
-    cargarDisenosTerminados();
-});
+    // Cargar diseños terminados cuando se abre el modal
+    document.getElementById('disenosModal').addEventListener('show.bs.modal', function() {
+        cargarDisenosTerminados();
+    });
 
-// Función para cargar diseños terminados
-function cargarDisenosTerminados() {
-    const loader = document.getElementById('disenosLoader');
-    const table = document.getElementById('disenosTable');
-    const noFound = document.getElementById('noDisenosFound');
-    
-    loader.style.display = 'block';
-    table.style.display = 'none';
-    noFound.style.display = 'none';
-    
-    fetch('/api/disenos/terminados')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            disenosDisponibles = data;
-            mostrarDisenosEnTabla(data);
-            loader.style.display = 'none';
-            
-            if (data.length > 0) {
-                table.style.display = 'block';
-            } else {
+    // Función para cargar diseños terminados
+    function cargarDisenosTerminados() {
+        const loader = document.getElementById('disenosLoader');
+        const table = document.getElementById('disenosTable');
+        const noFound = document.getElementById('noDisenosFound');
+
+        loader.style.display = 'block';
+        table.style.display = 'none';
+        noFound.style.display = 'none';
+
+        fetch('/api/disenos/terminados')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                disenosDisponibles = data;
+                mostrarDisenosEnTabla(data);
+                loader.style.display = 'none';
+
+                if (data.length > 0) {
+                    table.style.display = 'block';
+                } else {
+                    noFound.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar diseños:', error);
+                loader.style.display = 'none';
                 noFound.style.display = 'block';
-            }
-        })
-        .catch(error => {
-            console.error('Error al cargar diseños:', error);
-            loader.style.display = 'none';
-            noFound.style.display = 'block';
-            
-            // Mostrar mensaje de error más específico
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'alert alert-danger mt-2';
-            errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}`;
-            noFound.appendChild(errorDiv);
-        });
-}
 
-// Función para mostrar diseños en la tabla
-function mostrarDisenosEnTabla(disenos) {
-    const tbody = document.getElementById('disenosTableBody');
-    tbody.innerHTML = '';
-    
-    disenos.forEach(diseno => {
-        const isSelected = disenosSeleccionados.some(d => d.id === diseno.idDiseno);
-        const imagenSrc = diseno.archivo ? `/storage/${diseno.archivo}` : '/images/no-image.png';
-        
-        const row = `
+                // Mostrar mensaje de error más específico
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger mt-2';
+                errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}`;
+                noFound.appendChild(errorDiv);
+            });
+    }
+
+    // Función para mostrar diseños en la tabla
+    function mostrarDisenosEnTabla(disenos) {
+        const tbody = document.getElementById('disenosTableBody');
+        tbody.innerHTML = '';
+
+        disenos.forEach(diseno => {
+            const isSelected = disenosSeleccionados.some(d => d.id === diseno.idDiseno);
+            const imagenSrc = diseno.archivo ? `/storage/${diseno.archivo}` : '/images/no-image.png';
+
+            const row = `
             <tr>
                 <td>
                     <input type="checkbox" class="form-check-input diseno-checkbox" 
@@ -379,115 +367,115 @@ function mostrarDisenosEnTabla(disenos) {
                 <td>${new Date(diseno.created_at).toLocaleDateString()}</td>
             </tr>
         `;
-        tbody.innerHTML += row;
-    });
-    
-    // Agregar event listeners a los checkboxes
-    document.querySelectorAll('.diseno-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', actualizarSeleccion);
-    });
-    
-    actualizarContador();
-}
+            tbody.innerHTML += row;
+        });
 
-// Función para actualizar selección
-function actualizarSeleccion() {
-    const checkboxes = document.querySelectorAll('.diseno-checkbox:checked');
-    disenosSeleccionados = [];
-    
-    checkboxes.forEach(checkbox => {
-        const disenoId = parseInt(checkbox.value);
-        const diseno = disenosDisponibles.find(d => d.idDiseno === disenoId);
-        if (diseno) {
-            disenosSeleccionados.push({
-                id: diseno.idDiseno,
-                comentario: diseno.comentario,
-                archivo: diseno.archivo,
-                empleado: diseno.empleado
-            });
-        }
-    });
-    
-    actualizarContador();
-}
+        // Agregar event listeners a los checkboxes
+        document.querySelectorAll('.diseno-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', actualizarSeleccion);
+        });
 
-// Función para actualizar contador
-function actualizarContador() {
-    document.getElementById('contadorSeleccionados').textContent = disenosSeleccionados.length;
-}
-
-// Seleccionar/deseleccionar todos
-document.getElementById('selectAllDisenos').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.diseno-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = this.checked;
-    });
-    actualizarSeleccion();
-});
-
-// Confirmar selección
-document.getElementById('confirmarSeleccion').addEventListener('click', function() {
-    actualizarGaleriaDisenosSeleccionados();
-    const modalElement = document.getElementById('disenosModal');
-    const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-    modal.hide();
-    
-    // Limpieza inmediata y forzada
-    limpiarModal();
-});
-
-// Función para limpiar completamente el modal
-function limpiarModal() {
-    // Remover backdrop inmediatamente
-    const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(backdrop => backdrop.remove());
-    
-    // Limpiar clases y estilos del body
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('padding-right');
-    document.body.style.removeProperty('margin-right');
-    
-    // Restaurar scroll completo
-    document.documentElement.style.removeProperty('overflow');
-    document.documentElement.style.removeProperty('padding-right');
-    
-    // Forzar reflow para asegurar que los cambios se apliquen
-    document.body.offsetHeight;
-    
-    // Limpieza adicional después de un breve delay
-    setTimeout(() => {
-        const remainingBackdrops = document.querySelectorAll('.modal-backdrop');
-        remainingBackdrops.forEach(backdrop => backdrop.remove());
-        
-        // Asegurar que no queden estilos residuales
-        if (document.body.classList.contains('modal-open')) {
-            document.body.classList.remove('modal-open');
-        }
-    }, 100);
-}
-
-// Función para actualizar la galería de diseños seleccionados
-function actualizarGaleriaDisenosSeleccionados() {
-    const noDisenosMessage = document.getElementById('noDisenosMessage');
-    const disenosGrid = document.getElementById('disenosGrid');
-    const disenosVinculados = document.getElementById('disenosVinculados');
-    
-    if (disenosSeleccionados.length === 0) {
-        noDisenosMessage.style.display = 'block';
-        disenosGrid.style.display = 'none';
-        disenosVinculados.value = '';
-        return;
+        actualizarContador();
     }
-    
-    noDisenosMessage.style.display = 'none';
-    disenosGrid.style.display = 'block';
-    
-    // Actualizar grid visual
-    disenosGrid.innerHTML = '';
-    disenosSeleccionados.forEach(diseno => {
-        const imagenSrc = diseno.archivo ? `/storage/${diseno.archivo}` : '/images/no-image.png';
-        const disenoCard = `
+
+    // Función para actualizar selección
+    function actualizarSeleccion() {
+        const checkboxes = document.querySelectorAll('.diseno-checkbox:checked');
+        disenosSeleccionados = [];
+
+        checkboxes.forEach(checkbox => {
+            const disenoId = parseInt(checkbox.value);
+            const diseno = disenosDisponibles.find(d => d.idDiseno === disenoId);
+            if (diseno) {
+                disenosSeleccionados.push({
+                    id: diseno.idDiseno,
+                    comentario: diseno.comentario,
+                    archivo: diseno.archivo,
+                    empleado: diseno.empleado
+                });
+            }
+        });
+
+        actualizarContador();
+    }
+
+    // Función para actualizar contador
+    function actualizarContador() {
+        document.getElementById('contadorSeleccionados').textContent = disenosSeleccionados.length;
+    }
+
+    // Seleccionar/deseleccionar todos
+    document.getElementById('selectAllDisenos').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.diseno-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        actualizarSeleccion();
+    });
+
+    // Confirmar selección
+    document.getElementById('confirmarSeleccion').addEventListener('click', function() {
+        actualizarGaleriaDisenosSeleccionados();
+        const modalElement = document.getElementById('disenosModal');
+        const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+        modal.hide();
+
+        // Limpieza inmediata y forzada
+        limpiarModal();
+    });
+
+    // Función para limpiar completamente el modal
+    function limpiarModal() {
+        // Remover backdrop inmediatamente
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+
+        // Limpiar clases y estilos del body
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+        document.body.style.removeProperty('margin-right');
+
+        // Restaurar scroll completo
+        document.documentElement.style.removeProperty('overflow');
+        document.documentElement.style.removeProperty('padding-right');
+
+        // Forzar reflow para asegurar que los cambios se apliquen
+        document.body.offsetHeight;
+
+        // Limpieza adicional después de un breve delay
+        setTimeout(() => {
+            const remainingBackdrops = document.querySelectorAll('.modal-backdrop');
+            remainingBackdrops.forEach(backdrop => backdrop.remove());
+
+            // Asegurar que no queden estilos residuales
+            if (document.body.classList.contains('modal-open')) {
+                document.body.classList.remove('modal-open');
+            }
+        }, 100);
+    }
+
+    // Función para actualizar la galería de diseños seleccionados
+    function actualizarGaleriaDisenosSeleccionados() {
+        const noDisenosMessage = document.getElementById('noDisenosMessage');
+        const disenosGrid = document.getElementById('disenosGrid');
+        const disenosVinculados = document.getElementById('disenosVinculados');
+
+        if (disenosSeleccionados.length === 0) {
+            noDisenosMessage.style.display = 'block';
+            disenosGrid.style.display = 'none';
+            disenosVinculados.value = '';
+            return;
+        }
+
+        noDisenosMessage.style.display = 'none';
+        disenosGrid.style.display = 'block';
+
+        // Actualizar grid visual
+        disenosGrid.innerHTML = '';
+        disenosSeleccionados.forEach(diseno => {
+            const imagenSrc = diseno.archivo ? `/storage/${diseno.archivo}` : '/images/no-image.png';
+            const disenoCard = `
             <div class="col-md-3 col-sm-4 col-6">
                 <div class="card">
                     <img src="${imagenSrc}" class="card-img-top" style="height: 120px; object-fit: cover;"
@@ -502,99 +490,135 @@ function actualizarGaleriaDisenosSeleccionados() {
                 </div>
             </div>
         `;
-        disenosGrid.innerHTML += disenoCard;
+            disenosGrid.innerHTML += disenoCard;
+        });
+
+        // Actualizar input hidden con IDs
+        const ids = disenosSeleccionados.map(d => d.id).join(',');
+        disenosVinculados.value = ids;
+    }
+
+    // Función para remover diseño
+    function removerDiseno(disenoId) {
+        disenosSeleccionados = disenosSeleccionados.filter(d => d.id !== disenoId);
+        actualizarGaleriaDisenosSeleccionados();
+    }
+
+    // Búsqueda en tiempo real
+    document.getElementById('buscarDisenos').addEventListener('input', function() {
+        const termino = this.value.toLowerCase();
+        const disenosFiltrados = disenosDisponibles.filter(diseno =>
+            (diseno.comentario || '').toLowerCase().includes(termino) ||
+            (diseno.empleado && diseno.empleado.nombre.toLowerCase().includes(termino))
+        );
+        mostrarDisenosEnTabla(disenosFiltrados);
     });
-    
-    // Actualizar input hidden con IDs
-    const ids = disenosSeleccionados.map(d => d.id).join(',');
-    disenosVinculados.value = ids;
-}
 
-// Función para remover diseño
-function removerDiseno(disenoId) {
-    disenosSeleccionados = disenosSeleccionados.filter(d => d.id !== disenoId);
-    actualizarGaleriaDisenosSeleccionados();
-}
-
-// Búsqueda en tiempo real
-document.getElementById('buscarDisenos').addEventListener('input', function() {
-    const termino = this.value.toLowerCase();
-    const disenosFiltrados = disenosDisponibles.filter(diseno => 
-        (diseno.comentario || '').toLowerCase().includes(termino) ||
-        (diseno.empleado && diseno.empleado.nombre.toLowerCase().includes(termino))
-    );
-    mostrarDisenosEnTabla(disenosFiltrados);
-});
-
-// Cargar diseños ya vinculados al producto
-document.addEventListener('DOMContentLoaded', function() {
-    // Aquí cargarías los diseños ya vinculados al producto desde el servidor
-    // Por ahora lo dejamos vacío, pero se puede implementar más tarde
-});
-
-// Habilitar/deshabilitar input de precio según checkbox
-document.querySelectorAll('.caracteristica-check').forEach(function(checkbox) {
-    checkbox.addEventListener('change', function() {
-        const precioInput = this.closest('.form-check').querySelector('.precio-adicional');
-        precioInput.disabled = !this.checked;
-        if (!this.checked) {
-            precioInput.value = '0';
-        }
+    // Cargar diseños ya vinculados al producto
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aquí cargarías los diseños ya vinculados al producto desde el servidor
+        // Por ahora lo dejamos vacío, pero se puede implementar más tarde
     });
-});
 
-// Guardar nueva variante
-function guardarVariante() {
-    const form = document.getElementById('formNuevaVariante');
-    const formData = new FormData(form);
-    
-    // Convertir a objeto para envío JSON
-    const data = {
-        producto_id: formData.get('producto_id'),
-        nombre: formData.get('nombre'),
-        descripcion: formData.get('descripcion'),
-        caracteristicas: []
-    };
-    
-    // Recopilar características seleccionadas
-    document.querySelectorAll('.caracteristica-check:checked').forEach(function(checkbox) {
-        const caracteristicaId = checkbox.value;
-        const precioInput = checkbox.closest('.form-check').querySelector('.precio-adicional');
-        
-        data.caracteristicas.push({
-            id: caracteristicaId,
-            precio_adicional: parseFloat(precioInput.value) || 0
+    // Habilitar/deshabilitar input de precio según checkbox
+    document.querySelectorAll('.caracteristica-check').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            const precioInput = this.closest('.form-check').querySelector('.precio-adicional');
+            precioInput.disabled = !this.checked;
+            if (!this.checked) {
+                precioInput.value = '0';
+            }
         });
     });
-    
-    if (data.caracteristicas.length === 0) {
-        alert('Debe seleccionar al menos una característica');
-        return;
-    }
-    
-    // Enviar datos
-    fetch('{{ route("productos.storeVariante") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Error: ' + data.message);
+
+    // Guardar nueva variante
+    function guardarVariante() {
+        const form = document.getElementById('formNuevaVariante');
+        const formData = new FormData(form);
+
+        // Convertir a objeto para envío JSON
+        const data = {
+            producto_id: formData.get('producto_id'),
+            nombre: formData.get('nombre'),
+            descripcion: formData.get('descripcion'),
+            caracteristicas: []
+        };
+
+        // Recopilar características seleccionadas
+        document.querySelectorAll('.caracteristica-check:checked').forEach(function(checkbox) {
+            const caracteristicaId = checkbox.value;
+            const precioInput = checkbox.closest('.form-check').querySelector('.precio-adicional');
+
+            data.caracteristicas.push({
+                id: caracteristicaId,
+                precio_adicional: parseFloat(precioInput.value) || 0
+            });
+        });
+
+        if (data.caracteristicas.length === 0) {
+            alert('Debe seleccionar al menos una característica');
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al guardar la variante');
-    });
-}
 
+        // Enviar datos
+        fetch('{{ route("productos.storeVariante") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar la variante');
+            });
+    }
+</script>
+<script>
+    function confirmDeleteImage(button) {
+        const idVenta = button.getAttribute('data-id');
+        eliminarImagenAjax(idVenta);
+    }
 
+    function eliminarImagenAjax(idVenta) {
+        fetch(`/productos/${idVenta}/eliminar-imagen`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    document.querySelector('.imagen-container').innerHTML = `
+                <input type="file" id="imagenProducto" name="imagenProducto" class="form-control" accept="image/*">
+                <div class="form-text mt-2">Sube una nueva imagen si lo deseas.</div>
+            `;
+                    if (window.showNotification) window.showNotification('success', 'Imagen eliminada correctamente');
+                } else {
+                    if (window.showNotification) window.showNotification('error', 'Error al eliminar la imagen: ' + data.message);
+                    else alert('Error al eliminar la imagen: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+
+                alert('Error al eliminar la imagen: ' + err.message);
+            });
+    }
 </script>
 @endpush

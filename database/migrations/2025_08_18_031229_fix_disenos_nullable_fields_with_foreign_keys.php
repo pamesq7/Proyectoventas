@@ -14,7 +14,7 @@ return new class extends Migration
     {
         // Usar SQL directo para modificar los campos a nullable
         DB::statement('ALTER TABLE disenos MODIFY COLUMN idEmpleado BIGINT UNSIGNED NULL');
-        DB::statement('ALTER TABLE disenos MODIFY COLUMN idDiseñador BIGINT UNSIGNED NULL');
+
     }
 
     /**
@@ -24,6 +24,6 @@ return new class extends Migration
     {
         // Revertir los campos a NOT NULL
         DB::statement('ALTER TABLE disenos MODIFY COLUMN idEmpleado BIGINT UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE disenos MODIFY COLUMN idDiseñador BIGINT UNSIGNED NOT NULL');
+       
     }
 };

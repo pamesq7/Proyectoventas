@@ -39,10 +39,19 @@ class DetalleVenta extends Model
     {
         return $this->belongsTo(Venta::class, 'idVenta');
     }
+    // Relación: pertenece a un producto
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class, 'idProducto');
+    }
 
     // Accesor: estado como texto
     public function getEstadoTextoAttribute()
     {
         return $this->estado == 1 ? 'Activo' : 'Anulado';
+    }
+    public function diseno()
+    {
+        return $this->hasOne(Diseno::class, 'iddetalleVenta'); // Ajusta clave foránea si aplica
     }
 }

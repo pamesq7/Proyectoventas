@@ -1,249 +1,365 @@
 @extends('layouts.app')
 
-@section('title', 'Clientes Morosos')
+@section('title', 'Gestión de Ventas')
 
 @section('content')
-<div class="container-fluid px-4">
-    <h1 class="mt-4">
-        <i class="fas fa-exclamation-triangle text-danger me-2"></i>
-        Clientes Morosos
-    </h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ route('ventas.index') }}">Gestión de Ventas</a></li>
-        <li class="breadcrumb-item active">Clientes Morosos</li>
-    </ol>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">
+                        <i class="fas fa-shopping-cart"></i> Clientes Mororsos
+                    </h3>
+                </div>
 
-    <!-- Estadísticas Generales -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-danger text-white mb-4">
+                <!-- Filtros -->
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="small text-white-50">Total Clientes Morosos</div>
-                            <div class="h5 mb-0">{{ $clientesMorosos->count() }}</div>
-                        </div>
-                        <div class="fa-2x">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-warning text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="small text-white-50">Deuda Total</div>
-                            <div class="h5 mb-0">Bs. {{ number_format($clientesMorosos->sum('saldo_total'), 2) }}</div>
-                        </div>
-                        <div class="fa-2x">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-info text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="small text-white-50">Clientes Naturales</div>
-                            <div class="h5 mb-0">{{ $clientesMorosos->where('tipo_cliente', 'Natural')->count() }}</div>
-                        </div>
-                        <div class="fa-2x">
-                            <i class="fas fa-user"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-secondary text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="small text-white-50">Establecimientos</div>
-                            <div class="h5 mb-0">{{ $clientesMorosos->where('tipo_cliente', 'Establecimiento')->count() }}</div>
-                        </div>
-                        <div class="fa-2x">
-                            <i class="fas fa-building"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                    <form method="GET" action="{{ route('ventas.index') }}" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label for="fecha_desde">Desde:</label>
+                                <input type="date" name="fecha_desde" id="fecha_desde" class="form-control"
+                                    value="{{ request('fecha_desde') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="fecha_hasta">Hasta:</label>
+                                <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control"
+                                    value="{{ request('fecha_hasta') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="estado_pago">Estado de Pago:</label>
+                                <select name="estado_pago" id="estado_pago" class="form-control">
+                                    <option value="">Todos</option>
+                                    <option value="saldado" {{ request('estado_pago') == 'saldado' ? 'selected' : '' }}>Saldado</option>
+                                    <option value="pendiente" {{ request('estado_pago') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                                </select>
+                            </div>
 
-    <!-- Tabla de Clientes Morosos -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-table me-1"></i>
-            Lista de Clientes con Saldo Pendiente
-        </div>
-        <div class="card-body">
-            @if($clientesMorosos->count() > 0)
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="dataTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Cliente</th>
-                                <th>Teléfono</th>
-                                <th>Ventas Pendientes</th>
-                                <th>Saldo Total</th>
-                                <th>Días Promedio Atraso</th>
-                                <th>Riesgo</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($clientesMorosos as $cliente)
-                                @php
-                                    $diasAtraso = $cliente->dias_atraso_promedio ?? 0;
-                                    $riesgo = 'Bajo';
-                                    $colorRiesgo = 'success';
-                                    
-                                    if ($diasAtraso > 60) {
-                                        $riesgo = 'Alto';
-                                        $colorRiesgo = 'danger';
-                                    } elseif ($diasAtraso > 30) {
-                                        $riesgo = 'Medio';
-                                        $colorRiesgo = 'warning';
-                                    }
-                                @endphp
+                            <div class="col-md-2">
+                                <label for="tipo_cliente">Tipo Cliente:</label>
+                                <select name="tipo_cliente" id="tipo_cliente" class="form-control">
+                                    <option value="">Todos</option>
+                                    <option value="natural" {{ request('tipo_cliente') == 'natural' ? 'selected' : '' }}>Natural</option>
+                                    <option value="establecimiento" {{ request('tipo_cliente') == 'establecimiento' ? 'selected' : '' }}>Establecimiento</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-info mr-2">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                                <a href="{{ route('ventas.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Limpiar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+
+
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead class="thead-dark">
                                 <tr>
+                                    <th>N°</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Total</th>
+                                    <th>Estado Pago</th>
+                                    <th>Vendedor</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Fecha Actualización</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $contador = ($ventas->currentPage() - 1) * $ventas->perPage() + 1; @endphp
+                                @forelse($ventas as $venta)
+                                <tr>
+                                    <td>{{ $contador++ }}</td>
+                                    <td>{{ $venta->created_at->format('d/m/Y') }}</td>
                                     <td>
-                                        @if($cliente->tipo_cliente == 'Natural')
-                                            <span class="badge bg-primary">
-                                                <i class="fas fa-user me-1"></i>Natural
-                                            </span>
-                                        @else
-                                            <span class="badge bg-info">
-                                                <i class="fas fa-building me-1"></i>Establecimiento
-                                            </span>
+                                        <strong>{{ $venta->nombre_cliente }}</strong>
+                                        <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>Bs. {{ number_format($venta->total, 2) }}</strong>
+                                        @if($venta->estado_pago == 'PARCIAL')
+                                        <br><small class="text-muted">Pagado: Bs. {{ number_format($venta->monto_pagado, 2) }}</small>
+                                        <br><small class="text-danger">Debe: Bs. {{ number_format($venta->saldo, 2) }}</small>
                                         @endif
                                     </td>
                                     <td>
-                                        <strong>{{ $cliente->nombre_cliente }}</strong>
-                                    </td>
-                                    <td>
-                                        @if($cliente->telefono)
-                                            <a href="tel:{{ $cliente->telefono }}" class="text-decoration-none">
-                                                <i class="fas fa-phone text-success me-1"></i>
-                                                {{ $cliente->telefono }}
-                                            </a>
+                                        @if($venta->estado_pago == 'PAGADO')
+                                        <span class="badge badge-success">🟢 PAGADO</span>
+                                        @elseif($venta->estado_pago == 'PARCIAL')
+                                        <span class="badge badge-warning">🟡 PARCIAL</span>
+                                        <br><small>{{ $venta->porcentaje_pagado }}%</small>
                                         @else
-                                            <span class="text-muted">Sin teléfono</span>
+                                        <span class="badge badge-danger">🔴 PENDIENTE</span>
+                                        @if($venta->dias_atraso > 0)
+                                        <br><small class="text-danger">{{ $venta->dias_atraso }} días</small>
+                                        @endif
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge bg-warning">{{ $cliente->ventas_pendientes }}</span>
+                                        <strong>{{ $venta->nombre_empleado }}</strong>
                                     </td>
+                                    <!-- Fecha Creación -->
+                                    <td>{{ $venta->created_at->format('d/m/Y H:i') }}</td>
+
+                                    <!-- Fecha Actualización -->
+                                    <td>{{ $venta->updated_at->format('d/m/Y H:i') }}</td>
+
                                     <td>
-                                        <strong class="text-danger">
-                                            Bs. {{ number_format($cliente->saldo_total, 2) }}
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        @if($diasAtraso > 0)
-                                            <span class="text-{{ $colorRiesgo }}">
-                                                {{ $diasAtraso }} días
-                                            </span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{{ $colorRiesgo }}">{{ $riesgo }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            @if($cliente->telefono)
-                                                <a href="https://wa.me/51{{ $cliente->telefono }}?text=Hola {{ $cliente->nombre_cliente }}, te contactamos por el saldo pendiente de Bs. {{ number_format($cliente->saldo_total, 2) }}" 
-                                                   target="_blank" 
-                                                   class="btn btn-success btn-sm" 
-                                                   title="Contactar por WhatsApp">
-                                                    <i class="fab fa-whatsapp"></i>
-                                                </a>
-                                            @endif
-                                            <a href="{{ route('ventas.index', ['cliente_id' => $cliente->id_cliente, 'estado_pago' => 'pendiente']) }}" 
-                                               class="btn btn-primary btn-sm" 
-                                               title="Ver ventas pendientes">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ route('ventas.show', $venta->idVenta) }}"
+                                                class="btn btn-info" title="Ver detalles">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('ventas.create', ['cliente_id' => $cliente->id_cliente]) }}" 
-                                               class="btn btn-warning btn-sm" 
-                                               title="Registrar pago">
-                                                <i class="fas fa-money-bill"></i>
-                                            </a>
+                                            @if($venta->puedeRecibirPagos())
+                                            <button type="button"
+                                                class="btn btn-success"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalPago"
+                                                data-venta-id="{{ $venta->idVenta }}"
+                                                data-cliente="{{ $venta->nombre_cliente }}"
+                                                data-saldo="{{ $venta->saldo }}"
+                                                title="Registrar pago">
+                                                <i class="fas fa-dollar-sign"></i>
+                                            </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div class="alert alert-success" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <strong>¡Excelente!</strong> No hay clientes con saldo pendiente en este momento.
-                </div>
-            @endif
-        </div>
-    </div>
+                                @empty
+                                <tr>
+                                    <td colspan="9" class="text-center">No se encontraron ventas</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
 
-    <!-- Información adicional -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Información sobre Clientes Morosos
-                </div>
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li><i class="fas fa-circle text-success me-2"></i><strong>Riesgo Bajo:</strong> Menos de 30 días de atraso</li>
-                        <li><i class="fas fa-circle text-warning me-2"></i><strong>Riesgo Medio:</strong> Entre 30 y 60 días de atraso</li>
-                        <li><i class="fas fa-circle text-danger me-2"></i><strong>Riesgo Alto:</strong> Más de 60 días de atraso</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <i class="fas fa-lightbulb me-1"></i>
-                    Acciones Recomendadas
-                </div>
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li><i class="fab fa-whatsapp text-success me-2"></i>Contactar por WhatsApp para recordatorio amigable</li>
-                        <li><i class="fas fa-eye text-primary me-2"></i>Revisar historial de ventas del cliente</li>
-                        <li><i class="fas fa-money-bill text-warning me-2"></i>Registrar pagos parciales o totales</li>
-                        <li><i class="fas fa-handshake text-info me-2"></i>Negociar planes de pago flexibles</li>
-                    </ul>
+
+                    <!-- Paginación -->
+                    <div class="d-flex justify-content-center">
+                        {{ $ventas->appends(request()->query())->links() }}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Estilos para la tabla -->
+<style>
+    .table {
+        color: #000000;
+        /* Texto negro */
+        font-size: 0.9rem;
+    }
+
+    .table thead th {
+        background-color: #343a40;
+        color: white;
+        padding: 8px 12px;
+        vertical-align: middle;
+    }
+
+    .table tbody td {
+        padding: 6px 12px;
+        vertical-align: middle;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Ajuste para los botones de acción */
+    .btn-group-sm>.btn,
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    /* Ajuste para los badges de estado */
+    .badge-success,
+    .badge-warning,
+    .badge-danger {
+        color: #000000 !important;
+        /* Texto negro */
+        font-weight: 500;
+    }
+
+    .badge-success {
+        background-color: #a3e4a3;
+    }
+
+    /* Verde claro */
+    .badge-warning {
+        background-color: #f9e79f;
+    }
+
+    /* Amarillo claro */
+    .badge-danger {
+        background-color: #f5b7b1;
+    }
+
+    /* Rojo claro */
+
+    /* Ajuste para los textos pequeños */
+    small {
+        font-size: 0.8rem;
+    }
+</style>
+
+<!-- Modal para registrar pago -->
+<div class="modal fade" id="modalPago" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Pago</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formPago" method="POST" action="{{ route('ventas.store') }}">
+                @csrf
+                <div class="modal-body">
+                    <input type="hidden" name="idVenta" id="ventaId">
+                    <input type="hidden" name="tipoTransaccion" value="pago">
+
+                    <div class="form-group">
+                        <label>Cliente:</label>
+                        <p id="clienteNombre" class="font-weight-bold"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Saldo Pendiente:</label>
+                        <p id="saldoPendiente" class="font-weight-bold text-danger"></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="monto">Monto a Pagar: *</label>
+                        <input type="number" name="monto" id="monto" class="form-control"
+                            step="0.01" min="0.01" required>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">Tipo Pago *</label>
+                        <select class="form-select" id="tipoPago" name="tipoTransaccion">
+                            <option value="efectivo" selected>Efectivo</option>
+                            <option value="qr">QR</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="transferencia">Transferencia bancaria</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="observaciones">Observaciones/Serie:</label>
+                        <textarea name="observaciones" id="observaciones" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@endsection
+
 @push('scripts')
 <script>
-$(document).ready(function() {
-    $('#dataTable').DataTable({
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
-        },
-        "order": [[ 4, "desc" ]], // Ordenar por saldo total descendente
-        "pageLength": 25,
-        "responsive": true
+    // Poblar datos del modal cuando se abre
+    const modalEl = document.getElementById('modalPago');
+    if (modalEl) {
+        modalEl.addEventListener('show.bs.modal', function(event) {
+            // Botón que disparó el modal
+            const button = event.relatedTarget;
+
+            // Extraer datos del botón
+            const ventaId = button.getAttribute('data-venta-id');
+            const cliente = button.getAttribute('data-cliente');
+            const saldo = parseFloat(button.getAttribute('data-saldo')) || 0;
+
+            // Actualizar campos del modal
+            document.getElementById('ventaId').value = ventaId;
+            document.getElementById('clienteNombre').textContent = cliente;
+            document.getElementById('saldoPendiente').textContent = 'Bs. ' + saldo.toFixed(2);
+            document.getElementById('monto').setAttribute('max', saldo);
+            document.getElementById('monto').value = saldo; // Prellenar con saldo completo
+        });
+
+        // Limpiar formulario al cerrar
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            const form = document.getElementById('formPago');
+            if (form) form.reset();
+        });
+    }
+
+    // Enviar pago por AJAX para evitar redirección a ventas.show
+    $(function() {
+        $('#formPago').on('submit', function(e) {
+            e.preventDefault();
+            const $form = $(this);
+            const url = $form.attr('action');
+            const data = $form.serialize();
+
+            // Validar datos básicos antes de enviar - CORREGIDO
+            const monto = parseFloat($('#monto').val()) || 0;
+            const metodo = $('#tipoPago').val(); // ✅ CORREGIDO: 'tipoPago' en lugar de 'metodoPago'
+            const ventaId = $('#ventaId').val();
+
+            if (!ventaId || !metodo || monto <= 0) {
+                alert('Por favor complete todos los campos requeridos.');
+                return;
+            }
+
+            // Deshabilitar botón mientras se envía
+            const $submit = $form.find('button[type="submit"]');
+            $submit.prop('disabled', true).text('Guardando...');
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: data,
+                success: function() {
+                    // Cerrar modal y recargar lista
+                    if (window.bootstrap && bootstrap.Modal) {
+                        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalPago'));
+                        if (modalInstance) modalInstance.hide();
+                    } else if (typeof $('#modalPago').modal === 'function') {
+                        $('#modalPago').modal('hide');
+                    }
+                    // Pago registrado correctamente
+                    setTimeout(function() {
+                        location.reload();
+                    }, 500);
+                },
+                error: function(xhr) {
+                    // Mostrar errores específicos, pero solo si son errores reales
+                    let msg = 'No se pudo registrar el pago.';
+                    if (xhr.status === 419) {
+                        msg = 'Sesión expirada. Recarga la página.';
+                    } else if (xhr.status === 422 && xhr.responseJSON) {
+                        msg = 'Datos inválidos. Verifica el monto y método de pago.';
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+
+                    alert(msg);
+                },
+                complete: function() {
+                    $submit.prop('disabled', false).html('<i class="fas fa-check"></i> Registrar Pago');
+                }
+            });
+        });
     });
-});
 </script>
 @endpush
-@endsection

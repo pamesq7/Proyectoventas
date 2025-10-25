@@ -13,6 +13,8 @@ use App\Models\Caracteristica;
 use App\Models\ClienteNatural;
 use App\Models\ClienteEstablecimiento;
 use App\Models\Transaccion;
+use App\Models\Empleado;
+use App\Models\Diseno;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -252,22 +254,41 @@ class PedidoController extends Controller
      */
     public function nuevoPedido()
     {
-        if (!session()->has('disenoTemporal')) {
+        $user = auth()->user();
+
+        // ✅ SOLUCIÓN MEJORADA: Lógica diferenciada por rol
+        $esAdministrador = optional($user->empleado)->rol === 'administrador';
+        $tieneDiseno = session()->has('disenoTemporal');
+
+        if (!$tieneDiseno && !$esAdministrador) {
             return redirect()->route('pedidos.personalizar')
                 ->with('error', 'Primero sube tu diseño.');
         }
 
         $productos = Producto::where('estado', 1)
-            ->whereBetween('idProducto', [1, 4]) // ← FILTRO AÑADIDO
+            ->whereBetween('idProducto', [1, 4])
             ->orderBy('idProducto')
             ->get();
-        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
 
+        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
         $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
         $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
 
-        // Sin depender de la BD para métodos de pago
-        return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos'));
+        // Obtener solo empleados con rol 'diseñador'
+
+        $diseñadores = Empleado::with('user')
+            ->where('rol', 'diseñador')
+            ->where('estado', 1)
+            ->get();
+
+
+        // Mensaje informativo para admins sin diseño
+        $mensaje = null;
+        if ($esAdministrador && !$tieneDiseno) {
+            session()->flash('info', 'Modo administrador: Puedes crear pedidos sin diseño. Los clientes normales necesitarán subir un diseño.');
+        }
+
+        return view('pedidos.nuevo', compact('productos', 'tallas', 'clientesNaturales', 'clientesEstablecimientos', 'diseñadores'));
     }
 
     /**
@@ -280,41 +301,29 @@ class PedidoController extends Controller
                 ->with('error', 'No se encontró el diseño subido.');
         }
 
-        $request->validate([
-            'tipoCliente' => 'required|in:natural,establecimiento',
-            'idCliente' => 'required_if:tipoCliente,natural',
-            'idEstablecimiento' => 'required_if:tipoCliente,establecimiento',
-            'fechaEntrega' => 'required|date|after:today',
-            'lugarEntrega' => 'required|string|max:200',
-            'idProducto' => 'required|exists:productos,idProducto',
-            // Arrays de items
-            'idTalla' => 'required|array|min:1',
-            'idTalla.*' => 'required|exists:tallas,idTalla',
-            'cantidad' => 'required|array|min:1',
-            'cantidad.*' => 'required|integer|min:1',
-            'nombrePersonalizado' => 'nullable|array',
-            'numeroPersonalizado' => 'nullable|array',
-            'observaciones' => 'nullable|array',
-            // Pago
-            'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
-            'montoAdelanto' => 'nullable|numeric|min:0',
-        ]);
+        // ✅ LEER el id del diseñador desde el form (select name="idEmpleado")
+        $disenadorId = $request->input('idEmpleado');
 
-        $producto = Producto::findOrFail($request->idProducto);
+        // (Opcional) validar que exista y sea diseñador activo
+        if ($disenadorId && !Empleado::where('idEmpleado', $disenadorId)->where('rol', 'diseñador')->where('estado', 1)->exists()) {
+            return back()->with('error', 'El diseñador seleccionado no es válido.')->withInput();
+        }
+
+        $producto   = Producto::findOrFail($request->idProducto);
         $rutaDiseno = session()->get('disenoTemporal');
 
-        $idsTalla = $request->input('idTalla', []);
+        $idsTalla   = $request->input('idTalla', []);
         $cantidades = $request->input('cantidad', []);
-        $nombres = $request->input('nombrePersonalizado', []);
-        $numeros = $request->input('numeroPersonalizado', []);
-        $observs = $request->input('observaciones', []);
+        $nombres    = $request->input('nombrePersonalizado', []);
+        $numeros    = $request->input('numeroPersonalizado', []);
+        $observs    = $request->input('observaciones', []);
 
         DB::beginTransaction();
         try {
             $subtotal = 0.0;
             $itemsCalculados = [];
 
-            // Obtener un idEmpleado válido (evitar FK inválida)
+            // ✅ Aseguramos un idEmpleado válido para la venta/detalle
             $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
             if (!$idEmpleadoSeguro) {
                 $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
@@ -325,24 +334,24 @@ class PedidoController extends Controller
 
             foreach ($idsTalla as $i => $idTalla) {
                 $cant = (int)($cantidades[$i] ?? 0);
-                if ($cant <= 0) {
-                    continue;
-                }
-                // Precio unitario = precio base del producto + adicional por talla (si existe)
+                if ($cant <= 0) continue;
+
                 $precioAdicional = (float) (ProductoTalla::where('idProducto', $producto->idProducto)
                     ->where('idTalla', $idTalla)
                     ->value('precioAdicional') ?? 0);
+
                 $precioUnit = (float) ($producto->precioVenta ?? 0) + $precioAdicional;
                 $sub = $precioUnit * $cant;
                 $subtotal += $sub;
+
                 $itemsCalculados[] = [
-                    'idTalla' => $idTalla,
-                    'cantidad' => $cant,
+                    'idTalla'        => $idTalla,
+                    'cantidad'       => $cant,
                     'precioUnitario' => $precioUnit,
-                    'subtotal' => $sub,
-                    'nombre' => $nombres[$i] ?? null,
-                    'numero' => $numeros[$i] ?? null,
-                    'observacion' => $observs[$i] ?? null,
+                    'subtotal'       => $sub,
+                    'nombre'         => $nombres[$i] ?? null,
+                    'numero'         => $numeros[$i] ?? null,
+                    'observacion'    => $observs[$i] ?? null,
                 ];
             }
 
@@ -350,51 +359,67 @@ class PedidoController extends Controller
                 throw new \Exception('Debes agregar al menos una fila válida (talla y cantidad).');
             }
 
-            // Determinar si anexamos a una venta existente o creamos una nueva
+            // Crear o anexar a venta
             $ventaDestinoId = session()->get('ventaDestino');
             if ($ventaDestinoId) {
-                // Anexar a venta existente
                 $venta = Venta::with('transacciones')->findOrFail($ventaDestinoId);
             } else {
-                // Crear la venta
                 $total = $subtotal;
                 $venta = Venta::create([
-                    'subtotal' => $subtotal,
-                    'total' => $total,
-                    'fechaEntrega' => $request->fechaEntrega,
-                    'lugarEntrega' => $request->lugarEntrega,
-                    'estadoPedido' => '0',
-                    'saldo' => $total,
-                    'estado' => 1,
-                    'idEmpleado' => $idEmpleadoSeguro,
-                    'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
+                    'subtotal'        => $subtotal,
+                    'total'           => $total,
+                    'fechaEntrega'    => $request->fechaEntrega,
+                    'lugarEntrega'    => $request->lugarEntrega,
+                    'estadoPedido'    => '0',
+                    'saldo'           => $total,
+                    'estado'          => 1,
+                    'idEmpleado'      => $idEmpleadoSeguro,
+                    'idCliente'       => $request->tipoCliente === 'natural' ? $request->idCliente : null,
                     'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
                 ]);
             }
 
-            // Crear detalles por cada fila
+            // ✅ IMPORTANTE: inicializa $primerDetalle ANTES del bucle de creación
+            $primerDetalle = null;
+
+            // Crear detalles por cada fila y capturar el primero
             foreach ($itemsCalculados as $it) {
-                DetalleVenta::create([
-                    'cantidad' => $it['cantidad'],
+                $detalle = DetalleVenta::create([
+                    'cantidad'            => $it['cantidad'],
                     'nombrePersonalizado' => $it['nombre'],
                     'numeroPersonalizado' => $it['numero'],
-                    'textoAdicional' => null,
-                    'observacion' => $it['observacion'],
-                    'precioUnitario' => $it['precioUnitario'],
-                    'estado' => 1,
-                    'idTalla' => $it['idTalla'],
-                    'idVenta' => $venta->idVenta,
-                    'idEmpleado' => $idEmpleadoSeguro,
+                    'textoAdicional'      => null,
+                    'observacion'         => $it['observacion'],
+                    'precioUnitario'      => $it['precioUnitario'],
+                    'estado'              => 1,
+                    'idTalla'             => $it['idTalla'],
+                    'idVenta'             => $venta->idVenta,
+                    'idEmpleado'          => $idEmpleadoSeguro,
+                ]);
+
+                // ✅ Guardamos referencia al primer detalle creado
+                if (!$primerDetalle) {
+                    $primerDetalle = $detalle;
+                }
+            }
+
+            // ✅ Crea un SOLO registro de Diseno asociado al primer detalle
+            if ($rutaDiseno && $primerDetalle) {
+                Diseno::create([
+                    'archivo'        => $rutaDiseno,
+                    'iddetalleVenta' => $primerDetalle->iddetalleVenta,
+                    'estado'         => 1,
+                    'idEmpleado'     => $disenadorId, // diseñador seleccionado en el form
                 ]);
             }
 
-            // Si estamos anexando a una venta existente, recalcular subtotal/total/saldo sumando los nuevos ítems
+            // Recalcular o registrar adelanto si corresponde
             if ($ventaDestinoId) {
                 $nuevoSubtotal = DetalleVenta::where('idVenta', $venta->idVenta)
                     ->selectRaw('COALESCE(SUM(cantidad * precioUnitario),0) as s')
                     ->value('s');
                 $venta->subtotal = $nuevoSubtotal;
-                $venta->total = $nuevoSubtotal; // ajustar si hay recargos/descuentos
+                $venta->total    = $nuevoSubtotal;
 
                 $pagos = $venta->transacciones
                     ->where('tipoTransaccion', 'pago')
@@ -402,32 +427,29 @@ class PedidoController extends Controller
                 $venta->saldo = max($venta->total - (float) $pagos, 0);
                 $venta->save();
             } else {
-                // Registrar adelanto como pago (si corresponde) SOLO cuando se crea la venta
                 $montoAdelanto = (float) ($request->montoAdelanto ?? 0);
                 if ($montoAdelanto > 0) {
-                    if ($montoAdelanto > $total) {
+                    if ($montoAdelanto > $venta->total) {
                         throw new \Exception('El adelanto no puede ser mayor que el total.');
                     }
                     Transaccion::create([
                         'tipoTransaccion' => 'pago',
-                        'monto' => $montoAdelanto,
-                        'metodoPago' => $request->tipoTransaccion ?? 'efectivo',
-                        'observaciones' => null,
-                        'estado' => 1,
-                        'idVenta' => $venta->idVenta,
+                        'monto'           => $montoAdelanto,
+                        'metodoPago'      => $request->tipoTransaccion ?? 'efectivo',
+                        'observaciones'   => null,
+                        'estado'          => 1,
+                        'idVenta'         => $venta->idVenta,
                     ]);
-                    $venta->saldo = max($total - $montoAdelanto, 0);
+                    $venta->saldo = max($venta->total - $montoAdelanto, 0);
                     $venta->save();
                 }
             }
 
             DB::commit();
-            // Limpiar diseño temporal tras guardar
+
+            // Limpiar sesiones temporales
             session()->forget('disenoTemporal');
-            // Si anexamos, limpiar el destino
-            if ($ventaDestinoId) {
-                session()->forget('ventaDestino');
-            }
+            if ($ventaDestinoId) session()->forget('ventaDestino');
 
             return redirect()->route('pedidos.confirmacion', $venta->idVenta)
                 ->with('success', 'Pedido creado exitosamente');
@@ -807,15 +829,37 @@ class PedidoController extends Controller
     }
 
     /**
-     * Listar pedidos (para administración)
+     * Eliminar imagen del pedido vía AJAX
      */
+    public function eliminarImagen($idVenta)
+    {
+        try {
+            $pedido = Venta::findOrFail($idVenta);
+            $diseno = $pedido->disenos->first();
+
+            if ($diseno) {
+                // Eliminar archivo físico
+                Storage::delete('public/' . $diseno->archivo);
+                // Eliminar registro de BD
+                $diseno->delete();
+                Log::info('Imagen eliminada vía AJAX', ['idVenta' => $idVenta]);
+                return response()->json(['success' => true, 'message' => 'Imagen eliminada correctamente']);
+            } else {
+                return response()->json(['success' => false, 'message' => 'No se encontró imagen asociada'], 404);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error al eliminar imagen vía AJAX', ['idVenta' => $idVenta, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error al eliminar la imagen'], 500);
+        }
+    }
     public function index()
     {
         $pedidos = Venta::with([
             'clienteNatural',
             'clienteEstablecimiento',
             'empleado',
-            'detalleVentas'
+            'detalleVentas',
+            'disenos.empleado.user' // ✅ cargar también el user del emplead
         ])->where('estado', 1)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -831,16 +875,24 @@ class PedidoController extends Controller
     /**
      * Ver detalle de pedido
      */
-    public function show($idVenta)
+    public function show($pedido)
     {
         $pedido = Venta::with([
             'detalleVentas.talla',
+            'detalleVentas.diseno',
             'clienteNatural',
             'clienteEstablecimiento',
             'empleado'
-        ])->findOrFail($idVenta);
+        ])->findOrFail($pedido);
 
-        return view('pedidos.show', compact('pedido'));
+        // Verificar si hay un diseño temporal cargado en la sesión
+        $disenoUrl = null;
+        if (session()->has('disenoTemporal')) {
+            $disenoUrl = asset('storage/' . session()->get('disenoTemporal'));
+        }
+
+        return view('pedidos.show', compact('pedido', 'disenoUrl')); // Pasamos disenoUrl a la vista
+
     }
 
     /**
@@ -848,7 +900,8 @@ class PedidoController extends Controller
      */
     public function edit($idVenta)
     {
-        $pedido = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla'])
+        // Obtener el pedido a editar
+        $pedido = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla', 'detalleVentas.producto', 'disenos'])
             ->findOrFail($idVenta);
 
         // Estados posibles para select
@@ -860,10 +913,13 @@ class PedidoController extends Controller
             '4' => 'Cancelado',
         ];
 
+        // Obtener todos los diseñadores disponibles
+        $diseñadores = Empleado::where('rol', 'diseñador')->where('estado', 1)->get();
+
         // Tallas activas para la edición de detalles
         $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTalla', 'nombre']);
 
-        // Productos activos para precargar precios por talla (Opción A)
+        // Productos activos para precargar precios por talla (opcional)
         $productos = Producto::where('estado', 1)
             ->orderBy('nombre')
             ->get(['idProducto', 'nombre']);
@@ -876,30 +932,118 @@ class PedidoController extends Controller
             ['id' => null, 'nombre' => 'Transferencia bancaria', 'codigo' => 'transferencia'],
         ]);
 
-        return view('pedidos.edit', compact('pedido', 'estados', 'tallas', 'productos', 'metodosPago'));
+        // Clientes naturales y establecimientos para el select
+        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
+
+        // Empleados para el select
+        $empleados = Empleado::with('user')->where('estado', 1)->get();
+
+        // Retornar la vista con todas las variables necesarias
+        return view('pedidos.edit', compact(
+            'pedido',
+            'estados',          // Asegúrate de pasar esta variable a la vista
+            'tallas',
+            'productos',
+            'metodosPago',
+            'clientesNaturales',
+            'clientesEstablecimientos',
+            'empleados',
+            'diseñadores'
+        ));
     }
+
 
     /**
      * Actualizar pedido
      */
     public function update(Request $request, $idVenta)
     {
+        // Validación de los campos del pedido
         $request->validate([
             'fechaEntrega' => 'required|date',
             'lugarEntrega' => 'required|string|max:200',
             'estadoPedido' => 'required|in:0,1,2,3,4',
+            'imagenPedido' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Validación de la imagen
+            'tipoCliente' => 'nullable|string',
+            'idEmpleado' => 'required|exists:empleados,idEmpleado',
+            'observaciones' => 'nullable|string|max:500',
         ]);
 
+        // Buscar el pedido
         $pedido = Venta::findOrFail($idVenta);
 
-        $pedido->fechaEntrega = $request->fechaEntrega;
-        $pedido->lugarEntrega = $request->lugarEntrega;
-        $pedido->estadoPedido = (string) $request->estadoPedido;
+        // Actualizar los datos del pedido
+        $pedido->fill($request->all());
+
+        // Manejar cliente si se cambió
+        if ($request->filled('tipoCliente')) {
+            if (str_starts_with($request->tipoCliente, 'natural:')) {
+                $pedido->idCliente = explode(':', $request->tipoCliente)[1];
+                $pedido->idEstablecimiento = null;
+            } elseif (str_starts_with($request->tipoCliente, 'establecimiento:')) {
+                $pedido->idEstablecimiento = explode(':', $request->tipoCliente)[1];
+                $pedido->idCliente = null;
+            }
+        }
+
+        // Actualizar empleado si se cambió
+        if ($request->filled('idEmpleado')) {
+            $pedido->idEmpleado = $request->idEmpleado;
+        }
+
+        // Manejar la carga de la nueva imagen
+        if ($request->hasFile('imagenPedido')) {
+            // Eliminar el diseño antiguo si existe
+            $disenoAntiguo = $pedido->disenos->first();
+            if ($disenoAntiguo) {
+                Storage::delete('public/' . $disenoAntiguo->archivo);
+                $disenoAntiguo->delete();
+            }
+
+            // Subir la nueva imagen
+            $imagen = $request->file('imagenPedido');
+            $path = $imagen->store('imagenes_pedidos', 'public');
+
+            // Crear nuevo diseño
+            $primerDetalle = DetalleVenta::where('idVenta', $pedido->idVenta)->first();
+            if ($primerDetalle) {
+                Diseno::create([
+                    'archivo' => $path,
+                    'iddetalleVenta' => $primerDetalle->iddetalleVenta,
+                    'estado' => 1,
+                ]);
+                Log::info('Nueva imagen subida para pedido', ['idVenta' => $pedido->idVenta, 'archivo' => $path]);
+            }
+        } elseif ($request->boolean('delete_imagen')) {
+            // Eliminar diseño si se marca el checkbox
+            Log::info('Intentando eliminar imagen', ['idVenta' => $pedido->idVenta, 'delete_imagen' => $request->boolean('delete_imagen')]);
+            $diseno = $pedido->disenos->first();
+            Log::info('Diseño encontrado', ['diseno' => $diseno]);
+            if ($diseno) {
+                $archivoPath = 'public/' . $diseno->archivo;
+                Log::info('Eliminando archivo', ['path' => $archivoPath]);
+                Storage::delete($archivoPath);
+                $diseno->delete();
+                Log::info('Imagen eliminada del pedido', ['idVenta' => $pedido->idVenta]);
+            } else {
+                Log::warning('Intento de eliminar imagen pero no se encontró diseño', ['idVenta' => $pedido->idVenta]);
+            }
+        } else {
+            Log::info('Ninguna acción de imagen realizada', ['idVenta' => $pedido->idVenta, 'hasFile' => $request->hasFile('imagenPedido'), 'delete_imagen' => $request->boolean('delete_imagen')]);
+        }
+
+        // Guardar los cambios
         $pedido->save();
 
         return redirect()->route('pedidos.index')->with('success', 'Pedido actualizado correctamente.');
     }
 
+
+
+    /**
+     * Actualizar detalles del pedido (crear/actualizar/eliminar en lote)
+     */
     /**
      * Actualizar detalles del pedido (crear/actualizar/eliminar en lote)
      */
@@ -907,80 +1051,83 @@ class PedidoController extends Controller
     {
         $pedido = Venta::with('transacciones')->findOrFail($idVenta);
 
+        // ✅ Solo validamos lo que realmente envía el formulario de DETALLES
         $request->validate([
-            'row_id' => 'required|array|min:1',
-            'row_id.*' => 'nullable|integer',
-            'idTalla' => 'required|array|min:1',
-            'idTalla.*' => 'required|exists:tallas,idTalla',
-            'cantidad' => 'required|array|min:1',
-            'cantidad.*' => 'required|integer|min:1',
-            'precioUnitario' => 'required|array|min:1',
+            // Cabecera: ❌ NO se valida aquí (fechaEntrega, lugarEntrega, tipoCliente, etc.)
+            // Producto en selector superior (útil para precargar precios) => opcional
+            'idProducto'       => 'nullable|exists:productos,idProducto',
+
+            // Filas de detalle
+            'row_id'           => 'required|array',            // puede venir vacío en valores pero el array existe
+            'idTalla'          => 'required|array|min:1',
+            'idTalla.*'        => 'required|exists:tallas,idTalla',
+            'cantidad'         => 'required|array|min:1',
+            'cantidad.*'       => 'required|integer|min:1',
+            'precioUnitario'   => 'required|array|min:1',
             'precioUnitario.*' => 'required|numeric|min:0',
             'nombrePersonalizado' => 'nullable|array',
             'numeroPersonalizado' => 'nullable|array',
-            'observacion' => 'nullable|array',
-            'descripcion' => 'nullable|array',
+            'observacion'         => 'nullable|array',         // 👈 usa "observacion" (sin s) para coincidir con el name del input
+            'descripcion'         => 'nullable|array',
+
             // Pago opcional
-            'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
-            'montoAdelanto' => 'nullable|numeric|min:0',
-            // delete_ids puede venir como array o como CSV string
+            'tipoTransaccion'  => 'nullable|in:efectivo,qr,cheque,transferencia',
+            'montoAdelanto'    => 'nullable|numeric|min:0',
+            // delete_ids llega como CSV desde el JS
         ]);
 
         DB::beginTransaction();
         try {
-            // Eliminar filas marcadas (acepta array o CSV)
-            $rawDelete = $request->input('delete_ids');
-            $deleteIds = collect([]);
-            if (is_array($rawDelete)) {
-                $deleteIds = collect($rawDelete);
-            } elseif (is_string($rawDelete) && trim($rawDelete) !== '') {
-                $deleteIds = collect(explode(',', $rawDelete));
-            }
-            $deleteIds = $deleteIds->map(fn($v) => (int) $v)->filter();
+            // Eliminar filas marcadas (CSV)
+            $rawDelete = (string) $request->input('delete_ids', '');
+            $deleteIds = collect(array_filter(array_map('trim', explode(',', $rawDelete))))
+                ->map(fn($v) => (int) $v)
+                ->filter();
+
             if ($deleteIds->isNotEmpty()) {
                 DetalleVenta::where('idVenta', $pedido->idVenta)
                     ->whereIn('iddetalleVenta', $deleteIds->all())
                     ->delete();
             }
 
-            $ids = $request->input('row_id', []);
-            $tallas = $request->input('idTalla', []);
+            // Arrays paralelos
+            $ids        = $request->input('row_id', []);
+            $tallas     = $request->input('idTalla', []);
             $cantidades = $request->input('cantidad', []);
-            $precios = $request->input('precioUnitario', []);
-            $nombres = $request->input('nombrePersonalizado', []);
-            $numeros = $request->input('numeroPersonalizado', []);
-            $observs = $request->input('observacion', []);
-            $descrs = $request->input('descripcion', []);
+            $precios    = $request->input('precioUnitario', []);
+            $nombres    = $request->input('nombrePersonalizado', []);
+            $numeros    = $request->input('numeroPersonalizado', []);
+            $observs    = $request->input('observacion', []); // 👈 coincide con el name del form
+            $descrs     = $request->input('descripcion', []);
 
-            // Obtener un idEmpleado válido
-            $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
-            if (!$idEmpleadoSeguro) {
-                $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
-            }
+            // Empleado seguro
+            $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado
+                ?? DB::table('empleados')->value('idEmpleado');
+
             if (!$idEmpleadoSeguro) {
                 return back()->with('error', 'No existe ningún empleado registrado para asociar los detalles.');
             }
 
             foreach ($ids as $i => $rowId) {
                 $dataDet = [
-                    'cantidad' => (int) ($cantidades[$i] ?? 0),
-                    'nombrePersonalizado' => $nombres[$i] ?? null,
-                    'numeroPersonalizado' => $numeros[$i] ?? null,
-                    'textoAdicional' => null,
-                    'observacion' => $observs[$i] ?? null,
-                    'descripcion' => $descrs[$i] ?? null,
-                    'precioUnitario' => (float) ($precios[$i] ?? 0),
-                    'estado' => 1,
-                    'idTalla' => (int) ($tallas[$i] ?? 0),
-                    'idVenta' => $pedido->idVenta,
-                    'idEmpleado' => $idEmpleadoSeguro,
+                    'cantidad'            => (int)   ($cantidades[$i] ?? 0),
+                    'nombrePersonalizado' =>         $nombres[$i] ?? null,
+                    'numeroPersonalizado' =>         $numeros[$i] ?? null,
+                    'textoAdicional'      => null,
+                    'observacion'         =>         $observs[$i] ?? null,
+                    'descripcion'         =>         $descrs[$i] ?? null,
+                    'precioUnitario'      => (float) ($precios[$i] ?? 0),
+                    'estado'              => 1,
+                    'idTalla'             => (int)   ($tallas[$i] ?? 0),
+                    'idVenta'             => $pedido->idVenta,
+                    'idEmpleado'          => $idEmpleadoSeguro,
                 ];
 
                 if ($dataDet['cantidad'] <= 0) {
                     continue;
                 }
 
-                if ($rowId) {
+                if (!empty($rowId)) {
                     // actualizar existente
                     $det = DetalleVenta::where('idVenta', $pedido->idVenta)
                         ->where('iddetalleVenta', $rowId)
@@ -998,8 +1145,9 @@ class PedidoController extends Controller
             $nuevoSubtotal = DetalleVenta::where('idVenta', $pedido->idVenta)
                 ->selectRaw('COALESCE(SUM(cantidad * precioUnitario),0) as s')
                 ->value('s');
+
             $pedido->subtotal = $nuevoSubtotal;
-            $pedido->total = $nuevoSubtotal; 
+            $pedido->total    = $nuevoSubtotal;
 
             // Registrar adelanto opcional
             $montoAd = (float) ($request->montoAdelanto ?? 0);
@@ -1010,21 +1158,24 @@ class PedidoController extends Controller
                 }
                 Transaccion::create([
                     'tipoTransaccion' => 'pago',
-                    'monto' => $montoAd,
-                    'metodoPago' => $tipoPago ?? 'efectivo',
-                    'observaciones' => null,
-                    'estado' => 1,
-                    'idVenta' => $pedido->idVenta,
+                    'monto'           => $montoAd,
+                    'metodoPago'      => $tipoPago ?? 'efectivo',
+                    'observaciones'   => null,
+                    'estado'          => 1,
+                    'idVenta'         => $pedido->idVenta,
                 ]);
             }
 
-            $pagos = $pedido->transacciones
+            // Recalcular pagos con consulta fresca
+            $pagosAcumulados = Transaccion::where('idVenta', $pedido->idVenta)
                 ->where('tipoTransaccion', 'pago')
                 ->sum('monto');
-            $pedido->saldo = max($pedido->total - (float) $pagos, 0);
+
+            $pedido->saldo = max($pedido->total - (float) $pagosAcumulados, 0);
             $pedido->save();
 
             DB::commit();
+
             return redirect()->route('pedidos.edit', $pedido->idVenta)
                 ->with('success', 'Detalles actualizados correctamente.');
         } catch (\Exception $e) {
@@ -1033,6 +1184,7 @@ class PedidoController extends Controller
             return redirect()->back()->with('error', 'No se pudo actualizar los detalles: ' . $e->getMessage());
         }
     }
+
 
     /**
      * API: Búsqueda unificada de clientes por CI/NIT, nombre y teléfono
@@ -1123,7 +1275,7 @@ class PedidoController extends Controller
 
             $pedido = Venta::findOrFail($idVenta);
             $estadoAnterior = $pedido->estadoPedido;
-            
+
             // Actualizar el estado
             $pedido->estadoPedido = $request->estadoPedido;
             $pedido->save();
@@ -1245,5 +1397,85 @@ class PedidoController extends Controller
             Log::error('Error al eliminar (lógico) pedido', ['idVenta' => $idVenta, 'error' => $e->getMessage()]);
             return redirect()->route('pedidos.index')->with('error', 'No se pudo eliminar el pedido: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Mostrar los pedidos asignados al diseñador actual
+     */
+    public function pedidosAsignados(Request $request)
+    {
+        // Obtener el ID del empleado asociado al usuario autenticado
+        $idEmpleado = auth()->user()->empleado->idEmpleado;
+
+        $query = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'detalles'])
+            ->whereHas('disenos', function ($q) use ($idEmpleado) {
+                $q->where('disenos.idEmpleado', $idEmpleado);
+            });
+
+        // Filtros adicionales si son necesarios
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $pedidos = $query->latest()->paginate(10);
+
+        return view('pedidos.asignados', compact('pedidos'));
+    }
+    public function create()
+    {
+        // Obtener solo empleados con rol 'diseñador'
+        $diseñadores = Empleado::with('user')
+            ->where('rol', 'diseñador')
+            ->where('estado', 1)
+            ->get();
+
+        // Tus otras variables existentes
+        $productos = Producto::where('estado', 1)->get();
+        $tallas = Talla::where('estado', 1)->get();
+        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
+
+        return view('pedidos.nuevo', compact(
+            'productos',
+            'tallas',
+            'clientesNaturales',
+            'clientesEstablecimientos',
+            'diseñadores'
+        ));
+    }
+    /**
+     * Método para que el diseñador marque un diseño como "terminado"
+     */
+    public function trabajarEnDiseno(Request $request, $idDiseno)
+    {
+        // Validar el archivo de diseño terminado
+        $request->validate([
+            'disenoTerminado' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // Tamaño máximo de archivo 5MB
+        ]);
+
+        // Buscar el diseño
+        $diseno = Diseno::findOrFail($idDiseno);
+
+        // Verificar que el diseño esté en estado "borrador" antes de marcarlo como terminado
+        if ($diseno->estadoDiseño !== 'borrador') {
+            return back()->with('error', 'Este diseño no está en estado borrador y no puede ser marcado como terminado.');
+        }
+
+        // Subir el archivo de diseño terminado
+        $rutaTerminado = $request->file('disenoTerminado')->store('disenos_terminados', 'public');
+
+        // Marcar diseño como terminado
+        $diseno->archivo = $rutaTerminado; // Actualizamos el archivo
+        $diseno->estadoDiseño = 'terminado'; // Cambiamos el estado del diseño a "terminado"
+        $diseno->save(); // Guardamos los cambios
+
+        // Cambiar el estado del pedido asociado al diseño
+        $venta = $diseno->detalleVenta->venta; // Obtener la venta asociada al detalle de venta del diseño
+        $venta->estadoPedido = '2'; // Cambiar el estado del pedido a "Producción"
+        $venta->save();
+
+        // Redirigir con mensaje de éxito
+        return redirect()->route('pedidos.borradores') // Asegúrate de tener la ruta correspondiente
+            ->with('success', 'El diseño ha sido marcado como terminado y el pedido ha pasado a producción.');
     }
 }

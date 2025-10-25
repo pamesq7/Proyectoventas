@@ -77,53 +77,6 @@
         </div>
     </div>
 
-    <!-- Filtros y Búsqueda -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-filter me-1"></i>
-            Filtros de Búsqueda
-        </div>
-        <div class="card-body">
-            <form method="GET" action="{{ route('empleados.index') }}">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="search" class="form-label">Buscar</label>
-                        <input type="text" class="form-control" id="search" name="search" 
-                               value="{{ request('search') }}" 
-                               placeholder="Nombre, cargo o rol...">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="estado" class="form-label">Estado</label>
-                        <select class="form-select" id="estado" name="estado">
-                            <option value="">Todos los estados</option>
-                            <option value="1" {{ request('estado') == '1' ? 'selected' : '' }}>Activo</option>
-                            <option value="0" {{ request('estado') == '0' ? 'selected' : '' }}>Inactivo</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="rol" class="form-label">Rol</label>
-                        <select class="form-select" id="rol" name="rol">
-                            <option value="">Todos los roles</option>
-                            <option value="administrador" {{ request('rol') == 'administrador' ? 'selected' : '' }}>Administrador</option>
-                            <option value="vendedor" {{ request('rol') == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
-                            <option value="diseñador" {{ request('rol') == 'diseñador' ? 'selected' : '' }}>Diseñador</option>
-                            <option value="operador" {{ request('rol') == 'operador' ? 'selected' : '' }}>Operador</option>
-                            <option value="cliente" {{ request('rol') == 'cliente' ? 'selected' : '' }}>Cliente</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 mb-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary me-2">
-                            <i class="fas fa-search"></i> Buscar
-                        </button>
-                        <a href="{{ route('empleados.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i>
-                        </a>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Tabla de Empleados -->
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -147,6 +100,7 @@
                     <table class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
+                                <th>N°</th>
                                 <th>Empleado</th>
                                 <th>Cargo</th>
                                 <th>Rol</th>
@@ -157,8 +111,10 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @php $contador = ($empleados->currentPage() - 1) * $empleados->perPage() + 1; @endphp
                             @foreach($empleados as $empleado)
                                 <tr>
+                                    <td>{{ $contador++ }}</td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="me-3">

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 class Venta extends Model
 {
@@ -33,7 +34,7 @@ class Venta extends Model
     // Relación: pertenece a un empleado
     public function empleado()
     {
-        return $this->belongsTo(Empleado::class, 'idEmpleado');
+        return $this->belongsTo(Empleado::class, 'idEmpleado', 'idEmpleado');
     }
 
     // Relación: pertenece a un cliente natural (opcional)
@@ -46,7 +47,18 @@ class Venta extends Model
     public function clienteEstablecimiento()
     {
         return $this->belongsTo(ClienteEstablecimiento::class, 'idEstablecimiento');
+        // Establecimiento: razón social o nombreEstablecimiento
+        if ($this->clienteEstablecimiento) {
+            return $this->clienteEstablecimiento->razonSocial
+                ?? $this->clienteEstablecimiento->razonSocial
+                ?? 'Establecimiento';
+        }
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'idCliente', 'idEmpleado', 'idUser');
+    }
+
 
     // Relación: detalles de venta
     public function detalleVentas()
@@ -54,16 +66,16 @@ class Venta extends Model
         return $this->hasMany(DetalleVenta::class, 'idVenta');
     }
 
+    // Relación: diseños asociados a través de los detalles de venta
+    public function disenos()
+    {
+        return $this->hasManyThrough(Diseno::class, DetalleVenta::class, 'idVenta', 'iddetalleVenta');
+    }
+
     // Relación: transacciones asociadas
     public function transacciones()
     {
         return $this->hasMany(Transaccion::class, 'idVenta');
-    }
-
-    // Relación: diseños vinculados (muchos a muchos con tabla intermedia)
-    public function disenos()
-    {
-        return $this->belongsToMany(Diseno::class, 'venta_disenos', 'idventa', 'idDiseno');
     }
 
 
@@ -97,7 +109,9 @@ class Venta extends Model
     public function getPorcentajePagadoAttribute()
     {
         if ($this->total <= 0) return 0;
-        return round(($this->monto_pagado / $this->total) * 100, 2);
+        // Calcular usando solo campos existentes: monto_pagado = total - saldo
+        $montoPagado = $this->total - $this->saldo;
+        return round(($montoPagado / $this->total) * 100, 2);
     }
 
     // Accessor: nombre completo del cliente
@@ -112,7 +126,7 @@ class Venta extends Model
         // Establecimiento: razón social o nombreEstablecimiento
         if ($this->clienteEstablecimiento) {
             return $this->clienteEstablecimiento->razonSocial
-                ?? $this->clienteEstablecimiento->nombreEstablecimiento
+                ?? $this->clienteEstablecimiento->razonSocial
                 ?? 'Establecimiento';
         }
         return 'Cliente no especificado';
@@ -162,4 +176,6 @@ class Venta extends Model
     {
         return $this->saldo > 0;
     }
+
+   
 }

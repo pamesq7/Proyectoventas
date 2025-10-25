@@ -8,7 +8,7 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        // Dashboard simplificado sin estadísticas específicas
-        return view('dashboard');
+        // Cargar la vista del dashboard del administrador
+        return view('dashboard.admin');
     }
 }

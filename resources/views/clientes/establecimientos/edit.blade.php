@@ -89,10 +89,9 @@
                                             name="tipoEstablecimiento"
                                             required>
                                         <option value="">Seleccione el tipo</option>
-                                        <option value="Empresa Privada" {{ old('tipoEstablecimiento', $clienteEstablecimiento->tipoEstablecimiento) == 'Empresa Privada' ? 'selected' : '' }}>Empresa Privada</option>
-                                        <option value="Institución Pública" {{ old('tipoEstablecimiento', $clienteEstablecimiento->tipoEstablecimiento) == 'Institución Pública' ? 'selected' : '' }}>Institución Pública</option>
-                                        <option value="ONG" {{ old('tipoEstablecimiento', $clienteEstablecimiento->tipoEstablecimiento) == 'ONG' ? 'selected' : '' }}>ONG</option>
-                                        <option value="Cooperativa" {{ old('tipoEstablecimiento', $clienteEstablecimiento->tipoEstablecimiento) == 'Cooperativa' ? 'selected' : '' }}>Cooperativa</option>
+                                        <option value="Colegio" {{ old('tipoEstablecimiento', $clienteEstablecimiento->tipoEstablecimiento) == 'Colegio' ? 'selected' : '' }}>Colegio</option>
+                                        <option value="Institución Alcaldía" {{ old('tipoEstablecimiento', $clienteEstablecimiento->tipoEstablecimiento) == 'Institución Alcaldía' ? 'selected' : '' }}>Institución Alcaldía</option>
+                                        <option value="Escuela de Fútbol o Basket" {{ old('tipoEstablecimiento', $clienteEstablecimiento->tipoEstablecimiento) == 'Escuela de Fútbol o Basket' ? 'selected' : '' }}>Escuela de Fútbol o Basket</option>
                                         <option value="Otro" {{ old('tipoEstablecimiento', $clienteEstablecimiento->tipoEstablecimiento) == 'Otro' ? 'selected' : '' }}>Otro</option>
                                     </select>
                                     @error('tipoEstablecimiento')
@@ -322,41 +321,6 @@
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-1"></i>
                                     <strong>Nota:</strong> Deje estos campos vacíos si no desea cambiar la contraseña del representante.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            {{-- Nueva Contraseña --}}
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Nueva Contraseña
-                                    </label>
-                                    <input type="password" 
-                                           class="form-control @error('password') is-invalid @enderror" 
-                                           id="password" 
-                                           name="password" 
-                                           placeholder="Mínimo 6 caracteres (opcional)">
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            {{-- Confirmar Nueva Contraseña --}}
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password_confirmation" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Confirmar Nueva Contraseña
-                                    </label>
-                                    <input type="password" 
-                                           class="form-control" 
-                                           id="password_confirmation" 
-                                           name="password_confirmation" 
-                                           placeholder="Repetir nueva contraseña">
                                 </div>
                             </div>
                         </div>

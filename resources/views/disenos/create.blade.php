@@ -34,11 +34,11 @@
                             <!-- ID Diseñador -->
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="idDiseñador">ID Diseñador</label>
-                                    <input type="number" class="form-control @error('idDiseñador') is-invalid @enderror" 
-                                           id="idDiseñador" name="idDiseñador" value="{{ old('idDiseñador') }}" 
+                                    <label for="idEmpleado">ID Diseñador</label>
+                                    <input type="number" class="form-control @error('idEmpleado') is-invalid @enderror" 
+                                           id="idEmpleado" name="idEmpleado" value="{{ old('idEmpleado') }}" 
                                            min="1">
-                                    @error('idDiseñador')
+                                    @error('idEmpleado')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Diseno;
 use App\Models\Empleado;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -14,9 +15,39 @@ class DisenoController extends Controller
     /**
      * Display a listing of the resource.
      */
+    /**
+     * Mostrar los diseños del diseñador actual
+     */
+    public function misDisenos(Request $request)
+    {
+        // Obtener el ID del empleado asociado al usuario autenticado
+        $idEmpleado = auth()->user()->empleado->idEmpleado;
+
+        $query = Diseno::with('empleado')
+            ->where('idEmpleado', $idEmpleado);
+
+        // Filtro por estado del diseño
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $disenos = Diseno::where('idEmpleado', auth()->user()->empleado->idEmpleado)
+            ->latest()
+            ->paginate(10);
+
+        return view('disenos.mis-disenos', compact('disenos'));
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
     public function index(Request $request)
     {
-        $query = Diseno::with('empleado');
+        $query = Diseno::with([
+            'empleado.user',
+            'detalleVenta.venta.clienteNatural.user',
+            'detalleVenta.venta.clienteEstablecimiento.representante'
+        ]);
 
         // Filtro por estado del diseño
         if ($request->filled('estadoDiseno')) {
@@ -64,7 +95,7 @@ class DisenoController extends Controller
         $validator = Validator::make($request->all(), [
             'comentario' => 'nullable|string|max:45',
             'estado' => 'required|integer|in:0,1',
-            'idDiseñador' => 'nullable|integer',
+            'idEmpleado' => 'nullable|integer',
             'estadoDiseño' => 'required|in:no realizado,en proceso,terminado',
             'idEmpleado' => 'nullable|exists:empleados,idEmpleado',
             'archivo' => 'nullable|file|mimes:svg,ai,psd,pdf,zip,jpg,png|max:10240'
@@ -96,7 +127,7 @@ class DisenoController extends Controller
                 'archivo' => $archivoPath,
                 'comentario' => $request->comentario,
                 'estado' => $request->estado,
-                'idDiseñador' => $request->idDiseñador,
+                'idEmpleado' => $request->idEmpleado,
                 'estadoDiseño' => $request->estadoDiseño,
                 'iddetalleVenta' => $request->iddetalleVenta, // nullable
                 'idEmpleado' => $request->idEmpleado
@@ -116,8 +147,21 @@ class DisenoController extends Controller
      */
     public function show(Diseno $diseno)
     {
-        $diseno->load('empleado');
-        return view('disenos.show', compact('diseno'));
+        try {
+            // Verificar que el diseño pertenece al diseñador autenticado (si es diseñador)
+            if (auth()->user()->empleado && $diseno->idEmpleado !== auth()->user()->empleado->idEmpleado) {
+                // Si no es administrador, no permitir acceso a diseños de otros
+                if (auth()->user()->rol !== 'administrador') {
+                    abort(403, 'No tienes permiso para ver este diseño.');
+                }
+            }
+
+            $diseno->load('empleado');
+            return view('disenos.show', compact('diseno'));
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Error al cargar el diseño: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -125,8 +169,27 @@ class DisenoController extends Controller
      */
     public function edit(Diseno $diseno)
     {
-        $empleados = Empleado::where('estado', 1)->get();
-        return view('disenos.edit', compact('diseno', 'empleados'));
+        try {
+            // Verificar que el diseño pertenece al diseñador autenticado (si es diseñador)
+            if (auth()->user()->empleado && $diseno->idEmpleado !== auth()->user()->empleado->idEmpleado) {
+                // Si no es administrador, no permitir editar diseños de otros
+                if (auth()->user()->rol !== 'administrador') {
+                    abort(403, 'No tienes permiso para editar este diseño.');
+                }
+            }
+
+            // Solo permitir editar si no está completado
+            if ($diseno->estadoDiseño === 'completado') {
+                return redirect()->back()
+                    ->with('warning', 'No se puede editar un diseño completado.');
+            }
+
+            $empleados = Empleado::where('estado', 1)->get();
+            return view('disenos.edit', compact('diseno', 'empleados'));
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Error al cargar el formulario de edición: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -137,7 +200,7 @@ class DisenoController extends Controller
         $validator = Validator::make($request->all(), [
             'comentario' => 'nullable|string|max:45',
             'estado' => 'required|integer|in:0,1',
-            'idDiseñador' => 'nullable|integer',
+            'idEmpleado' => 'nullable|integer',
             'estadoDiseño' => 'required|in:no realizado,en proceso,terminado',
             'idEmpleado' => 'nullable|exists:empleados,idEmpleado',
             'archivo' => 'nullable|file|mimes:svg,ai,psd,pdf,zip,jpg,png|max:10240'
@@ -172,7 +235,7 @@ class DisenoController extends Controller
             $diseno->update([
                 'comentario' => $request->comentario,
                 'estado' => $request->estado,
-                'idDiseñador' => $request->idDiseñador,
+                'idEmpleado' => $request->idEmpleado,
                 'estadoDiseño' => $request->estadoDiseño,
                 'iddetalleVenta' => $request->iddetalleVenta,
                 'idEmpleado' => $request->idEmpleado
@@ -187,30 +250,6 @@ class DisenoController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Diseno $diseno)
-    {
-        try {
-            // Eliminar archivo asociado
-            if ($diseno->archivo && Storage::disk('public')->exists($diseno->archivo)) {
-                Storage::disk('public')->delete($diseno->archivo);
-            }
-
-            $diseno->delete();
-
-            return redirect()->route('disenos.index')
-                ->with('success', 'Diseño eliminado exitosamente.');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Error al eliminar el diseño: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * API: Obtener diseños terminados para vincular con productos
-     */
     /**
      * API: Obtener diseños terminados para vincular con productos
      */

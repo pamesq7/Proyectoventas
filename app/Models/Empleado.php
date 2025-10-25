@@ -21,6 +21,7 @@ class Empleado extends Model
         'estado',
     ];
     
+    
     protected $casts = [
         'estado' => 'boolean',
     ];
