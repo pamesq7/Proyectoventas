@@ -111,7 +111,7 @@
 
 
                             <td>
-                                <span class="fw-bold text-success">${{ number_format($pedido->total, 0) }}</span>
+                                <span class="fw-bold text-success"> Bs. {{ number_format($pedido->total, 0) }}</span>
                             </td>
                             <td>
                                 @php $pagado = (float)($pedido->saldo ?? 0) <= 0; @endphp

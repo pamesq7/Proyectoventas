@@ -173,13 +173,6 @@
                                                 <i class="fas fa-dollar-sign"></i>
                                             </button>
                                             @endif
-                                            @if($venta->puedeSerAnulada())
-                                            <button type="button" class="btn btn-warning btn-anular"
-                                                data-venta-id="{{ $venta->idVenta }}"
-                                                title="Anular venta">
-                                                <i class="fas fa-ban"></i>
-                                            </button>
-                                            @endif
                                         </div>
                                     </td>
                                 </tr>

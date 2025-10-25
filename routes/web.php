@@ -165,7 +165,8 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::post('productos/variante', [ProductoController::class, 'storeVariante'])->name('productos.storeVariante');
     Route::delete('productos/variante/{variante}', [ProductoController::class, 'deleteVariante'])->name('productos.deleteVariante');
     Route::get('productos/caracteristicas/{opcion}', [ProductoController::class, 'getCaracteristicasByOpcion'])->name('productos.caracteristicasByOpcion');
-
+    Route::delete('/productos/{idProducto}/eliminar-imagen', [ProductoController::class, 'eliminarImagen'])
+        ->name('productos.eliminar-imagen');
     // Diseños
     Route::resource('disenos', DisenoController::class);
 
@@ -476,23 +477,22 @@ Route::middleware(['auth'])->group(function () {
 
 // Rutas para Clientes
 Route::middleware(['auth'])->group(function () {
-    
-  
-    
+
+
+
     // Historial de pedidos del cliente
     Route::get('/rolCliente/historial', [ClienteDashboardController::class, 'historial'])->name('rolCliente.historial');
-    
+
     // Detalle de un pedido específico
     Route::get('/rolCliente/pedido/{idVenta}', [ClienteDashboardController::class, 'detallePedido'])->name('rolCliente.detalle-pedido');
-    
+
     // API para estadísticas (si necesitas AJAX)
     Route::get('/rolCliente/estadisticas', [ClienteDashboardController::class, 'getEstadisticas'])->name('rolCliente.estadisticas');
-    
+
     // Vista principal/consulta
     Route::get('/rolCliente/consulta', [ClienteDashboardController::class, 'consulta'])->name('rolCliente.consulta');
-    
-    
+
+
     // Mostrar perfil del cliente
     Route::get('/rolCliente/perfil', [ClienteDashboardController::class, 'perfil'])->name('rolCliente.perfil');
-    
 });

@@ -17,9 +17,9 @@
                         <i class="fas fa-user-edit me-2"></i>
                         Editar Cliente Natural: {{ $clienteNatural->user->nombre_completo }}
                         @if($clienteNatural->estado == 1 && $clienteNatural->user->estado == 1)
-                            <span class="badge bg-success ms-2">Activo</span>
+                        <span class="badge bg-success ms-2">Activo</span>
                         @else
-                            <span class="badge bg-danger ms-2">Inactivo</span>
+                        <span class="badge bg-danger ms-2">Inactivo</span>
                         @endif
                     </h5>
                 </div>
@@ -27,7 +27,7 @@
                     <form action="{{ route('clienteNatural.update', $clienteNatural->idCliente) }}" method="POST" id="editClienteForm">
                         @csrf
                         @method('PUT')
-                        
+
                         {{-- Información Personal --}}
                         <div class="row">
                             <div class="col-12">
@@ -46,15 +46,15 @@
                                         <i class="fas fa-id-badge me-1"></i>
                                         Cédula de Identidad <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" 
-                                           class="form-control @error('ci') is-invalid @enderror" 
-                                           id="ci" 
-                                           name="ci" 
-                                           value="{{ old('ci', $clienteNatural->user->ci) }}" 
-                                           placeholder="Ej: 1234567"
-                                           required>
+                                    <input type="text"
+                                        class="form-control @error('ci') is-invalid @enderror"
+                                        id="ci"
+                                        name="ci"
+                                        value="{{ old('ci', $clienteNatural->user->ci) }}"
+                                        placeholder="Ej: 1234567"
+                                        required>
                                     @error('ci')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -66,15 +66,15 @@
                                         <i class="fas fa-user me-1"></i>
                                         Nombre <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" 
-                                           class="form-control @error('name') is-invalid @enderror" 
-                                           id="name" 
-                                           name="name" 
-                                           value="{{ old('name', $clienteNatural->user->name) }}" 
-                                           placeholder="Nombre del cliente"
-                                           required>
+                                    <input type="text"
+                                        class="form-control @error('name') is-invalid @enderror"
+                                        id="name"
+                                        name="name"
+                                        value="{{ old('name', $clienteNatural->user->name) }}"
+                                        placeholder="Nombre del cliente"
+                                        required>
                                     @error('name')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -85,15 +85,15 @@
                                     <label for="primerApellido" class="form-label">
                                         Primer Apellido <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" 
-                                           class="form-control @error('primerApellido') is-invalid @enderror" 
-                                           id="primerApellido" 
-                                           name="primerApellido" 
-                                           value="{{ old('primerApellido', $clienteNatural->user->primerApellido) }}" 
-                                           placeholder="Primer apellido"
-                                           required>
+                                    <input type="text"
+                                        class="form-control @error('primerApellido') is-invalid @enderror"
+                                        id="primerApellido"
+                                        name="primerApellido"
+                                        value="{{ old('primerApellido', $clienteNatural->user->primerApellido) }}"
+                                        placeholder="Primer apellido"
+                                        required>
                                     @error('primerApellido')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -104,14 +104,14 @@
                                     <label for="segundApellido" class="form-label">
                                         Segundo Apellido
                                     </label>
-                                    <input type="text" 
-                                           class="form-control @error('segundApellido') is-invalid @enderror" 
-                                           id="segundApellido" 
-                                           name="segundApellido" 
-                                           value="{{ old('segundApellido', $clienteNatural->user->segundApellido) }}" 
-                                           placeholder="Segundo apellido (opcional)">
+                                    <input type="text"
+                                        class="form-control @error('segundApellido') is-invalid @enderror"
+                                        id="segundApellido"
+                                        name="segundApellido"
+                                        value="{{ old('segundApellido', $clienteNatural->user->segundApellido) }}"
+                                        placeholder="Segundo apellido (opcional)">
                                     @error('segundApellido')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -125,15 +125,15 @@
                                         <i class="fas fa-envelope me-1"></i>
                                         Correo Electrónico <span class="text-danger">*</span>
                                     </label>
-                                    <input type="email" 
-                                           class="form-control @error('email') is-invalid @enderror" 
-                                           id="email" 
-                                           name="email" 
-                                           value="{{ old('email', $clienteNatural->user->email) }}" 
-                                           placeholder="correo@ejemplo.com"
-                                           required>
+                                    <input type="email"
+                                        class="form-control @error('email') is-invalid @enderror"
+                                        id="email"
+                                        name="email"
+                                        value="{{ old('email', $clienteNatural->user->email) }}"
+                                        placeholder="correo@ejemplo.com"
+                                        required>
                                     @error('email')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -145,14 +145,14 @@
                                         <i class="fas fa-phone me-1"></i>
                                         Teléfono
                                     </label>
-                                    <input type="tel" 
-                                           class="form-control @error('telefono') is-invalid @enderror" 
-                                           id="telefono" 
-                                           name="telefono" 
-                                           value="{{ old('telefono', $clienteNatural->user->telefono) }}" 
-                                           placeholder="Ej: 70123456">
+                                    <input type="tel"
+                                        class="form-control @error('telefono') is-invalid @enderror"
+                                        id="telefono"
+                                        name="telefono"
+                                        value="{{ old('telefono', $clienteNatural->user->telefono) }}"
+                                        placeholder="Ej: 70123456">
                                     @error('telefono')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -164,14 +164,14 @@
                                         <i class="fas fa-file-invoice me-1"></i>
                                         NIT (opcional)
                                     </label>
-                                    <input type="text" 
-                                           class="form-control @error('nit') is-invalid @enderror" 
-                                           id="nit" 
-                                           name="nit" 
-                                           value="{{ old('nit', $clienteNatural->nit) }}" 
-                                           placeholder="Número de NIT">
+                                    <input type="text"
+                                        class="form-control @error('nit') is-invalid @enderror"
+                                        id="nit"
+                                        name="nit"
+                                        value="{{ old('nit', $clienteNatural->nit) }}"
+                                        placeholder="Número de NIT">
                                     @error('nit')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -195,10 +195,10 @@
                                         <i class="fas fa-user-check me-1"></i>
                                         Estado del Usuario <span class="text-danger">*</span>
                                     </label>
-                                    <select class="form-select @error('estado') is-invalid @enderror" 
-                                            id="estado" 
-                                            name="estado" 
-                                            required>
+                                    <select class="form-select @error('estado') is-invalid @enderror"
+                                        id="estado"
+                                        name="estado"
+                                        required>
                                         <option value="1" {{ old('estado', $clienteNatural->user->estado) == 1 ? 'selected' : '' }}>Activo</option>
                                         <option value="0" {{ old('estado', $clienteNatural->user->estado) == 0 ? 'selected' : '' }}>Inactivo</option>
                                     </select>
@@ -207,7 +207,7 @@
                                         Controla el acceso al sistema
                                     </div>
                                     @error('estado')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -219,10 +219,10 @@
                                         <i class="fas fa-user-tag me-1"></i>
                                         Estado del Cliente <span class="text-danger">*</span>
                                     </label>
-                                    <select class="form-select @error('estado_cliente') is-invalid @enderror" 
-                                            id="estado_cliente" 
-                                            name="estado_cliente" 
-                                            required>
+                                    <select class="form-select @error('estado_cliente') is-invalid @enderror"
+                                        id="estado_cliente"
+                                        name="estado_cliente"
+                                        required>
                                         <option value="1" {{ old('estado_cliente', $clienteNatural->estado) == 1 ? 'selected' : '' }}>Activo</option>
                                         <option value="0" {{ old('estado_cliente', $clienteNatural->estado) == 0 ? 'selected' : '' }}>Inactivo</option>
                                     </select>
@@ -231,55 +231,12 @@
                                         Controla la capacidad de realizar compras
                                     </div>
                                     @error('estado_cliente')
-                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Cambio de Contraseña (Opcional) --}}
-                        <div class="row">
-                            <div class="col-12">
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-key me-1"></i>
-                                    Cambiar Contraseña (Opcional)
-                                </h6>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Nueva Contraseña
-                                    </label>
-                                    <input type="password" 
-                                           class="form-control @error('password') is-invalid @enderror" 
-                                           id="password" 
-                                           name="password" 
-                                           placeholder="Dejar vacío para mantener la actual">
-                                    <div class="form-text">Mínimo 6 caracteres. Dejar vacío para no cambiar.</div>
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password_confirmation" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Confirmar Nueva Contraseña
-                                    </label>
-                                    <input type="password" 
-                                           class="form-control" 
-                                           id="password_confirmation" 
-                                           name="password_confirmation" 
-                                           placeholder="Repetir nueva contraseña">
-                                </div>
-                            </div>
-                        </div>
 
                         {{-- Información del Sistema --}}
                         <div class="row mt-4">
@@ -314,9 +271,9 @@
                                                 <small class="text-muted">Email Verificado:</small>
                                                 <div>
                                                     @if($clienteNatural->user->email_verified_at)
-                                                        <span class="badge bg-success">Sí</span>
+                                                    <span class="badge bg-success">Sí</span>
                                                     @else
-                                                        <span class="badge bg-warning">No</span>
+                                                    <span class="badge bg-warning">No</span>
                                                     @endif
                                                 </div>
                                             </div>
@@ -369,57 +326,57 @@
 
 @push('scripts')
 <script>
-$(document).ready(function() {
-    // Validación del formulario
-    $('#editClienteForm').on('submit', function(e) {
-        // Validar contraseñas si se están cambiando
-        const password = $('#password').val();
-        const passwordConfirmation = $('#password_confirmation').val();
-        
-        if (password && password !== passwordConfirmation) {
-            e.preventDefault();
-            alert('Las contraseñas no coinciden');
-            return false;
-        }
-        
-        if (password && password.length < 6) {
-            e.preventDefault();
-            alert('La contraseña debe tener al menos 6 caracteres');
-            return false;
-        }
-    });
+    $(document).ready(function() {
+        // Validación del formulario
+        $('#editClienteForm').on('submit', function(e) {
+            // Validar contraseñas si se están cambiando
+            const password = $('#password').val();
+            const passwordConfirmation = $('#password_confirmation').val();
 
-    // Confirmación antes de cambiar estado a inactivo
-    $('#estado, #estado_cliente').on('change', function() {
-        if ($(this).val() == '0') {
-            const tipo = $(this).attr('id') === 'estado' ? 'usuario' : 'cliente';
-            if (!confirm(`¿Estás seguro de que deseas desactivar el ${tipo}? Esto afectará su capacidad de usar el sistema.`)) {
-                $(this).val('1');
+            if (password && password !== passwordConfirmation) {
+                e.preventDefault();
+                alert('Las contraseñas no coinciden');
+                return false;
             }
-        }
-    });
 
-    // Mostrar/ocultar confirmación de contraseña
-    $('#password').on('input', function() {
-        const passwordValue = $(this).val();
-        if (passwordValue) {
-            $('#password_confirmation').prop('required', true);
-        } else {
-            $('#password_confirmation').prop('required', false);
-        }
-    });
+            if (password && password.length < 6) {
+                e.preventDefault();
+                alert('La contraseña debe tener al menos 6 caracteres');
+                return false;
+            }
+        });
 
-    // Formatear campos
-    $('#ci, #telefono, #nit').on('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
-    });
+        // Confirmación antes de cambiar estado a inactivo
+        $('#estado, #estado_cliente').on('change', function() {
+            if ($(this).val() == '0') {
+                const tipo = $(this).attr('id') === 'estado' ? 'usuario' : 'cliente';
+                if (!confirm(`¿Estás seguro de que deseas desactivar el ${tipo}? Esto afectará su capacidad de usar el sistema.`)) {
+                    $(this).val('1');
+                }
+            }
+        });
 
-    // Capitalizar nombres
-    $('#name, #primerApellido, #segundApellido').on('blur', function() {
-        this.value = this.value.replace(/\b\w/g, function(l) {
-            return l.toUpperCase();
+        // Mostrar/ocultar confirmación de contraseña
+        $('#password').on('input', function() {
+            const passwordValue = $(this).val();
+            if (passwordValue) {
+                $('#password_confirmation').prop('required', true);
+            } else {
+                $('#password_confirmation').prop('required', false);
+            }
+        });
+
+        // Formatear campos
+        $('#ci, #telefono, #nit').on('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Capitalizar nombres
+        $('#name, #primerApellido, #segundApellido').on('blur', function() {
+            this.value = this.value.replace(/\b\w/g, function(l) {
+                return l.toUpperCase();
+            });
         });
     });
-});
 </script>
 @endpush

@@ -325,41 +325,6 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            {{-- Nueva Contraseña --}}
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Nueva Contraseña
-                                    </label>
-                                    <input type="password" 
-                                           class="form-control @error('password') is-invalid @enderror" 
-                                           id="password" 
-                                           name="password" 
-                                           placeholder="Mínimo 6 caracteres (opcional)">
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            {{-- Confirmar Nueva Contraseña --}}
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password_confirmation" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Confirmar Nueva Contraseña
-                                    </label>
-                                    <input type="password" 
-                                           class="form-control" 
-                                           id="password_confirmation" 
-                                           name="password_confirmation" 
-                                           placeholder="Repetir nueva contraseña">
-                                </div>
-                            </div>
-                        </div>
-
                         {{-- Información del Sistema --}}
                         <div class="row">
                             <div class="col-12">
