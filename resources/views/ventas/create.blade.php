@@ -87,6 +87,7 @@
             </div>
         </div>
     </div>
+<<<<<<< HEAD
     <!-- Modal para registrar pago -->
     <div class="modal fade" id="modalRegistrarPago" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -116,6 +117,36 @@
                                             <span class="text-danger font-weight-bold">Bs. <span id="saldoModal"></span></span>
                                         </p>
                                     </div>
+=======
+<!-- Modal para registrar pago -->
+<div class="modal fade" id="modalRegistrarPago" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-dollar-sign"></i> Registrar Pago
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('ventas.store') }}">
+                @csrf
+                <div class="modal-body">
+                    <input type="hidden" name="idVenta" id="ventaIdModal">
+                    <input type="hidden" name="tipoTransaccion" value="pago">
+{{ ... }}
+                    
+                    <!-- Información de la venta -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Información de la Venta</h6>
+                                    <p><strong>Cliente:</strong> <span id="clienteModal"></span></p>
+                                    <p><strong>Total:</strong> Bs. <span id="totalModal"></span></p>
+                                    <p><strong>Saldo Pendiente:</strong> 
+                                        <span class="text-danger font-weight-bold">Bs. <span id="saldoModal"></span></span>
+                                    </p>
+>>>>>>> ea8c1bc30f198079cf35f0df0359e382d4be4191
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -188,6 +219,7 @@
                             </div>
                         </div>
                     </div>
+<<<<<<< HEAD
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="fas fa-times"></i> Cancelar
@@ -198,11 +230,24 @@
                     </div>
                 </form>
             </div>
+=======
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Confirmar Pago
+                    </button>
+                </div>
+            </form>
+>>>>>>> ea8c1bc30f198079cf35f0df0359e382d4be4191
         </div>
     </div>
 
     @endsection
 
+<<<<<<< HEAD
     @section('scripts')
     <script>
         $(document).ready(function() {
@@ -298,3 +343,100 @@
         });
     </script>
     @endsection
+=======
+@section('scripts')
+<script>
+$(document).ready(function() {
+    let saldoActual = 0;
+    
+    // Abrir modal de pago
+    $('.btn-registrar-pago').click(function() {
+        const ventaId = $(this).data('venta-id');
+        const cliente = $(this).data('cliente');
+        const saldo = parseFloat($(this).data('saldo'));
+        const total = parseFloat($(this).data('total'));
+        
+        saldoActual = saldo;
+        
+        $('#ventaIdModal').val(ventaId);
+        $('#clienteModal').text(cliente);
+        $('#totalModal').text(total.toFixed(2));
+        $('#saldoModal').text(saldo.toFixed(2));
+        $('#monto').attr('max', saldo);
+        $('#monto').val(saldo); // Por defecto, pago completo
+        
+        actualizarResumen();
+        // Compatibilidad Bootstrap 5 y fallback a Bootstrap 4
+        const modalEl = document.getElementById('modalRegistrarPago');
+        if (window.bootstrap && bootstrap.Modal) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        } else if (typeof $ !== 'undefined' && typeof $('#modalRegistrarPago').modal === 'function') {
+            $('#modalRegistrarPago').modal('show');
+        }
+    });
+    
+    // Manejar tipo de pago
+    $('input[name="tipoPago"]').change(function() {
+        if ($(this).val() === 'completo') {
+            $('#monto').val(saldoActual);
+        } else {
+            $('#monto').val('');
+        }
+        actualizarResumen();
+    });
+    
+    // Actualizar resumen cuando cambia el monto
+    $('#monto').on('input', function() {
+        actualizarResumen();
+    });
+    
+    function actualizarResumen() {
+        const monto = parseFloat($('#monto').val()) || 0;
+        const saldoRestante = saldoActual - monto;
+        
+        $('#montoPagar').text('Bs. ' + monto.toFixed(2));
+        $('#saldoRestante').text('Bs. ' + saldoRestante.toFixed(2));
+        
+        if (saldoRestante <= 0) {
+            $('#estadoFinal').removeClass('badge-warning badge-danger').addClass('badge-success').text('🟢 PAGADO');
+        } else if (monto > 0) {
+            $('#estadoFinal').removeClass('badge-success badge-danger').addClass('badge-warning').text('🟡 PARCIAL');
+        } else {
+            $('#estadoFinal').removeClass('badge-success badge-warning').addClass('badge-danger').text('🔴 PENDIENTE');
+        }
+        
+        $('#resumenPago').show();
+    }
+    
+    // Limpiar modal al cerrar
+    // Reset al cerrar (Bootstrap 5 y 4)
+    const resetModal = function() {
+        const form = document.querySelector('#modalRegistrarPago form');
+        if (form) form.reset();
+        $('#resumenPago').hide();
+        saldoActual = 0;
+    };
+    const modalEl = document.getElementById('modalRegistrarPago');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', resetModal);
+    }
+    
+    // Validación del formulario
+    $('form').submit(function(e) {
+        const monto = parseFloat($('#monto').val());
+        if (monto <= 0) {
+            e.preventDefault();
+            alert('El monto debe ser mayor a 0');
+            return false;
+        }
+        if (monto > saldoActual) {
+            e.preventDefault();
+            alert('El monto no puede ser mayor al saldo pendiente');
+            return false;
+        }
+    });
+});
+</script>
+@endsection
+>>>>>>> ea8c1bc30f198079cf35f0df0359e382d4be4191

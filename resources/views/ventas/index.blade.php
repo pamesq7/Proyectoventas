@@ -172,6 +172,7 @@
                                                 title="Registrar pago">
                                                 <i class="fas fa-dollar-sign"></i>
                                             </button>
+<<<<<<< HEAD
                                             @endif
                                             @if($venta->puedeSerAnulada())
                                             <button type="button" class="btn btn-warning btn-anular"
@@ -179,6 +180,8 @@
                                                 title="Anular venta">
                                                 <i class="fas fa-ban"></i>
                                             </button>
+=======
+>>>>>>> ea8c1bc30f198079cf35f0df0359e382d4be4191
                                             @endif
                                         </div>
                                     </td>

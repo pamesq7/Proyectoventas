@@ -19,6 +19,7 @@ class VentaController extends Controller
      */
     public function index(Request $request)
     {
+<<<<<<< HEAD
         // Tu código para las consultas de ventas
         $ventas = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'empleado.user'])
             ->where('ventas.estado', 1) // ✅ Solo ventas en estado 1
@@ -42,47 +43,86 @@ class VentaController extends Controller
         $query = Venta::with(['empleado', 'clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla', 'transacciones'])
             ->where('estado', 1) // Solo mostrar ventas en estado 1
             ->orderBy('created_at', 'desc');
+=======
+        // Base query con filtro de estado = 1
+        $query = Venta::with(['clienteNatural.user', 'clienteEstablecimiento', 'empleado.user', 'transacciones'])
+            ->where('ventas.estado', 1) // ✅ Solo ventas en estado 1
+            ->orderBy('ventas.created_at', 'desc');
+>>>>>>> ea8c1bc30f198079cf35f0df0359e382d4be4191
 
         // Filtro por estado de pago
         if ($request->filled('estado_pago')) {
             if ($request->estado_pago == 'saldado') {
-                $query->where('saldo', '<=', 0);
+                $query->where('ventas.saldo', '<=', 0);
             } elseif ($request->estado_pago == 'pendiente') {
-                $query->where('saldo', '>', 0);
+                $query->where('ventas.saldo', '>', 0);
             }
         }
 
         // Filtro por fechas
         if ($request->filled('fecha_desde')) {
-            $query->whereDate('created_at', '>=', $request->fecha_desde);
+            $query->whereDate('ventas.created_at', '>=', $request->fecha_desde);
         }
 
         if ($request->filled('fecha_hasta')) {
-            $query->whereDate('created_at', '<=', $request->fecha_hasta);
-        }
-
-        // Filtro por estado del pedido
-        if ($request->filled('estado_pedido')) {
-            $query->where('estado', $request->estado_pedido);
+            $query->whereDate('ventas.created_at', '<=', $request->fecha_hasta);
         }
 
         // Filtro por tipo de cliente
         if ($request->filled('tipo_cliente')) {
             if ($request->tipo_cliente == 'natural') {
-                $query->whereNotNull('idCliente');
+                $query->whereNotNull('ventas.idCliente');
             } elseif ($request->tipo_cliente == 'establecimiento') {
-                $query->whereNotNull('idEstablecimiento');
+                $query->whereNotNull('ventas.idEstablecimiento');
             }
         }
 
         $ventas = $query->paginate(15);
 
-        // Estadísticas rápidas
+        // Procesar datos para la vista
+        $ventas->each(function ($venta) {
+            // Calcular nombre del cliente
+            if ($venta->clienteNatural && $venta->clienteNatural->user) {
+                $venta->nombre_cliente = $venta->clienteNatural->user->name . ' ' .
+                    $venta->clienteNatural->user->primerApellido;
+                $venta->tipo_cliente = 'Natural';
+            } elseif ($venta->clienteEstablecimiento) {
+                $venta->nombre_cliente = $venta->clienteEstablecimiento->razonSocial;
+                $venta->tipo_cliente = 'Establecimiento';
+            } else {
+                $venta->nombre_cliente = 'Cliente no especificado';
+                $venta->tipo_cliente = 'N/A';
+            }
+
+            // Calcular estado de pago
+            $montoPagado = $venta->transacciones->where('tipoTransaccion', 'pago')->sum('monto');
+            $venta->monto_pagado = $montoPagado;
+            $venta->saldo = max(0, $venta->total - $montoPagado);
+
+            if ($montoPagado >= $venta->total) {
+                $venta->estado_pago = 'PAGADO';
+            } elseif ($montoPagado > 0) {
+                $venta->estado_pago = 'PARCIAL';
+                $venta->porcentaje_pagado = round(($montoPagado / $venta->total) * 100, 2);
+            } else {
+                $venta->estado_pago = 'PENDIENTE';
+            }
+
+            // Nombre del empleado
+            if ($venta->empleado && $venta->empleado->user) {
+                $venta->nombre_empleado = $venta->empleado->user->name . ' ' .
+                    $venta->empleado->user->primerApellido;
+            } else {
+                $venta->nombre_empleado = 'No asignado';
+            }
+        });
+
+        // Estadísticas (solo de ventas con estado = 1)
         $estadisticas = [
-            'total_ventas' => Venta::count(),
-            'ventas_saldadas' => Venta::where('saldo', '<=', 0)->count(),
-            'ventas_pendientes' => Venta::where('saldo', '>', 0)->count(),
-            'monto_pendiente' => Venta::where('saldo', '>', 0)->sum('saldo'),
+            'total_ventas' => Venta::where('estado', 1)->count(),
+            'ventas_saldadas' => Venta::where('estado', 1)->where('saldo', '<=', 0)->count(),
+            'ventas_pendientes' => Venta::where('estado', 1)->where('saldo', '>', 0)->count(),
+            'monto_pendiente' => Venta::where('estado', 1)->where('saldo', '>', 0)->sum('saldo'),
         ];
 
         return view('ventas.index', compact('ventas', 'estadisticas'));

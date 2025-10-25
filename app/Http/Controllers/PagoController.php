@@ -32,9 +32,16 @@ class PagoController extends Controller
         // Obtener métodos de pago disponibles
         $metodosPago = [
             ['codigo' => 'efectivo', 'nombre' => 'Efectivo'],
+<<<<<<< HEAD
             ['codigo' => 'qr', 'nombre' => 'QR'],
             ['codigo' => 'cheque', 'nombre' => 'Cheque'],
             ['codigo' => 'transferencia', 'nombre' => 'Transferencia bancaria'],
+=======
+            ['codigo' => 'tarjeta', 'nombre' => 'Tarjeta'],
+            ['codigo' => 'transferencia', 'nombre' => 'Transferencia'],
+            ['codigo' => 'yape', 'nombre' => 'Yape'],
+            ['codigo' => 'plin', 'nombre' => 'Plin'],
+>>>>>>> ea8c1bc30f198079cf35f0df0359e382d4be4191
         ];
 
         return view('pagos.edit', compact('transaccion', 'metodosPago'));

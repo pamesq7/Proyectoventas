@@ -15,43 +15,25 @@
 
                 <!-- Filtros -->
                 <div class="card-body">
-                    <form method="GET" action="{{ route('ventas.index') }}" class="mb-4">
-                        <div class="row">
-                            <div class="col-md-2">
-                                <label for="fecha_desde">Desde:</label>
-                                <input type="date" name="fecha_desde" id="fecha_desde" class="form-control"
-                                    value="{{ request('fecha_desde') }}">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="fecha_hasta">Hasta:</label>
-                                <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control"
-                                    value="{{ request('fecha_hasta') }}">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="estado_pago">Estado de Pago:</label>
-                                <select name="estado_pago" id="estado_pago" class="form-control">
-                                    <option value="">Todos</option>
-                                    <option value="saldado" {{ request('estado_pago') == 'saldado' ? 'selected' : '' }}>Saldado</option>
-                                    <option value="pendiente" {{ request('estado_pago') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-2">
-                                <label for="tipo_cliente">Tipo Cliente:</label>
-                                <select name="tipo_cliente" id="tipo_cliente" class="form-control">
-                                    <option value="">Todos</option>
-                                    <option value="natural" {{ request('tipo_cliente') == 'natural' ? 'selected' : '' }}>Natural</option>
-                                    <option value="establecimiento" {{ request('tipo_cliente') == 'establecimiento' ? 'selected' : '' }}>Establecimiento</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-info mr-2">
-                                    <i class="fas fa-search"></i> Filtrar
-                                </button>
-                                <a href="{{ route('ventas.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Limpiar
-                                </a>
-                            </div>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="small text-white-50">Deuda Total</div>
+                            <div class="h5 mb-0">Bs. {{ number_format($clientesMorosos->sum('saldo_total'), 2) }}</div>
+                        </div>
+                        <div class="fa-2x">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="small text-white-50">Clientes Naturales</div>
+                            <div class="h5 mb-0">{{ $clientesMorosos->where('tipo_cliente', 'Natural')->count() }}</div>
                         </div>
                     </form>
 
@@ -90,11 +72,18 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if($venta->estado_pago == 'PAGADO')
-                                        <span class="badge badge-success">🟢 PAGADO</span>
-                                        @elseif($venta->estado_pago == 'PARCIAL')
-                                        <span class="badge badge-warning">🟡 PARCIAL</span>
-                                        <br><small>{{ $venta->porcentaje_pagado }}%</small>
+                                        <span class="badge bg-warning">{{ $cliente->ventas_pendientes }}</span>
+                                    </td>
+                                    <td>
+                                        <strong class="text-danger">
+                                            Bs. {{ number_format($cliente->saldo_total, 2) }}
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        @if($diasAtraso > 0)
+                                            <span class="text-{{ $colorRiesgo }}">
+                                                {{ $diasAtraso }} días
+                                            </span>
                                         @else
                                         <span class="badge badge-danger">🔴 PENDIENTE</span>
                                         @if($venta->dias_atraso > 0)
@@ -105,30 +94,26 @@
                                     <td>
                                         <strong>{{ $venta->nombre_empleado }}</strong>
                                     </td>
-                                    <!-- Fecha Creación -->
-                                    <td>{{ $venta->created_at->format('d/m/Y H:i') }}</td>
-
-                                    <!-- Fecha Actualización -->
-                                    <td>{{ $venta->updated_at->format('d/m/Y H:i') }}</td>
-
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('ventas.show', $venta->idVenta) }}"
-                                                class="btn btn-info" title="Ver detalles">
+                                        <div class="btn-group" role="group">
+                                            @if($cliente->telefono)
+                                                <a href="https://wa.me/51{{ $cliente->telefono }}?text=Hola {{ $cliente->nombre_cliente }}, te contactamos por el saldo pendiente de Bs. {{ number_format($cliente->saldo_total, 2) }}" 
+                                                   target="_blank" 
+                                                   class="btn btn-success btn-sm" 
+                                                   title="Contactar por WhatsApp">
+                                                    <i class="fab fa-whatsapp"></i>
+                                                </a>
+                                            @endif
+                                            <a href="{{ route('ventas.index', ['cliente_id' => $cliente->id_cliente, 'estado_pago' => 'pendiente']) }}" 
+                                               class="btn btn-primary btn-sm" 
+                                               title="Ver ventas pendientes">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            @if($venta->puedeRecibirPagos())
-                                            <button type="button"
-                                                class="btn btn-success"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalPago"
-                                                data-venta-id="{{ $venta->idVenta }}"
-                                                data-cliente="{{ $venta->nombre_cliente }}"
-                                                data-saldo="{{ $venta->saldo }}"
-                                                title="Registrar pago">
-                                                <i class="fas fa-dollar-sign"></i>
-                                            </button>
-                                            @endif
+                                            <a href="{{ route('ventas.create', ['cliente_id' => $cliente->id_cliente]) }}" 
+                                               class="btn btn-warning btn-sm" 
+                                               title="Registrar pago">
+                                                <i class="fas fa-money-bill"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -276,90 +261,15 @@
 
 @push('scripts')
 <script>
-    // Poblar datos del modal cuando se abre
-    const modalEl = document.getElementById('modalPago');
-    if (modalEl) {
-        modalEl.addEventListener('show.bs.modal', function(event) {
-            // Botón que disparó el modal
-            const button = event.relatedTarget;
-
-            // Extraer datos del botón
-            const ventaId = button.getAttribute('data-venta-id');
-            const cliente = button.getAttribute('data-cliente');
-            const saldo = parseFloat(button.getAttribute('data-saldo')) || 0;
-
-            // Actualizar campos del modal
-            document.getElementById('ventaId').value = ventaId;
-            document.getElementById('clienteNombre').textContent = cliente;
-            document.getElementById('saldoPendiente').textContent = 'Bs. ' + saldo.toFixed(2);
-            document.getElementById('monto').setAttribute('max', saldo);
-            document.getElementById('monto').value = saldo; // Prellenar con saldo completo
-        });
-
-        // Limpiar formulario al cerrar
-        modalEl.addEventListener('hidden.bs.modal', function() {
-            const form = document.getElementById('formPago');
-            if (form) form.reset();
-        });
-    }
-
-    // Enviar pago por AJAX para evitar redirección a ventas.show
-    $(function() {
-        $('#formPago').on('submit', function(e) {
-            e.preventDefault();
-            const $form = $(this);
-            const url = $form.attr('action');
-            const data = $form.serialize();
-
-            // Validar datos básicos antes de enviar - CORREGIDO
-            const monto = parseFloat($('#monto').val()) || 0;
-            const metodo = $('#tipoPago').val(); // ✅ CORREGIDO: 'tipoPago' en lugar de 'metodoPago'
-            const ventaId = $('#ventaId').val();
-
-            if (!ventaId || !metodo || monto <= 0) {
-                alert('Por favor complete todos los campos requeridos.');
-                return;
-            }
-
-            // Deshabilitar botón mientras se envía
-            const $submit = $form.find('button[type="submit"]');
-            $submit.prop('disabled', true).text('Guardando...');
-
-            $.ajax({
-                url: url,
-                method: 'POST',
-                data: data,
-                success: function() {
-                    // Cerrar modal y recargar lista
-                    if (window.bootstrap && bootstrap.Modal) {
-                        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalPago'));
-                        if (modalInstance) modalInstance.hide();
-                    } else if (typeof $('#modalPago').modal === 'function') {
-                        $('#modalPago').modal('hide');
-                    }
-                    // Pago registrado correctamente
-                    setTimeout(function() {
-                        location.reload();
-                    }, 500);
-                },
-                error: function(xhr) {
-                    // Mostrar errores específicos, pero solo si son errores reales
-                    let msg = 'No se pudo registrar el pago.';
-                    if (xhr.status === 419) {
-                        msg = 'Sesión expirada. Recarga la página.';
-                    } else if (xhr.status === 422 && xhr.responseJSON) {
-                        msg = 'Datos inválidos. Verifica el monto y método de pago.';
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    }
-
-                    alert(msg);
-                },
-                complete: function() {
-                    $submit.prop('disabled', false).html('<i class="fas fa-check"></i> Registrar Pago');
-                }
-            });
-        });
+$(document).ready(function() {
+    $('#dataTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+        },
+        "order": [[ 4, "desc" ]], // Ordenar por saldo total descendente
+        "pageLength": 25,
+        "responsive": true
     });
+});
 </script>
 @endpush
