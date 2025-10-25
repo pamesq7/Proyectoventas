@@ -119,77 +119,63 @@
                             <tbody>
                                 @php $contador = ($ventas->currentPage() - 1) * $ventas->perPage() + 1; @endphp
                                 @forelse($ventas as $venta)
-                                <tr>
-                                    <td>{{ $contador++ }}</td>
-                                    <td>{{ $venta->created_at->format('d/m/Y') }}</td>
-                                    <td>
-                                        <strong>{{ $venta->nombre_cliente }}</strong>
-                                        <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
-                                    </td>
-                                    <td>
-                                        <strong>Bs. {{ number_format($venta->total, 2) }}</strong>
-                                        @if($venta->estado_pago == 'PARCIAL')
-                                        <br><small class="text-muted">Pagado: Bs. {{ number_format($venta->monto_pagado, 2) }}</small>
-                                        <br><small class="text-danger">Debe: Bs. {{ number_format($venta->saldo, 2) }}</small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($venta->estado_pago == 'PAGADO')
-                                        <span class="badge badge-success">🟢 PAGADO</span>
-                                        @elseif($venta->estado_pago == 'PARCIAL')
-                                        <span class="badge badge-warning">🟡 PARCIAL</span>
-                                        <br><small>{{ $venta->porcentaje_pagado }}%</small>
-                                        @else
-                                        <span class="badge badge-danger">🔴 PENDIENTE</span>
-                                        @if($venta->dias_atraso > 0)
-                                        <br><small class="text-danger">{{ $venta->dias_atraso }} días</small>
-                                        @endif
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <strong>{{ $venta->nombre_empleado }}</strong>
-                                    </td>
-                                    <!-- Fecha Creación -->
-                                    <td>{{ $venta->created_at->format('d/m/Y H:i') }}</td>
-
-                                    <!-- Fecha Actualización -->
-                                    <td>{{ $venta->updated_at->format('d/m/Y H:i') }}</td>
-
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('ventas.show', $venta->idVenta) }}"
-                                                class="btn btn-info" title="Ver detalles">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            @if($venta->puedeRecibirPagos())
-                                            <button type="button"
-                                                class="btn btn-success"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalPago"
-                                                data-venta-id="{{ $venta->idVenta }}"
-                                                data-cliente="{{ $venta->nombre_cliente }}"
-                                                data-saldo="{{ $venta->saldo }}"
-                                                title="Registrar pago">
-                                                <i class="fas fa-dollar-sign"></i>
-                                            </button>
-<<<<<<< HEAD
+                                    <tr>
+                                        <td>{{ $contador++ }}</td>
+                                        <td>{{ $venta->created_at->format('d/m/Y') }}</td>
+                                        <td>
+                                            <strong>{{ $venta->nombre_cliente }}</strong>
+                                            <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>Bs. {{ number_format($venta->total, 2) }}</strong>
+                                            @if($venta->estado_pago == 'PARCIAL')
+                                                <br><small class="text-muted">Pagado: Bs. {{ number_format($venta->monto_pagado, 2) }}</small>
+                                                <br><small class="text-danger">Debe: Bs. {{ number_format($venta->saldo, 2) }}</small>
                                             @endif
-                                            @if($venta->puedeSerAnulada())
-                                            <button type="button" class="btn btn-warning btn-anular"
-                                                data-venta-id="{{ $venta->idVenta }}"
-                                                title="Anular venta">
-                                                <i class="fas fa-ban"></i>
-                                            </button>
-=======
->>>>>>> ea8c1bc30f198079cf35f0df0359e382d4be4191
+                                        </td>
+                                        <td>
+                                            @if($venta->estado_pago == 'PAGADO')
+                                                <span class="badge badge-success">🟢 PAGADO</span>
+                                            @elseif($venta->estado_pago == 'PARCIAL')
+                                                <span class="badge badge-warning">🟡 PARCIAL</span>
+                                                <br><small>{{ $venta->porcentaje_pagado }}%</small>
+                                            @else
+                                                <span class="badge badge-danger">🔴 PENDIENTE</span>
+                                                @if($venta->dias_atraso > 0)
+                                                    <br><small class="text-danger">{{ $venta->dias_atraso }} días</small>
+                                                @endif
                                             @endif
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td>
+                                            <strong>{{ $venta->nombre_empleado }}</strong>
+                                        </td>
+                                        <td>{{ $venta->created_at->format('d/m/Y H:i') }}</td>
+                                        <td>{{ $venta->updated_at->format('d/m/Y H:i') }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ route('ventas.show', $venta->idVenta) }}"
+                                                    class="btn btn-info" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @if($venta->puedeRecibirPagos())
+                                                    <button type="button"
+                                                        class="btn btn-success"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalPago"
+                                                        data-venta-id="{{ $venta->idVenta }}"
+                                                        data-cliente="{{ $venta->nombre_cliente }}"
+                                                        data-saldo="{{ $venta->saldo }}"
+                                                        title="Registrar pago">
+                                                        <i class="fas fa-dollar-sign"></i>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="9" class="text-center">No se encontraron ventas</td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="9" class="text-center">No se encontraron ventas</td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -284,7 +270,6 @@
                 @csrf
                 <div class="modal-body">
                     <input type="hidden" name="idVenta" id="ventaId">
-                    <input type="hidden" name="tipoTransaccion" value="pago">
 
                     <div class="form-group">
                         <label>Cliente:</label>
@@ -302,15 +287,13 @@
                             step="0.01" min="0.01" required>
                     </div>
 
-                    <div class="form-group">
-                        <label for="metodoPago">Método de Pago: *</label>
-                        <select name="metodoPago" id="metodoPago" class="form-control" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="efectivo">Efectivo</option>
-                            <option value="tarjeta">Tarjeta</option>
-                            <option value="transferencia">Transferencia</option>
-                            <option value="yape">Yape</option>
-                            <option value="plin">Plin</option>
+                    <div class="mb-2">
+                        <label class="form-label">Tipo Pago *</label>
+                        <select class="form-select" id="metodoPago" name="metodoPago">
+                            <option value="efectivo" selected>Efectivo</option>
+                            <option value="qr">QR</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="transferencia">Transferencia bancaria</option>
                         </select>
                     </div>
 

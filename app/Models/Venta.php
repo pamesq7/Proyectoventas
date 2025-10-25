@@ -47,16 +47,12 @@ class Venta extends Model
     public function clienteEstablecimiento()
     {
         return $this->belongsTo(ClienteEstablecimiento::class, 'idEstablecimiento');
-        // Establecimiento: razón social o nombreEstablecimiento
-        if ($this->clienteEstablecimiento) {
-            return $this->clienteEstablecimiento->razonSocial
-                ?? $this->clienteEstablecimiento->razonSocial
-                ?? 'Establecimiento';
-        }
     }
+
     public function user()
     {
-        return $this->belongsTo(User::class, 'idCliente', 'idEmpleado', 'idUser');
+        // Relación no necesaria para Venta, ya que el usuario se obtiene a través de clienteNatural o empleado
+        return null;
     }
 
 

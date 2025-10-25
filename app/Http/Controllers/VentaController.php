@@ -11,6 +11,7 @@ use App\Models\Producto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class VentaController extends Controller
 {
@@ -19,36 +20,15 @@ class VentaController extends Controller
      */
     public function index(Request $request)
     {
-<<<<<<< HEAD
-        // Tu código para las consultas de ventas
-        $ventas = Venta::with(['clienteNatural', 'clienteEstablecimiento', 'empleado.user'])
-            ->where('ventas.estado', 1) // ✅ Solo ventas en estado 1
-            ->select('ventas.*')
-            ->leftJoin('empleados', 'ventas.idEmpleado', '=', 'empleados.idEmpleado')
-            ->leftJoin('users', 'empleados.idEmpleado', '=', 'users.idUser')
-            ->selectRaw('ventas.*, CONCAT(users.name, " ", users.primerApellido, " ", IFNULL(users.segundApellido, "")) as nombre_empleado')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-
-        // Estadísticas rápidas
-        $estadisticas = [
-            'total_ventas' => Venta::count(),
-            'ventas_saldadas' => Venta::where('saldo', '<=', 0)->count(),
-            'ventas_pendientes' => Venta::where('saldo', '>', 0)->count(),
-            'monto_pendiente' => Venta::where('saldo', '>', 0)->sum('saldo'),
-        ];
-
-        return view('ventas.index', compact('ventas', 'estadisticas'));
-
-        $query = Venta::with(['empleado', 'clienteNatural', 'clienteEstablecimiento', 'detalleVentas.talla', 'transacciones'])
-            ->where('estado', 1) // Solo mostrar ventas en estado 1
+        $query = Venta::with([
+            'empleado.user',
+            'clienteNatural.user',
+            'clienteEstablecimiento',
+            'detalleVentas.talla',
+            'transacciones'
+        ])
+            ->where('ventas.estado', 1) // Solo mostrar ventas en estado 1
             ->orderBy('created_at', 'desc');
-=======
-        // Base query con filtro de estado = 1
-        $query = Venta::with(['clienteNatural.user', 'clienteEstablecimiento', 'empleado.user', 'transacciones'])
-            ->where('ventas.estado', 1) // ✅ Solo ventas en estado 1
-            ->orderBy('ventas.created_at', 'desc');
->>>>>>> ea8c1bc30f198079cf35f0df0359e382d4be4191
 
         // Filtro por estado de pago
         if ($request->filled('estado_pago')) {
@@ -95,7 +75,7 @@ class VentaController extends Controller
             }
 
             // Calcular estado de pago
-            $montoPagado = $venta->transacciones->where('tipoTransaccion', 'pago')->sum('monto');
+            $montoPagado = $venta->transacciones ? $venta->transacciones->where('tipoTransaccion', 'pago')->sum('monto') : 0;
             $venta->monto_pagado = $montoPagado;
             $venta->saldo = max(0, $venta->total - $montoPagado);
 
@@ -115,6 +95,13 @@ class VentaController extends Controller
             } else {
                 $venta->nombre_empleado = 'No asignado';
             }
+
+            // Calcular días de atraso si aplica
+            $venta->dias_atraso = 0;
+            if ($venta->fechaEntrega) {
+                $fechaEntrega = \Carbon\Carbon::parse($venta->fechaEntrega);
+                $venta->dias_atraso = \Carbon\Carbon::now()->diffInDays($fechaEntrega, false);
+            }
         });
 
         // Estadísticas (solo de ventas con estado = 1)
@@ -125,6 +112,7 @@ class VentaController extends Controller
             'monto_pendiente' => Venta::where('estado', 1)->where('saldo', '>', 0)->sum('saldo'),
         ];
 
+
         return view('ventas.index', compact('ventas', 'estadisticas'));
     }
 
@@ -134,11 +122,8 @@ class VentaController extends Controller
     public function show($id)
     {
         $venta = Venta::with([
-            'empleado',
-            'clienteNatural',
-            'clienteEstablecimiento',
-            'empleado',
-            'clienteNatural',
+            'empleado.user',
+            'clienteNatural.user',
             'clienteEstablecimiento',
             'detalleVentas.talla',
             'transacciones.user'
@@ -165,27 +150,31 @@ class VentaController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info('Iniciando registro de pago', ['request' => $request->all()]);
+
         $request->validate([
             'idVenta' => 'required|exists:ventas,idVenta',
             'monto' => 'required|numeric|min:0.01',
-            'metodoPago' => 'required|string|max:50',
-            'tipoTransaccion' => 'required|in:pago,abono,descuento',
+            'metodoPago' => 'required|string|max:50', // Usa metodoPago como el método de pago (ej. 'efectivo')
             'observaciones' => 'nullable|string|max:500'
         ]);
 
         return DB::transaction(function () use ($request) {
+            Log::info('Transacción iniciada', ['idVenta' => $request->idVenta]);
+
             $venta = Venta::lockForUpdate()->findOrFail($request->idVenta);
 
             // Verificar que el monto no exceda el saldo pendiente
             if ($request->monto > $venta->saldo) {
+                Log::warning('Monto excede saldo', ['monto' => $request->monto, 'saldo' => $venta->saldo]);
                 return back()->withErrors(['monto' => 'El monto no puede ser mayor al saldo pendiente']);
             }
 
-            // Crear la transacción
+            // Crear la transacción (usando metodoPago como el método de pago)
             Transaccion::create([
-                'tipoTransaccion' => $request->tipoTransaccion,
+                'tipoTransaccion' => 'pago', // Tipo fijo para pagos
                 'monto' => $request->monto,
-                'metodoPago' => $request->metodoPago,
+                'metodoPago' => $request->metodoPago ?? 'efectivo', // Usa metodoPago del request como el método
                 'observaciones' => $request->observaciones,
                 'estado' => 1,
                 'idVenta' => $request->idVenta,
@@ -196,13 +185,38 @@ class VentaController extends Controller
             $venta->saldo = max(0, $venta->saldo - $request->monto);
             $venta->save();
 
+            Log::info('Pago registrado exitosamente', ['idVenta' => $request->idVenta, 'nuevoSaldo' => $venta->saldo]);
+
             return redirect()->route('ventas.show', $request->idVenta)
                 ->with('success', 'Pago registrado correctamente. Saldo actualizado.');
         });
     }
 
+    public function confirmacion($idVenta)
+    {
+        $venta = Venta::with([
+            'detalleVentas.talla',
+            'clienteNatural',
+            'clienteEstablecimiento',
+            'transacciones'
+        ])->findOrFail($idVenta);
+
+        // Tallas activas para el formulario de agregar detalle
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTalla', 'nombre']);
+
+        // Lista fija de métodos de pago (no depende de tabla)
+        $metodosPago = collect([
+            ['id' => null, 'nombre' => 'Efectivo', 'codigo' => 'efectivo'],
+            ['id' => null, 'nombre' => 'QR', 'codigo' => 'qr'],
+            ['id' => null, 'nombre' => 'Cheque', 'codigo' => 'cheque'],
+            ['id' => null, 'nombre' => 'Transferencia bancaria', 'codigo' => 'transferencia'],
+        ]);
+
+        return view('pedidos.confirmacion', compact('venta', 'metodosPago', 'tallas'));
+    }
+
     /**
-     * Consultar clientes morosos (con saldo pendiente) - USANDO SOLO TABLAS: ventas, transaccions, cliente_naturals, cliente_establecimientos
+     * Consultar clientes morosos (con saldo pendiente)
      */
     public function clientesMorosos()
     {
@@ -238,7 +252,7 @@ class VentaController extends Controller
             ->select(
                 'cliente_establecimientos.idEstablecimiento as id_cliente',
                 'cliente_establecimientos.razonSocial as nombre_cliente',
-                DB::raw('NULL as telefono'), // No hay teléfono en esta tabla
+                DB::raw('NULL as telefono'),
                 DB::raw("'Establecimiento' as tipo_cliente"),
                 DB::raw('SUM(ventas.saldo) as total_deuda'),
                 DB::raw('COUNT(DISTINCT ventas.idVenta) as cantidad_ventas_pendientes'),
@@ -272,7 +286,7 @@ class VentaController extends Controller
             'clientes_morosos' => Venta::where('saldo', '>', 0)->distinct('idCliente', 'idEstablecimiento')->count()
         ];
 
-        $ventasRecientes = Venta::with(['clienteNatural', 'clienteEstablecimiento'])
+        $ventasRecientes = Venta::with(['clienteNatural.user', 'clienteEstablecimiento'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();

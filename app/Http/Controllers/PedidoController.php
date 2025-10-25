@@ -666,28 +666,7 @@ class PedidoController extends Controller
     /**
      * Mostrar confirmación de pedido
      */
-    public function confirmacion($idVenta)
-    {
-        $venta = Venta::with([
-            'detalleVentas.talla',
-            'clienteNatural',
-            'clienteEstablecimiento',
-            'transacciones'
-        ])->findOrFail($idVenta);
-
-        // Tallas activas para el formulario de agregar detalle
-        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTalla', 'nombre']);
-
-        // Lista fija de métodos de pago (no depende de tabla)
-        $metodosPago = collect([
-            ['id' => null, 'nombre' => 'Efectivo', 'codigo' => 'efectivo'],
-            ['id' => null, 'nombre' => 'QR', 'codigo' => 'qr'],
-            ['id' => null, 'nombre' => 'Cheque', 'codigo' => 'cheque'],
-            ['id' => null, 'nombre' => 'Transferencia bancaria', 'codigo' => 'transferencia'],
-        ]);
-
-        return view('pedidos.confirmacion', compact('venta', 'metodosPago', 'tallas'));
-    }
+  
 
     /**
      * Agregar un detalle de venta desde la confirmación y recalcular totales/saldo

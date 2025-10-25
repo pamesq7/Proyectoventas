@@ -140,13 +140,17 @@
             const notifications = document.querySelectorAll('.notification-alert');
             notifications.forEach(function(notification) {
                 setTimeout(function() {
-                    notification.style.transition = 'opacity 0.5s ease-out';
-                    notification.style.opacity = '0';
-                    
-                    // Remove the notification from the DOM after the fade out
-                    setTimeout(function() {
-                        notification.remove();
-                    }, 500);
+                    if (notification && notification.classList.contains('show')) {
+                        notification.style.transition = 'opacity 0.5s ease-out';
+                        notification.style.opacity = '0';
+                        
+                        // Remove the notification from the DOM after the fade out
+                        setTimeout(function() {
+                            if (notification && notification.parentNode) {
+                                notification.remove();
+                            }
+                        }, 500);
+                    }
                 }, 6000);
             });
             
@@ -154,13 +158,17 @@
             document.querySelectorAll('.btn-close').forEach(function(button) {
                 button.addEventListener('click', function() {
                     const alert = this.closest('.alert');
-                    alert.style.transition = 'opacity 0.5s ease-out';
-                    alert.style.opacity = '0';
-                    
-                    // Remove the notification from the DOM after the fade out
-                    setTimeout(function() {
-                        alert.remove();
-                    }, 500);
+                    if (alert) {
+                        alert.style.transition = 'opacity 0.5s ease-out';
+                        alert.style.opacity = '0';
+                        
+                        // Remove the notification from the DOM after the fade out
+                        setTimeout(function() {
+                            if (alert && alert.parentNode) {
+                                alert.remove();
+                            }
+                        }, 500);
+                    }
                 });
             });
             
@@ -202,19 +210,23 @@
                 // Auto-hide after 6 seconds
                 setTimeout(function() {
                     if (notification && notification.classList.contains('show')) {
-                        const bsAlert = new bootstrap.Alert(notification);
-                        bsAlert.close();
+                        if (notification) {
+                            const bsAlert = new bootstrap.Alert(notification);
+                            bsAlert.close();
+                        }
                     }
                     
-                    notification.style.transition = 'opacity 0.5s ease-out';
-                    notification.style.opacity = '0';
-                    
-                    // Remove the notification from the DOM after the fade out
-                    setTimeout(function() {
-                        if (notification && notification.parentNode) {
-                            notification.remove();
-                        }
-                    }, 500);
+                    if (notification) {
+                        notification.style.transition = 'opacity 0.5s ease-out';
+                        notification.style.opacity = '0';
+                        
+                        // Remove the notification from the DOM after the fade out
+                        setTimeout(function() {
+                            if (notification && notification.parentNode) {
+                                notification.remove();
+                            }
+                        }, 500);
+                    }
                 }, 6000);
                 
                 // Hover effect for the new notification
@@ -230,15 +242,17 @@
                 const closeButton = notification.querySelector('.btn-close');
                 if (closeButton) {
                     closeButton.addEventListener('click', function() {
-                        notification.style.transition = 'opacity 0.5s ease-out';
-                        notification.style.opacity = '0';
-                        
-                        // Remove the notification from the DOM after the fade out
-                        setTimeout(function() {
-                            if (notification && notification.parentNode) {
-                                notification.remove();
-                            }
-                        }, 500);
+                        if (notification) {
+                            notification.style.transition = 'opacity 0.5s ease-out';
+                            notification.style.opacity = '0';
+                            
+                            // Remove the notification from the DOM after the fade out
+                            setTimeout(function() {
+                                if (notification && notification.parentNode) {
+                                    notification.remove();
+                                }
+                            }, 500);
+                        }
                     });
                 }
                 
