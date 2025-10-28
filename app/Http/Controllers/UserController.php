@@ -94,7 +94,7 @@ class UserController extends Controller
                 'segundApellido' => $request->segundApellido,
                 'email' => $request->email,
                 'telefono' => $request->telefono,
-                'password' => Hash::make($request->password),
+                'password' => Hash::make($request->password),   // Contraseña encri    
                 'estado' => 1,
             ]);
 

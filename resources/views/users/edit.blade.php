@@ -434,26 +434,12 @@
                                         </h6>
                                         <div class="row">
                                             <div class="col-md-3">
-                                                <small class="text-muted">ID del Usuario:</small>
-                                                <div><code>#{{ $user->idUser }}</code></div>
-                                            </div>
-                                            <div class="col-md-3">
                                                 <small class="text-muted">Fecha de Registro:</small>
                                                 <div>{{ $user->created_at ? $user->created_at->format('d/m/Y H:i') : 'No disponible' }}</div>
                                             </div>
                                             <div class="col-md-3">
                                                 <small class="text-muted">Última Actualización:</small>
                                                 <div>{{ $user->updated_at ? $user->updated_at->format('d/m/Y H:i') : 'No disponible' }}</div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <small class="text-muted">Email Verificado:</small>
-                                                <div>
-                                                    @if($user->email_verified_at)
-                                                        <span class="badge bg-success">Sí</span>
-                                                    @else
-                                                        <span class="badge bg-warning">No</span>
-                                                    @endif
-                                                </div>
                                             </div>
                                         </div>
                                     </div>

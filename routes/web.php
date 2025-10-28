@@ -24,6 +24,8 @@ use App\Http\Controllers\DisenadorController;
 use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\OperadorController;
 use App\Http\Controllers\ClienteDashboardController;
+use App\Http\Controllers\MorosoController;
+use App\Http\Controllers\PedidoPdfController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,6 +86,17 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::post('ventas', [VentaController::class, 'store'])->name('ventas.store');
     Route::get('ventas/{id}', [VentaController::class, 'show'])->name('ventas.show');
     Route::post('ventas/{id}/estado', [VentaController::class, 'actualizarEstado'])->name('ventas.actualizar-estado');
+
+    /*
+     |--------------------------------------------------------------------------
+     | Gestión de Morosos
+     |--------------------------------------------------------------------------
+     */
+    // web.php
+    Route::get('morosos', [MorosoController::class, 'index'])->name('morosos.index');
+    Route::get('morosos/{id}', [MorosoController::class, 'show'])->name('morosos.show');
+    Route::post('morosos/{id}/pago', [MorosoController::class, 'store'])->name('morosos.store');
+
 
     // Gestión de pagos
     Route::get('pagos', [PagoController::class, 'index'])->name('pagos.index');
@@ -210,15 +223,41 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::post('pedidos/{idVenta}/detalle', [PedidoController::class, 'agregarDetalle'])->name('pedidos.detalle.agregar');
     Route::post('pedido/{idVenta}/pagos', [PedidoController::class, 'registrarPago'])->name('pedidos.registrar-pago');
 
-    // Administración de pedidos
-    Route::get('pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
-    Route::get('pedidos/{idVenta}', [PedidoController::class, 'show'])->name('pedidos.show');
-    Route::get('pedidos/{idVenta}/edit', [PedidoController::class, 'edit'])->name('pedidos.edit');
-    Route::put('pedidos/{idVenta}', [PedidoController::class, 'update'])->name('pedidos.update');
-    Route::patch('pedidos/{idVenta}/estado', [PedidoController::class, 'actualizarEstado'])->name('pedidos.actualizar-estado');
-    Route::put('pedidos/{idVenta}/detalles', [PedidoController::class, 'updateDetalles'])->name('pedidos.update-detalles');
-    Route::delete('pedidos/{idVenta}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
-    Route::delete('pedidos/{idVenta}/eliminar-imagen', [PedidoController::class, 'eliminarImagen'])->name('pedidos.eliminar-imagen');
+    // =========================================================================
+    // GESTIÓN DE PEDIDOS
+    // =========================================================================
+    Route::prefix('pedidos')->group(function () {
+        // Configuración de pedidos
+        Route::get('catalogo', [PedidoController::class, 'catalogo'])->name('pedidos.catalogo');
+        Route::get('producto/{idProducto}/configurar', [PedidoController::class, 'configurarProducto'])->name('pedidos.configurar');
+        Route::post('guardar-configuracion', [PedidoController::class, 'guardarConfiguracion'])->name('pedidos.guardar-configuracion');
+        Route::get('limpiar-configuracion', [PedidoController::class, 'limpiarConfiguracion'])->name('pedidos.limpiar-configuracion');
+
+
+        Route::get('pedidos/nuevo', [PedidoController::class, 'nuevoPedido'])->name('pedidos.nuevo');
+        // ✅ CORRECCIÓN: Esta es la ruta que falta
+        Route::post('guardar-nuevo', [PedidoController::class, 'guardarNuevoPedido'])->name('pedidos.guardar-nuevo');
+
+
+        Route::get('/ventas/{venta}/recibo', [PedidoPdfController::class, 'generarRecibo'])
+            ->name('ventas.recibo.pdf')
+            ->middleware('auth');
+
+        // Dentro del grupo de rutas de 'pedidos'
+        Route::get('{pedido}/ver-recibo', [PedidoPdfController::class, 'verRecibo'])
+            ->name('pedidos.recibo.ver')
+            ->middleware('auth');
+
+        // Administración de pedidos
+        Route::get('/', [PedidoController::class, 'index'])->name('pedidos.index');
+        Route::get('{idVenta}', [PedidoController::class, 'show'])->name('pedidos.show');
+        Route::get('{idVenta}/edit', [PedidoController::class, 'edit'])->name('pedidos.edit');
+        Route::put('{idVenta}', [PedidoController::class, 'update'])->name('pedidos.update');
+        Route::patch('{idVenta}/estado', [PedidoController::class, 'actualizarEstado'])->name('pedidos.actualizar-estado');
+        Route::put('{idVenta}/detalles', [PedidoController::class, 'updateDetalles'])->name('pedidos.update-detalles');
+        Route::delete('{idVenta}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
+        Route::delete('{idVenta}/eliminar-imagen', [PedidoController::class, 'eliminarImagen'])->name('pedidos.eliminar-imagen');
+    });
 
     /*
      |--------------------------------------------------------------------------

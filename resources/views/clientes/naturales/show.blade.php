@@ -140,14 +140,6 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label text-muted">ID del Cliente:</label>
-                        <div><code>#{{ $clienteNatural->idCliente }}</code></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted">ID del Usuario:</label>
-                        <div><code>#{{ $clienteNatural->user->idUser }}</code></div>
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label text-muted">Fecha de Registro:</label>
                         <div>{{ $clienteNatural->created_at ? $clienteNatural->created_at->format('d/m/Y H:i') : 'No disponible' }}</div>
                     </div>

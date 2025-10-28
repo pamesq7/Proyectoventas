@@ -2,23 +2,26 @@
 
 namespace App\Http\Controllers;
 
+
+use Illuminate\Http\Request;
 use App\Models\Venta;
 use App\Models\ClienteNatural;
 use App\Models\ClienteEstablecimiento;
 use App\Models\Empleado;
 use App\Models\Transaccion;
 use App\Models\Producto;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
-class VentaController extends Controller
+
+
+class MorosoController extends Controller
 {
     /**
-     * Módulo principal de ventas - muestra ventas saldadas y pendientes
+     * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request)  // Asegúrate de inyectar el Request
     {
         $query = Venta::with([
             'empleado.user',
@@ -27,17 +30,9 @@ class VentaController extends Controller
             'detalleVentas.talla',
             'transacciones'
         ])
-            ->where('ventas.estado', 1) // Solo mostrar ventas en estado 1
+            ->where('ventas.estado', 1) // Solo ventas activas
+            ->where('ventas.saldo', '>', 0) // Solo con saldo pendiente
             ->orderBy('created_at', 'desc');
-
-        // Filtro por estado de pago
-        if ($request->filled('estado_pago')) {
-            if ($request->estado_pago == 'saldado') {
-                $query->where('ventas.saldo', '<=', 0);
-            } elseif ($request->estado_pago == 'pendiente') {
-                $query->where('ventas.saldo', '>', 0);
-            }
-        }
 
         // Filtro por fechas
         if ($request->filled('fecha_desde')) {
@@ -61,7 +56,7 @@ class VentaController extends Controller
 
         // Procesar datos para la vista
         $ventas->each(function ($venta) {
-            // Calcular nombre del cliente
+            // Cálculo de nombre del cliente
             if ($venta->clienteNatural && $venta->clienteNatural->user) {
                 $venta->nombre_cliente = $venta->clienteNatural->user->name . ' ' .
                     $venta->clienteNatural->user->primerApellido;
@@ -75,10 +70,13 @@ class VentaController extends Controller
             }
 
             // Calcular estado de pago
-            $montoPagado = $venta->transacciones ? $venta->transacciones->where('tipoTransaccion', 'pago')->sum('monto') : 0;
+            $montoPagado = $venta->transacciones ?
+                $venta->transacciones->where('tipoTransaccion', 'pago')->sum('monto') : 0;
+
             $venta->monto_pagado = $montoPagado;
             $venta->saldo = max(0, $venta->total - $montoPagado);
 
+            // Clasificar el estado de pago
             if ($montoPagado >= $venta->total) {
                 $venta->estado_pago = 'PAGADO';
             } elseif ($montoPagado > 0) {
@@ -96,30 +94,45 @@ class VentaController extends Controller
                 $venta->nombre_empleado = 'No asignado';
             }
 
-            // Calcular días de atraso si aplica
+            // Calcular días de atraso
             $venta->dias_atraso = 0;
             if ($venta->fechaEntrega) {
                 $fechaEntrega = \Carbon\Carbon::parse($venta->fechaEntrega);
-                $venta->dias_atraso = \Carbon\Carbon::now()->diffInDays($fechaEntrega, false);
+                $venta->dias_atraso = now()->diffInDays($fechaEntrega, false);
             }
         });
 
-        // Estadísticas (solo de ventas con estado = 1)
+        // Estadísticas para la vista
         $estadisticas = [
-            'total_ventas' => Venta::where('estado', 1)->count(),
-            'ventas_saldadas' => Venta::where('estado', 1)->where('saldo', '<=', 0)->count(),
-            'ventas_pendientes' => Venta::where('estado', 1)->where('saldo', '>', 0)->count(),
-            'monto_pendiente' => Venta::where('estado', 1)->where('saldo', '>', 0)->sum('saldo'),
+            'total_morosos' => Venta::where('estado', 1)
+                ->where('saldo', '>', 0)
+                ->count(),
+
+            'monto_total_pendiente' => Venta::where('estado', 1)
+                ->where('saldo', '>', 0)
+                ->sum('saldo'),
+
+            'clientes_morosos' => Venta::where('estado', 1)
+                ->where('saldo', '>', 0)
+                ->selectRaw('COALESCE(idCliente, idEstablecimiento) as cliente_id')
+                ->distinct()
+                ->count(),
+
+            'promedio_atraso' => Venta::where('estado', 1)
+                ->where('saldo', '>', 0)
+                ->whereNotNull('fechaEntrega')
+                ->selectRaw('AVG(DATEDIFF(NOW(), fechaEntrega)) as atraso')
+                ->value('atraso') ?? 0
         ];
 
-
-        return view('ventas.index', compact('ventas', 'estadisticas'));
+        return view('morosos.index', compact('ventas', 'estadisticas'));
     }
 
+
     /**
-     * Mostrar detalle de una venta específica
+     * Display the specified resource.
      */
-    public function show($id)
+    public function show(string $id)
     {
         $venta = Venta::with([
             'empleado.user',
@@ -130,66 +143,6 @@ class VentaController extends Controller
         ])->findOrFail($id);
 
         return view('ventas.show', compact('venta'));
-    }
-
-    /**
-     * Formulario para registrar nueva venta/pago
-     */
-    public function create()
-    {
-        $ventasPendientes = Venta::with(['clienteNatural.user', 'clienteEstablecimiento'])
-            ->where('saldo', '>', 0)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('ventas.create', compact('ventasPendientes'));
-    }
-
-    /**
-     * Registrar nueva transacción/pago
-     */
-    public function store(Request $request)
-    {
-        Log::info('Iniciando registro de pago', ['request' => $request->all()]);
-
-        $request->validate([
-            'idVenta' => 'required|exists:ventas,idVenta',
-            'monto' => 'required|numeric|min:0.01',
-            'metodoPago' => 'required|string|max:50', // Usa metodoPago como el método de pago (ej. 'efectivo')
-            'observaciones' => 'nullable|string|max:500'
-        ]);
-
-        return DB::transaction(function () use ($request) {
-            Log::info('Transacción iniciada', ['idVenta' => $request->idVenta]);
-
-            $venta = Venta::lockForUpdate()->findOrFail($request->idVenta);
-
-            // Verificar que el monto no exceda el saldo pendiente
-            if ($request->monto > $venta->saldo) {
-                Log::warning('Monto excede saldo', ['monto' => $request->monto, 'saldo' => $venta->saldo]);
-                return back()->withErrors(['monto' => 'El monto no puede ser mayor al saldo pendiente']);
-            }
-
-            // Crear la transacción (usando metodoPago como el método de pago)
-            Transaccion::create([
-                'tipoTransaccion' => 'pago', // Tipo fijo para pagos
-                'monto' => $request->monto,
-                'metodoPago' => $request->metodoPago ?? 'efectivo', // Usa metodoPago del request como el método
-                'observaciones' => $request->observaciones,
-                'estado' => 1,
-                'idVenta' => $request->idVenta,
-                'idUser' => Auth::id()
-            ]);
-
-            // Actualizar saldo de la venta (evitar negativos)
-            $venta->saldo = max(0, $venta->saldo - $request->monto);
-            $venta->save();
-
-            Log::info('Pago registrado exitosamente', ['idVenta' => $request->idVenta, 'nuevoSaldo' => $venta->saldo]);
-
-            return redirect()->route('ventas.show', $request->idVenta)
-                ->with('success', 'Pago registrado correctamente. Saldo actualizado.');
-        });
     }
 
     public function confirmacion($idVenta)
@@ -237,23 +190,47 @@ class VentaController extends Controller
 
         return view('ventas.dashboard', compact('estadisticas', 'ventasRecientes'));
     }
-
-    /**
-     * Actualizar estado del pedido
-     */
-    public function actualizarEstado(Request $request, $id)
+    public function store(Request $request)
     {
+        Log::info('Iniciando registro de pago', ['request' => $request->all()]);
+
         $request->validate([
-            'estado' => 'required|in:0,1,2,3'
+            'idVenta' => 'required|exists:ventas,idVenta',
+            'monto' => 'required|numeric|min:0.01',
+            'metodoPago' => 'required|string|max:50', // Usa metodoPago como el método de pago (ej. 'efectivo')
+            'observaciones' => 'nullable|string|max:500'
         ]);
 
-        $venta = Venta::findOrFail($id);
-        $venta->update(['estado' => $request->estado]);
+        return DB::transaction(function () use ($request) {
+            Log::info('Transacción iniciada', ['idVenta' => $request->idVenta]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Estado actualizado correctamente',
-            'nuevo_estado' => $venta->estado_texto
-        ]);
+            $venta = Venta::lockForUpdate()->findOrFail($request->idVenta);
+
+            // Verificar que el monto no exceda el saldo pendiente
+            if ($request->monto > $venta->saldo) {
+                Log::warning('Monto excede saldo', ['monto' => $request->monto, 'saldo' => $venta->saldo]);
+                return back()->withErrors(['monto' => 'El monto no puede ser mayor al saldo pendiente']);
+            }
+
+            // Crear la transacción (usando metodoPago como el método de pago)
+            Transaccion::create([
+                'tipoTransaccion' => 'pago', // Tipo fijo para pagos
+                'monto' => $request->monto,
+                'metodoPago' => $request->metodoPago ?? 'efectivo', // Usa metodoPago del request como el método
+                'observaciones' => $request->observaciones,
+                'estado' => 1,
+                'idVenta' => $request->idVenta,
+                'idUser' => Auth::id()
+            ]);
+
+            // Actualizar saldo de la venta (evitar negativos)
+            $venta->saldo = max(0, $venta->saldo - $request->monto);
+            $venta->save();
+
+            Log::info('Pago registrado exitosamente', ['idVenta' => $request->idVenta, 'nuevoSaldo' => $venta->saldo]);
+
+            return redirect()->route('clientes.show', $request->idVenta)
+                ->with('success', 'Pago registrado correctamente. Saldo actualizado.');
+        });
     }
 }

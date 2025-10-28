@@ -11,12 +11,6 @@
                     <h3 class="card-title">
                         <i class="fas fa-shopping-cart"></i> Gestión de Ventas
                     </h3>
-                    <div class="btn-group">
-
-                        <a href="{{ route('ventas.morosos') }}" class="btn btn-warning">
-                            <i class="fas fa-exclamation-triangle"></i> Clientes Morosos
-                        </a>
-                    </div>
                 </div>
 
                 <!-- Filtros -->

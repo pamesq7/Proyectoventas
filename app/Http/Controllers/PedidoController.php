@@ -30,7 +30,6 @@ class PedidoController extends Controller
     {
         $productos = Producto::with([
             'categoria',
-            'variante.varianteCaracteristicas.caracteristica.opcion',
             'diseno'
         ])
             ->leftJoin('categorias', 'productos.idCategoria', '=', 'categorias.idCategoria')
@@ -187,22 +186,126 @@ class PedidoController extends Controller
         ]);
     }
 
-    /**
-     * Configurador de producto - mostrar opciones de personalización
-     */
     public function configurarProducto($idProducto)
     {
-        $producto = Producto::with([
-            'categoria',
-            'variante.varianteCaracteristicas.caracteristica.opcion',
-            'productoTallas.talla',
-            'diseno'
-        ])->findOrFail($idProducto);
+        try {
+            // Obtener el producto con sus relaciones
+            $producto = Producto::with([
+                'opciones.caracteristicas' => function ($query) {
+                    $query->where('estado', 1);
+                },
+                'diseno'
+            ])->where('estado', 1)->findOrFail($idProducto);
 
-        // Obtener todas las tallas disponibles para el producto
-        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
+            // ✅ CORRECCIÓN: Obtener TODAS las tallas activas del sistema
+            $tallas = Talla::where('estado', 1)
+                ->orderBy('nombre')
+                ->get();
 
-        return view('pedidos.configurar', compact('producto', 'tallas'));
+            // Obtener la lista de diseñadores
+            $diseñadores = Empleado::with('user')
+                ->whereHas('user', function ($q) {
+                    $q->where('rol', 'diseñador')->where('estado', 1);
+                })
+                ->where('estado', 1)
+                ->get();
+
+            // Obtener otros datos necesarios
+            $productos = Producto::where('estado', 1)->get();
+            $clientesNaturales = ClienteNatural::with(['user' => function ($query) {
+                $query->where('estado', 1);
+            }])->where('estado', 1)->get();
+            // ✅ ORDEN PERSONALIZADO para tallas
+            $tallas = Talla::where('estado', 1)->get();
+
+            // Definir el orden deseado
+            $ordenPersonalizado = [
+                '3XL',
+                '2XL',
+                'XL',
+                'L',
+                'M',
+                'S',
+                'XS',
+                '14',
+                '12',
+                '10',
+                '8',
+                '6',
+                '4',
+                '2',
+                '2XLD',
+                'XLD',
+                'LD',
+                'MD',
+                'SD',
+                '14D'
+            ];
+
+            $tallas = $tallas->sortBy(function ($talla) use ($ordenPersonalizado) {
+                $index = array_search($talla->nombre, $ordenPersonalizado);
+                return $index === false ? 999 : $index; // Si no está en la lista, va al final
+            });
+
+            $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->get();
+
+            $configuracion = session('configuracion_pedido', []);
+
+
+            return view('pedidos.configurar', compact(
+                'producto',
+                'tallas', // ✅ Esto ahora tendrá todas las tallas
+                'diseñadores',
+                'productos',
+                'clientesNaturales',
+                'clientesEstablecimientos',
+                'configuracion'
+            ));
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('pedidos.catalogo')
+                ->with('error', 'Producto no encontrado o no disponible.');
+        }
+    }
+    public function store(Request $request)
+    {
+        // Redirige al método que sí existe
+        return $this->guardarNuevoPedido($request);
+    }
+
+    public function guardarConfiguracion(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'idProducto' => 'required|exists:productos,idProducto',
+                'items' => 'required|array|min:1',
+                'items.*.idTalla' => 'required|exists:tallas,idTalla',
+                'items.*.nombre' => 'nullable|string|max:100',
+                'items.*.numero' => 'nullable|integer|min:0|max:999',
+                'items.*.observaciones' => 'nullable|string|max:255',
+                'fechaEntrega' => 'required|date|after:today',
+                'lugarEntrega' => 'required|string|max:255',
+                'idEmpleado' => 'required|exists:empleados,idEmpleado'
+            ]);
+
+            // Guardar configuración en sesión
+            session([
+                'configuracion_pedido' => [
+                    'idProducto' => $request->idProducto,
+                    'items' => $request->items,
+                    'fechaEntrega' => $request->fechaEntrega,
+                    'lugarEntrega' => $request->lugarEntrega,
+                    'idEmpleado' => $request->idEmpleado,
+                    'timestamp' => now()
+                ]
+            ]);
+
+            return redirect()->route('pedidos.nuevo')
+                ->with('success', 'Configuración guardada correctamente. Ahora completa la información del cliente.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        }
     }
 
     /**
@@ -382,6 +485,9 @@ class PedidoController extends Controller
             // ✅ IMPORTANTE: inicializa $primerDetalle ANTES del bucle de creación
             $primerDetalle = null;
 
+            // Obtener características seleccionadas del request
+            $caracteristicasSeleccionadas = $request->input('caracteristicas', []);
+
             // Crear detalles por cada fila y capturar el primero
             foreach ($itemsCalculados as $it) {
                 $detalle = DetalleVenta::create([
@@ -396,6 +502,20 @@ class PedidoController extends Controller
                     'idVenta'             => $venta->idVenta,
                     'idEmpleado'          => $idEmpleadoSeguro,
                 ]);
+
+                // ✅ Guardar características en variante_caracteristicas
+                if (!empty($caracteristicasSeleccionadas)) {
+                    foreach ($caracteristicasSeleccionadas as $idOpcion => $idCaracteristica) {
+                        if ($idCaracteristica) {
+                            DB::table('variante_caracteristicas')->insert([
+                                'iddetalleVenta' => $detalle->iddetalleVenta,
+                                'idCaracteristica' => $idCaracteristica,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                }
 
                 // ✅ Guardamos referencia al primer detalle creado
                 if (!$primerDetalle) {
@@ -666,7 +786,7 @@ class PedidoController extends Controller
     /**
      * Mostrar confirmación de pedido
      */
-  
+
 
     /**
      * Agregar un detalle de venta desde la confirmación y recalcular totales/saldo
@@ -857,23 +977,37 @@ class PedidoController extends Controller
     public function show($pedido)
     {
         $pedido = Venta::with([
-            'detalleVentas.talla',
-            'detalleVentas.diseno',
-            'clienteNatural',
-            'clienteEstablecimiento',
-            'empleado'
-        ])->findOrFail($pedido);
+            'detalleVentas' => function ($query) {
+                $query->with([
+                    'producto' => function ($q) {
+                        $q->select('idProducto', 'nombre', 'precioVenta as precio', 'imagen');
+                    },
+                    'talla' => function ($q) {
+                        $q->select('idTalla', 'nombre');
+                    },
+                ]);
+            },
+            'clienteNatural.user' => function ($q) {
+                $q->select('idUser', 'name', 'primerApellido', 'segundApellido', 'email', 'telefono');
+            },
+            'clienteEstablecimiento' => function ($q) {
+                $q->select('idEstablecimiento', 'razonSocial', 'nit', 'domicilioFiscal as direccion', 'idRepresentante');
+            },
+            'empleado.user' => function ($q) {
+                $q->select('idUser', 'name', 'email');
+            }
+        ])->select('ventas.*')
+            ->findOrFail($pedido);
 
-        // Verificar si hay un diseño temporal cargado en la sesión
-        $disenoUrl = null;
-        if (session()->has('disenoTemporal')) {
-            $disenoUrl = asset('storage/' . session()->get('disenoTemporal'));
-        }
+        // Calcular totales
+        $subtotal = $pedido->detalleVentas->sum(function ($item) {
+            return ($item->precio_unitario ?? 0) * ($item->cantidad ?? 0);
+        });
 
-        return view('pedidos.show', compact('pedido', 'disenoUrl')); // Pasamos disenoUrl a la vista
+        $total = $subtotal - ($pedido->descuento ?? 0);
 
+        return view('pedidos.show', compact('pedido', 'subtotal', 'total'));
     }
-
     /**
      * Editar pedido (datos básicos)
      */

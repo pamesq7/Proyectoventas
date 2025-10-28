@@ -15,17 +15,6 @@
         <li class="breadcrumb-item active">Catálogo</li>
     </ol>
 
-    {{-- Carrito flotante --}}
-    <div class="position-fixed" style="top: 100px; right: 20px; z-index: 1000;">
-        <a href="{{ route('pedidos.carrito') }}" class="btn btn-primary btn-lg rounded-circle shadow">
-            <i class="fas fa-shopping-cart"></i>
-            @if(session('carrito') && count(session('carrito')) > 0)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {{ count(session('carrito')) }}
-                </span>
-            @endif
-        </a>
-    </div>
 
     {{-- Filtros por categoría --}}
     <div class="card mb-4">
@@ -107,11 +96,11 @@
                         {{-- Precio --}}
                         <div class="mb-3">
                             <h4 class="text-success mb-0">
-                                ${{ number_format($producto->precioVenta, 0) }}
+                                Bs{{ number_format($producto->precioVenta, 0) }}
                             </h4>
                             @if($producto->precioProduccion)
                                 <small class="text-muted">
-                                    Costo: ${{ number_format($producto->precioProduccion, 0) }}
+                                    Costo: Bs{{ number_format($producto->precioProduccion, 0) }}
                                 </small>
                             @endif
                         </div>

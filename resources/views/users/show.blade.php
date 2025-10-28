@@ -161,10 +161,7 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted">ID del Usuario:</label>
-                        <div><code>#{{ $user->idUser }}</code></div>
-                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label text-muted">Tipo de Usuario:</label>
                         <div>

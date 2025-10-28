@@ -272,7 +272,6 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>ID Diseño</th>
                                     <th>Descripción</th>
                                     <th>Estado</th>
                                     <th>Fecha</th>
@@ -281,7 +280,6 @@
                             <tbody>
                                 @foreach($empleado->disenos->take(10) as $diseno)
                                 <tr>
-                                    <td>#{{ $diseno->idDiseno }}</td>
                                     <td>{{ $diseno->descripcion ?? 'Sin descripción' }}</td>
                                     <td>
                                         @if($diseno->estado)
@@ -315,12 +313,6 @@
                         <i class="fas fa-edit me-2"></i>
                         Editar
                     </a>
-                    @if(isset($estadisticas))
-                    <a href="{{ route('empleados.estadisticas', $empleado) }}" class="btn btn-info">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        Ver Estadísticas JSON
-                    </a>
-                    @endif
                 </div>
             </div>
         </div>

@@ -154,6 +154,13 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
+                                    <!-- Nuevo botón de recibo -->
+                                    <a href="{{ route('pedidos.recibo.ver', $pedido->idVenta) }}"
+                                        class="btn btn-success btn-sm"
+                                        title="Ver recibo"
+                                        target="_blank">
+                                        <i class="fas fa-receipt"></i> Ver Recibo
+                                    </a>
                                 </div>
                             </td>
                         </tr>

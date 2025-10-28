@@ -335,16 +335,7 @@
                                             Información del Sistema
                                         </h6>
                                         <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-2">
-                                                    <strong>ID del Establecimiento:</strong> 
-                                                    <code>#{{ $clienteEstablecimiento->idEstablecimiento }}</code>
-                                                </div>
-                                                <div class="mb-2">
-                                                    <strong>ID del Representante:</strong> 
-                                                    <code>#{{ $clienteEstablecimiento->representante->idUser }}</code>
-                                                </div>
-                                            </div>
+
                                             <div class="col-md-6">
                                                 <div class="mb-2">
                                                     <strong>Fecha de Registro:</strong> 

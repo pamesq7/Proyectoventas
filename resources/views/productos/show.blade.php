@@ -167,10 +167,6 @@
                         <label class="form-label text-muted">Última Actualización:</label>
                         <div>{{ $producto->updated_at ? $producto->updated_at->format('d/m/Y H:i') : 'No disponible' }}</div>
                     </div>
-                    <div class="mb-0">
-                        <label class="form-label text-muted">ID del Producto:</label>
-                        <div><code>#{{ $producto->idProducto }}</code></div>
-                    </div>
                 </div>
             </div>
             

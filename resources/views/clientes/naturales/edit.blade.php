@@ -249,14 +249,6 @@
                                         </h6>
                                         <div class="row">
                                             <div class="col-md-3">
-                                                <small class="text-muted">ID del Cliente:</small>
-                                                <div><code>#{{ $clienteNatural->idCliente }}</code></div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <small class="text-muted">ID del Usuario:</small>
-                                                <div><code>#{{ $clienteNatural->user->idUser }}</code></div>
-                                            </div>
-                                            <div class="col-md-3">
                                                 <small class="text-muted">Fecha de Registro:</small>
                                                 <div>{{ $clienteNatural->created_at ? $clienteNatural->created_at->format('d/m/Y H:i') : 'No disponible' }}</div>
                                             </div>
@@ -267,16 +259,6 @@
                                         </div>
                                         <hr>
                                         <div class="row">
-                                            <div class="col-md-4">
-                                                <small class="text-muted">Email Verificado:</small>
-                                                <div>
-                                                    @if($clienteNatural->user->email_verified_at)
-                                                    <span class="badge bg-success">Sí</span>
-                                                    @else
-                                                    <span class="badge bg-warning">No</span>
-                                                    @endif
-                                                </div>
-                                            </div>
                                             <div class="col-md-4">
                                                 <small class="text-muted">Total de Ventas:</small>
                                                 <div>
