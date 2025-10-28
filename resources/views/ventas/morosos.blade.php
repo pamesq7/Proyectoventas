@@ -55,8 +55,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @php $contador = ($ventas->currentPage() - 1) * $ventas->perPage() + 1; @endphp
-                                @forelse($ventas as $venta)
                                 <tr>
                                     <td>{{ $contador++ }}</td>
                                     <td>{{ $venta->created_at->format('d/m/Y') }}</td>
