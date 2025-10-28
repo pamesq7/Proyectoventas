@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Gestión de Ventas')
+@section('title', 'Clientes Morosos')
 
 @section('content')
 <div class="container-fluid">
@@ -9,35 +9,55 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">
-                        <i class="fas fa-shopping-cart"></i> Clientes Mororsos
+                        <i class="fas fa-exclamation-triangle"></i> Clientes Morosos
                     </h3>
-                </div>
-
-                <!-- Filtros -->
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="small text-white-50">Deuda Total</div>
-                            <div class="h5 mb-0">Bs. {{ number_format($clientesMorosos->sum('saldo_total'), 2) }}</div>
-                        </div>
-                        <div class="fa-2x">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
+                    <div class="btn-group">
+                        <a href="{{ route('ventas.index') }}" class="btn btn-info">
+                            <i class="fas fa-arrow-left"></i> Volver a Ventas
+                        </a>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-info text-white mb-4">
+
+                <!-- Estadísticas -->
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="small text-white-50">Clientes Naturales</div>
-                            <div class="h5 mb-0">{{ $clientesMorosos->where('tipo_cliente', 'Natural')->count() }}</div>
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="info-box bg-danger">
+                                <span class="info-box-icon"><i class="fas fa-dollar-sign"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Deuda Total</span>
+                                    <span class="info-box-number">Bs. {{ number_format($clientesMorosos->sum('saldo_total'), 2) }}</span>
+                                </div>
+                            </div>
                         </div>
-                    </form>
-
-
+                        <div class="col-md-3">
+                            <div class="info-box bg-warning">
+                                <span class="info-box-icon"><i class="fas fa-user"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Clientes Naturales</span>
+                                    <span class="info-box-number">{{ $clientesMorosos->where('tipo_cliente', 'Natural')->count() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box bg-success">
+                                <span class="info-box-icon"><i class="fas fa-store"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Clientes Establecimiento</span>
+                                    <span class="info-box-number">{{ $clientesMorosos->where('tipo_cliente', 'Establecimiento')->count() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box bg-info">
+                                <span class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Total Clientes Morosos</span>
+                                    <span class="info-box-number">{{ $clientesMorosos->count() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped">
@@ -55,79 +75,47 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php $contador = 1; @endphp
+                                @forelse($clientesMorosos as $cliente)
                                 <tr>
                                     <td>{{ $contador++ }}</td>
-                                    <td>{{ $venta->created_at->format('d/m/Y') }}</td>
+                                    <td>{{ $cliente->ultima_venta_fecha ? \Carbon\Carbon::parse($cliente->ultima_venta_fecha)->format('d/m/Y') : 'N/A' }}</td>
                                     <td>
-                                        <strong>{{ $venta->nombre_cliente }}</strong>
-                                        <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
+                                        <strong>{{ $cliente->nombre_cliente ?? 'N/A' }}</strong>
+                                        <br><small class="text-muted">{{ $cliente->tipo_cliente ?? 'N/A' }}</small>
                                     </td>
                                     <td>
-                                        <strong>Bs. {{ number_format($venta->total, 2) }}</strong>
-                                        @if($venta->estado_pago == 'PARCIAL')
-                                        <br><small class="text-muted">Pagado: Bs. {{ number_format($venta->monto_pagado, 2) }}</small>
-                                        <br><small class="text-danger">Debe: Bs. {{ number_format($venta->saldo, 2) }}</small>
+                                        <strong>Bs. {{ number_format($cliente->saldo_total ?? 0, 2) }}</strong>
+                                    </td>
+                                    <td>
+                                        @if(($cliente->ventas_pendientes ?? 0) > 0)
+                                        <span class="badge badge-danger">🔴 MOROSO</span>
+                                        <br><small>{{ $cliente->ventas_pendientes ?? 0 }} venta(s)</small>
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge bg-warning">{{ $cliente->ventas_pendientes }}</span>
+                                        <strong>N/A</strong>
                                     </td>
+                                    <td>{{ $cliente->ultima_venta_fecha ? \Carbon\Carbon::parse($cliente->ultima_venta_fecha)->format('d/m/Y H:i') : 'N/A' }}</td>
+                                    <td>{{ $cliente->ultima_venta_fecha ? \Carbon\Carbon::parse($cliente->ultima_venta_fecha)->format('d/m/Y H:i') : 'N/A' }}</td>
                                     <td>
-                                        <strong class="text-danger">
-                                            Bs. {{ number_format($cliente->saldo_total, 2) }}
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        @if($diasAtraso > 0)
-                                            <span class="text-{{ $colorRiesgo }}">
-                                                {{ $diasAtraso }} días
-                                            </span>
-                                        @else
-                                        <span class="badge badge-danger">🔴 PENDIENTE</span>
-                                        @if($venta->dias_atraso > 0)
-                                        <br><small class="text-danger">{{ $venta->dias_atraso }} días</small>
-                                        @endif
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <strong>{{ $venta->nombre_empleado }}</strong>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            @if($cliente->telefono)
-                                                <a href="https://wa.me/51{{ $cliente->telefono }}?text=Hola {{ $cliente->nombre_cliente }}, te contactamos por el saldo pendiente de Bs. {{ number_format($cliente->saldo_total, 2) }}" 
-                                                   target="_blank" 
-                                                   class="btn btn-success btn-sm" 
-                                                   title="Contactar por WhatsApp">
-                                                    <i class="fab fa-whatsapp"></i>
-                                                </a>
-                                            @endif
-                                            <a href="{{ route('ventas.index', ['cliente_id' => $cliente->id_cliente, 'estado_pago' => 'pendiente']) }}" 
-                                               class="btn btn-primary btn-sm" 
-                                               title="Ver ventas pendientes">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ route('ventas.create', ['cliente_id' => $cliente->id_cliente]) }}" 
-                                               class="btn btn-warning btn-sm" 
-                                               title="Registrar pago">
-                                                <i class="fas fa-money-bill"></i>
-                                            </a>
+                                        <div class="btn-group btn-group-sm">
+
+                                        
+
                                         </div>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="9" class="text-center">No se encontraron ventas</td>
+                                    <td colspan="9" class="text-center py-4">
+                                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i><br>
+                                        ¡Excelente! No hay clientes morosos
+                                    </td>
                                 </tr>
                                 @endforelse
                             </tbody>
                         </table>
-                    </div>
-
-
-                    <!-- Paginación -->
-                    <div class="d-flex justify-content-center">
-                        {{ $ventas->appends(request()->query())->links() }}
                     </div>
                 </div>
             </div>
@@ -139,7 +127,6 @@
 <style>
     .table {
         color: #000000;
-        /* Texto negro */
         font-size: 0.9rem;
     }
 
@@ -173,9 +160,9 @@
     /* Ajuste para los badges de estado */
     .badge-success,
     .badge-warning,
-    .badge-danger {
+    .badge-danger,
+    .badge-secondary {
         color: #000000 !important;
-        /* Texto negro */
         font-weight: 500;
     }
 
@@ -183,91 +170,103 @@
         background-color: #a3e4a3;
     }
 
-    /* Verde claro */
     .badge-warning {
         background-color: #f9e79f;
     }
 
-    /* Amarillo claro */
     .badge-danger {
         background-color: #f5b7b1;
     }
 
-    /* Rojo claro */
+    .badge-secondary {
+        background-color: #d5dbdb;
+    }
 
     /* Ajuste para los textos pequeños */
     small {
         font-size: 0.8rem;
     }
+
+    /* Estilos para las info-box */
+    .info-box {
+        box-shadow: 0 0 1px rgba(0, 0, 0, .125), 0 1px 3px rgba(0, 0, 0, .2);
+        border-radius: 0.25rem;
+        background: #fff;
+        display: flex;
+        margin-bottom: 1rem;
+        min-height: 80px;
+        padding: 0.5rem;
+        position: relative;
+    }
+
+    .info-box .info-box-icon {
+        border-radius: 0.25rem;
+        align-items: center;
+        display: flex;
+        font-size: 1.875rem;
+        justify-content: center;
+        text-align: center;
+        width: 70px;
+    }
+
+    .info-box .info-box-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.8;
+        flex: 1;
+        padding: 0 10px;
+    }
+
+    .info-box .info-box-text {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+    }
+
+    .info-box .info-box-number {
+        display: block;
+        margin-top: 0.25rem;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .info-box.bg-danger {
+        color: #fff;
+    }
+
+    .info-box.bg-warning {
+        color: #1f2d3d;
+    }
+
+    .info-box.bg-success {
+        color: #fff;
+    }
+
+    .info-box.bg-info {
+        color: #fff;
+    }
 </style>
-
-<!-- Modal para registrar pago -->
-<div class="modal fade" id="modalPago" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Registrar Pago</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="formPago" method="POST" action="{{ route('ventas.store') }}">
-                @csrf
-                <div class="modal-body">
-                    <input type="hidden" name="idVenta" id="ventaId">
-                    <input type="hidden" name="tipoTransaccion" value="pago">
-
-                    <div class="form-group">
-                        <label>Cliente:</label>
-                        <p id="clienteNombre" class="font-weight-bold"></p>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Saldo Pendiente:</label>
-                        <p id="saldoPendiente" class="font-weight-bold text-danger"></p>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="monto">Monto a Pagar: *</label>
-                        <input type="number" name="monto" id="monto" class="form-control"
-                            step="0.01" min="0.01" required>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Tipo Pago *</label>
-                        <select class="form-select" id="tipoPago" name="tipoTransaccion">
-                            <option value="efectivo" selected>Efectivo</option>
-                            <option value="qr">QR</option>
-                            <option value="cheque">Cheque</option>
-                            <option value="transferencia">Transferencia bancaria</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="observaciones">Observaciones/Serie:</label>
-                        <textarea name="observaciones" id="observaciones" class="form-control" rows="2"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Registrar Pago</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 @endsection
 
 @push('scripts')
 <script>
-$(document).ready(function() {
-    $('#dataTable').DataTable({
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
-        },
-        "order": [[ 4, "desc" ]], // Ordenar por saldo total descendente
-        "pageLength": 25,
-        "responsive": true
+    $(document).ready(function() {
+        $('.table').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+            },
+            "order": [
+                [4, "desc"]
+            ], // Ordenar por saldo total descendente
+            "pageLength": 25,
+            "responsive": true,
+            "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+            "pagingType": "simple_numbers"
+        });
     });
-});
 </script>
 @endpush

@@ -28,6 +28,7 @@ class VentaController extends Controller
             'transacciones'
         ])
             ->where('ventas.estado', 1) // Solo mostrar ventas en estado 1
+            ->where('ventas.saldo', '=', 0)
             ->orderBy('created_at', 'desc');
 
         // Filtro por estado de pago
@@ -228,13 +229,14 @@ class VentaController extends Controller
             ->join('users', 'cliente_naturals.idCliente', '=', 'users.idUser')
             ->leftJoin('transaccions', 'ventas.idVenta', '=', 'transaccions.idVenta')
             ->where('ventas.saldo', '>', 0)
+            ->where('ventas.estado', 1)
             ->select(
                 'cliente_naturals.idCliente as id_cliente',
                 DB::raw("CONCAT(users.name, ' ', users.primerApellido, COALESCE(CONCAT(' ', users.segundApellido), '')) as nombre_cliente"),
                 'users.telefono',
                 DB::raw("'Natural' as tipo_cliente"),
-                DB::raw('SUM(ventas.saldo) as total_deuda'),
-                DB::raw('COUNT(DISTINCT ventas.idVenta) as cantidad_ventas_pendientes'),
+                DB::raw('SUM(ventas.saldo) as saldo_total'), // ← CAMBIADO de total_deuda a saldo_total
+                DB::raw('COUNT(DISTINCT ventas.idVenta) as ventas_pendientes'), // ← CAMBIADO para que coincida con la vista
                 DB::raw('COUNT(transaccions.idTransaccion) as total_pagos_realizados'),
                 DB::raw('SUM(transaccions.monto) as total_pagado'),
                 DB::raw('AVG(DATEDIFF(NOW(), ventas.created_at)) as dias_atraso_promedio'),
@@ -249,13 +251,14 @@ class VentaController extends Controller
             ->join('cliente_establecimientos', 'ventas.idEstablecimiento', '=', 'cliente_establecimientos.idEstablecimiento')
             ->leftJoin('transaccions', 'ventas.idVenta', '=', 'transaccions.idVenta')
             ->where('ventas.saldo', '>', 0)
+            ->where('ventas.estado', 1)
             ->select(
                 'cliente_establecimientos.idEstablecimiento as id_cliente',
                 'cliente_establecimientos.razonSocial as nombre_cliente',
                 DB::raw('NULL as telefono'),
                 DB::raw("'Establecimiento' as tipo_cliente"),
-                DB::raw('SUM(ventas.saldo) as total_deuda'),
-                DB::raw('COUNT(DISTINCT ventas.idVenta) as cantidad_ventas_pendientes'),
+                DB::raw('SUM(ventas.saldo) as saldo_total'), // ← CAMBIADO de total_deuda a saldo_total
+                DB::raw('COUNT(DISTINCT ventas.idVenta) as ventas_pendientes'), // ← CAMBIADO para que coincida con la vista
                 DB::raw('COUNT(transaccions.idTransaccion) as total_pagos_realizados'),
                 DB::raw('SUM(transaccions.monto) as total_pagado'),
                 DB::raw('AVG(DATEDIFF(NOW(), ventas.created_at)) as dias_atraso_promedio'),
@@ -266,11 +269,10 @@ class VentaController extends Controller
             ->get();
 
         // Combinar ambos tipos de clientes y ordenar por deuda total descendente
-        $clientesMorosos = $naturales->concat($establecimientos)->sortByDesc('total_deuda');
+        $clientesMorosos = $naturales->concat($establecimientos)->sortByDesc('saldo_total');
 
         return view('ventas.morosos', compact('clientesMorosos'));
     }
-
     /**
      * Dashboard de ventas con estadísticas
      */
