@@ -57,44 +57,33 @@
             @if($productos->count() > 0)
             <div class="table-responsive">
                 <table class="table table-striped table-hover" id="productosTable">
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
-                            <th>N°</th>
+                            <th>Foto</th>
                             <th>SKU</th>
                             <th>Nombre</th>
                             <th>Categoría</th>
+                            <th>Variante</th>
                             <th>Precio Venta</th>
-                            <th>Stock</th>
-                            <th>Estado</th>
                             <th>Fecha Creación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @php $contador = ($productos->currentPage() - 1) * $productos->perPage() + 1; @endphp
-                        @forelse($productos as $producto)
+                        @foreach($productos as $producto)
                         <tr>
-                            <td>{{ $contador++ }}</td>
                             <td>
-                                @php
+                            @php
                                     $imagenSrc = null;
                                     $altText = $producto->nombre;
 
+                                    // Solo una imagen: foto del producto O imagen del diseño (no ambas)
                                     if ($producto->foto) {
                                         $imagenSrc = asset('storage/' . $producto->foto);
                                         $altText = $producto->nombre;
                                     } elseif ($producto->diseno && $producto->diseno->archivo) {
                                         $imagenSrc = asset('storage/' . $producto->diseno->archivo);
                                         $altText = $producto->diseno->comentario ?? $producto->nombre;
-                                    } elseif ($producto->disenos && $producto->disenos->count() > 0) {
-                                        // Buscar el diseño principal o el primero disponible
-                                        $disenoPrincipal = $producto->disenos->where('pivot.es_principal', true)->first();
-                                        $diseno = $disenoPrincipal ?: $producto->disenos->first();
-
-                                        if ($diseno && $diseno->archivo) {
-                                            $imagenSrc = asset('storage/' . $diseno->archivo);
-                                            $altText = $diseno->comentario ?? $producto->nombre;
-                                        }
                                     }
                                 @endphp
 

@@ -257,6 +257,15 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
         Route::put('{idVenta}/detalles', [PedidoController::class, 'updateDetalles'])->name('pedidos.update-detalles');
         Route::delete('{idVenta}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
         Route::delete('{idVenta}/eliminar-imagen', [PedidoController::class, 'eliminarImagen'])->name('pedidos.eliminar-imagen');
+
+        // Ruta para guardar pedido directamente desde catálogo (sin diseño)
+        Route::post('guardar-desde-catalogo', [PedidoController::class, 'guardarDesdeCatalogo'])
+            ->name('pedidos.guardar-desde-catalogo');
+
+
+        // En tu archivo de rutas web.php
+        Route::get('pedidos/{idVenta}/confirmacion', [PedidoController::class, 'confirmacion'])
+            ->name('pedidos.confirmacion');
     });
 
     /*

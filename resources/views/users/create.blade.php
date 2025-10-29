@@ -275,6 +275,21 @@
                                     </div>
                                 </div>
                             </div>
+                            {{-- Botones --}}
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{{ route('users.index') }}" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left me-1"></i>
+                                            Cancelar
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>
+                                            Crear Usuario
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Cliente Establecimiento --}}
@@ -345,59 +360,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- Empleado --}}
-                            <div id="campos_empleado" class="tipo-usuario-campos" style="display: none;">
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h6 class="border-bottom pb-2 mb-3 text-success">
-                                            <i class="fas fa-user-tie me-1"></i>
-                                            Información del Empleado
-                                        </h6>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="cargo" class="form-label">
-                                                <i class="fas fa-briefcase me-1"></i>
-                                                Cargo <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="text"
-                                                class="form-control @error('cargo') is-invalid @enderror"
-                                                id="cargo"
-                                                name="cargo"
-                                                value="{{ old('cargo') }}"
-                                                placeholder="Ej: Vendedor, Diseñador, Gerente">
-                                            @error('cargo')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="rol" class="form-label">
-                                                <i class="fas fa-user-shield me-1"></i>
-                                                Rol en el Sistema <span class="text-danger">*</span>
-                                            </label>
-                                            <select class="form-select @error('rol') is-invalid @enderror"
-                                                id="rol"
-                                                name="rol">
-                                                <option value="">Seleccione el rol</option>
-                                                <option value="administrador" {{ old('rol') == 'administrador' ? 'selected' : '' }}>Administrador</option>
-                                                <option value="diseñador" {{ old('rol') == 'diseñador' ? 'selected' : '' }}>Diseñador</option>
-                                                <option value="operador" {{ old('rol') == 'operador' ? 'selected' : '' }}>Operador</option>
-                                                <option value="cliente" {{ old('rol') == 'cliente' ? 'selected' : '' }}>Cliente</option>
-                                                <option value="vendedor" {{ old('rol') == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
-                                            </select>
-                                            @error('rol')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             {{-- Botones --}}
                             <div class="row mt-4">
                                 <div class="col-12">
@@ -413,6 +375,75 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                        {{-- Empleado --}}
+                        <div id="campos_empleado" class="tipo-usuario-campos" style="display: none;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="border-bottom pb-2 mb-3 text-success">
+                                        <i class="fas fa-user-tie me-1"></i>
+                                        Información del Empleado
+                                    </h6>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="cargo" class="form-label">
+                                            <i class="fas fa-briefcase me-1"></i>
+                                            Cargo <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text"
+                                            class="form-control @error('cargo') is-invalid @enderror"
+                                            id="cargo"
+                                            name="cargo"
+                                            value="{{ old('cargo') }}"
+                                            placeholder="Ej: Vendedor, Diseñador, Gerente">
+                                        @error('cargo')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rol" class="form-label">
+                                            <i class="fas fa-user-shield me-1"></i>
+                                            Rol en el Sistema <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select @error('rol') is-invalid @enderror"
+                                            id="rol"
+                                            name="rol">
+                                            <option value="">Seleccione el rol</option>
+                                            <option value="administrador" {{ old('rol') == 'administrador' ? 'selected' : '' }}>Administrador</option>
+                                            <option value="diseñador" {{ old('rol') == 'diseñador' ? 'selected' : '' }}>Diseñador</option>
+                                            <option value="operador" {{ old('rol') == 'operador' ? 'selected' : '' }}>Operador</option>
+                                            <option value="cliente" {{ old('rol') == 'cliente' ? 'selected' : '' }}>Cliente</option>
+                                            <option value="vendedor" {{ old('rol') == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
+                                        </select>
+                                        @error('rol')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                            {{-- Botones --}}
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{{ route('users.index') }}" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left me-1"></i>
+                                            Cancelar
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>
+                                            Crear Usuario
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
                     </form>
                 </div>
             </div>

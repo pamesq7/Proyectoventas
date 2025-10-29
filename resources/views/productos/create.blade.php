@@ -177,17 +177,7 @@
                                             @enderror
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="cantidad" class="form-label">Cantidad/Stock</label>
-                                            <input type="number" class="form-control @error('cantidad') is-invalid @enderror"
-                                                id="cantidad" name="cantidad" min="0"
-                                                value="{{ old('cantidad', 0) }}" placeholder="0">
-                                            @error('cantidad')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
+
                                     <div class="col-md-4">
                                         <div class="mb-3">
                                             <label for="pedidoMinimo" class="form-label">Pedido Mínimo</label>

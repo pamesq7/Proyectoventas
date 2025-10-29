@@ -45,7 +45,7 @@
             </a>
         </div>
         <div class="card-body">
-            <form id="formNuevoPedido" action="{{ route('pedidos.guardar-nuevo') }}" method="POST">
+            <form id="formNuevoPedido" action="{{ route('pedidos.guardar-desde-catalogo') }}" method="POST">
                 @csrf
                 <input type="hidden" name="tipoCliente" id="tipoCliente" value="">
                 <input type="hidden" name="idCliente" id="idCliente" value="">
@@ -144,19 +144,69 @@
                             </div>
                         </div>
 
+                        <!-- Personalización del producto -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>Personalización del Producto
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                {{-- Mostrar configuración previa si existe --}}
+                                @if(!empty($configuracion))
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Tienes una configuración guardada. Puedes modificarla o continuar.
+                                    </div>
+                                @else
+                                    <div class="col-12 mt-2">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm align-middle mb-0" id="tablaCaracteristicas">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Característica</th>
+                                                        <th>Valor</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($producto->opciones as $o)
+                                                        <tr>
+                                                            <th>{{$o->nombre}}:</th>
+                                                            <td>
+                                                                <select name="caracteristicas[{{ $o->idOpcion }}]" class="form-select form-select-sm" required>
+                                                                    <option value="">Seleccionar valor</option>
+                                                                    @foreach ($o->caracteristicas as $c)
+                                                                        <option value="{{ $c->idCaracteristica }}" 
+                                                                            {{ !empty($configuracion['caracteristicas']) && 
+                                                                                collect($configuracion['caracteristicas'])->contains('idCaracteristica', $c->idCaracteristica) ? 'selected' : '' }}>
+                                                                            {{ $c->nombre }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
                         <!-- Configuración de prendas -->
-                        <div class="card">
+                        <div class="card mb-4">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">
-                                    <i class="fas fa-tshirt me-2"></i>Configuración de Prendas
+                                    <i class="fas fa-tshirt me-2"></i>Configuración de Prendas por talla
                                 </h5>
                                 <button type="button" id="btnAddRow" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-plus me-1"></i> Agregar Fila
+                                    <i class="fas fa-plus me-1"></i> Agregar Fila(s)
                                 </button>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-striped" id="tablaItems">
+                                    <table class="table table-bordered table-striped" id="tablaPrendas">
                                         <thead class="table-dark">
                                             <tr>
                                                 <th width="20%">Talla *</th>
@@ -382,6 +432,13 @@
 @push('scripts')
 <script>
     // ========================================
+    // VARIABLES GLOBALES Y CONFIGURACIÓN
+    // ========================================
+    let contadorFilas = 1;
+    let tallaPriceMap = new Map();
+    const precioBase = parseFloat(document.getElementById('idProducto').dataset.precio) || 0;
+
+    // ========================================
     // FUNCIONES PARA CARACTERÍSTICAS
     // ========================================
 
@@ -464,8 +521,8 @@
             opcionesContainer: wrap ? 'SÍ' : 'NO'
         });
 
-        cont.innerHTML = '';
-        wrap.style.display = 'none';
+        if (cont) cont.innerHTML = '';
+        if (wrap) wrap.style.display = 'none';
 
         if (!idProducto) {
             console.warn('⚠️ No hay idProducto');
@@ -496,37 +553,39 @@
             const opciones = data.opciones || [];
             console.log('✅ Total de opciones:', opciones.length);
 
-            opciones.forEach((op, index) => {
-                console.log(`🎨 Procesando opción ${index + 1}:`, op.nombreOpcion, '- Características:', op.caracteristicas?.length || 0);
+            if (cont) {
+                opciones.forEach((op, index) => {
+                    console.log(`🎨 Procesando opción ${index + 1}:`, op.nombreOpcion, '- Características:', op.caracteristicas?.length || 0);
 
-                const col = document.createElement('div');
-                col.className = 'col-md-3';
+                    const col = document.createElement('div');
+                    col.className = 'col-md-3';
 
-                const label = document.createElement('label');
-                label.className = 'form-label';
-                label.innerHTML = `<strong>${op.nombreOpcion} *</strong>`;
+                    const label = document.createElement('label');
+                    label.className = 'form-label';
+                    label.innerHTML = `<strong>${op.nombreOpcion} *</strong>`;
 
-                const select = document.createElement('select');
-                select.className = 'form-select';
-                select.name = `caracteristicas[${op.idOpcion || 'otros'}]`;
-                select.required = true;
+                    const select = document.createElement('select');
+                    select.className = 'form-select';
+                    select.name = `caracteristicas[${op.idOpcion || 'otros'}]`;
+                    select.required = true;
 
-                const placeholder = document.createElement('option');
-                placeholder.value = '';
-                placeholder.textContent = 'Seleccionar';
-                select.appendChild(placeholder);
+                    const placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = 'Seleccionar';
+                    select.appendChild(placeholder);
 
-                (op.caracteristicas || []).forEach(c => {
-                    const o = document.createElement('option');
-                    o.value = c.idCaracteristica;
-                    o.textContent = c.nombre;
-                    select.appendChild(o);
+                    (op.caracteristicas || []).forEach(c => {
+                        const o = document.createElement('option');
+                        o.value = c.idCaracteristica;
+                        o.textContent = c.nombre;
+                        select.appendChild(o);
+                    });
+
+                    col.appendChild(label);
+                    col.appendChild(select);
+                    cont.appendChild(col);
                 });
-
-                col.appendChild(label);
-                col.appendChild(select);
-                cont.appendChild(col);
-            });
+            }
 
             // Actualizar info de depuración
             const debugDiv = document.getElementById('debugInfo');
@@ -539,7 +598,7 @@
                 debugDiv.className = 'alert alert-success mb-3';
             }
 
-            if (opciones.length) {
+            if (wrap && opciones.length) {
                 console.log('✅ Mostrando contenedor de opciones');
                 wrap.style.display = '';
             } else {
@@ -562,9 +621,7 @@
         }
     }
 
-    // Mapa de precios por talla del producto actual
-    let tallaPriceMap = new Map();
-
+    // Cargar precios por talla
     async function loadTallaPrecios(idProducto) {
         tallaPriceMap = new Map();
         if (!idProducto) return;
@@ -612,20 +669,103 @@
         });
 
         // Ocultar/mostrar header de número
-        const headers = document.querySelectorAll('#tablaItems thead th');
+        const headers = document.querySelectorAll('#tablaPrendas thead th');
         if (headers.length >= 4) {
             headers[3].style.display = mostrarNumero ? '' : 'none';
         }
     }
 
     // ========================================
-    // FUNCIONES PRINCIPALES
+    // FUNCIONES PARA GESTIÓN DE FILAS
     // ========================================
 
     // Función para formatear números con separadores de miles
     function formatear(numero) {
         return 'Bs ' + parseFloat(numero).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     }
+
+    // Agregar nueva fila
+    function agregarFila() {
+        contadorFilas++;
+        const tbody = document.getElementById('tbodyItems');
+        const nuevaFila = document.createElement('tr');
+        nuevaFila.className = 'item-row';
+        
+        nuevaFila.innerHTML = `
+            <td>
+                <select name="items[${contadorFilas}][idTalla]" class="form-select form-select-sm sel-talla" required>
+                    <option value="">Seleccionar talla</option>
+                    @foreach($tallas as $talla)
+                    <option value="{{ $talla->idTalla }}">{{ $talla->nombre }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <input type="number" name="items[${contadorFilas}][cantidad]" 
+                    class="form-control form-control-sm inp-cantidad" 
+                    min="1" value="1" required>
+            </td>
+            <td>
+                <input type="text" name="items[${contadorFilas}][nombre]" 
+                    class="form-control form-control-sm inp-nombre" 
+                    placeholder="Nombre para la prenda">
+            </td>
+            <td>
+                <input type="number" name="items[${contadorFilas}][numero]" 
+                    class="form-control form-control-sm inp-numero" 
+                    placeholder="Número" min="0" max="999">
+            </td>
+            <td>
+                <textarea name="items[${contadorFilas}][observaciones]" 
+                    class="form-control form-control-sm inp-obs" 
+                    placeholder="Observaciones opcionales"
+                    rows="1"></textarea>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger btnRemoveRow" 
+                    title="Quitar fila">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        tbody.appendChild(nuevaFila);
+
+        // Actualizar visibilidad del campo número
+        toggleNumeroByProducto();
+        
+        // Habilitar botones de eliminar si hay más de una fila
+        actualizarBotonesEliminar();
+        recalcTotales();
+        
+        return false;
+    }
+
+    // Eliminar fila
+    function eliminarFila(fila) {
+        const filas = document.querySelectorAll('.item-row');
+        if (filas.length > 1) {
+            fila.remove();
+            actualizarBotonesEliminar();
+            recalcTotales();
+        }
+    }
+
+    // Actualizar botones de eliminar
+    function actualizarBotonesEliminar() {
+        const filas = document.querySelectorAll('.item-row');
+        const botones = document.querySelectorAll('.btnRemoveRow');
+
+        if (filas.length === 1) {
+            botones.forEach(btn => btn.disabled = true);
+        } else {
+            botones.forEach(btn => btn.disabled = false);
+        }
+    }
+
+    // ========================================
+    // FUNCIONES DE CÁLCULO
+    // ========================================
 
     function recalcTotales() {
         const filas = document.querySelectorAll('.item-row');
@@ -665,7 +805,6 @@
             desgloseHTML += `${talla}: ${datos.cantidad} (${formatear(datos.subtotal)})<br>`;
         }
         document.getElementById('uiBreakdownTallas').innerHTML = desgloseHTML || 'Ninguna talla seleccionada';
-
         document.getElementById('uiPrecioUnit').textContent = formatear(precioBase);
         document.getElementById('uiTotal').textContent = formatear(totalPrecio);
 
@@ -715,11 +854,15 @@
 
         if (efectivoExacto) {
             efectivo = totalPrecio;
-            efectivoInput.value = totalPrecio.toFixed(2);
-            efectivoInput.readOnly = true;
+            if (efectivoInput) {
+                efectivoInput.value = totalPrecio.toFixed(2);
+                efectivoInput.readOnly = true;
+            }
         } else {
-            efectivoInput.readOnly = false;
-            efectivo = parseFloat(efectivoInput.value) || 0;
+            if (efectivoInput) {
+                efectivoInput.readOnly = false;
+                efectivo = parseFloat(efectivoInput.value) || 0;
+            }
         }
 
         document.getElementById('uiEfectivo').textContent = formatear(efectivo);
@@ -727,25 +870,29 @@
         document.getElementById('uiVuelto').textContent = formatear(vuelto);
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Variables globales
-        const precioBase = {{ $producto->precioVenta }};
-        let contadorFilas = 1;
+    // ========================================
+    // INICIALIZACIÓN
+    // ========================================
 
+    document.addEventListener('DOMContentLoaded', function() {
         // TEST INMEDIATO - Verificar elementos
         console.log('\n========== TEST DE INICIALIZACIÓN ==========');
         const elementos = {
             idProducto: document.getElementById('idProducto'),
             opcionesContainer: document.getElementById('opcionesContainer'),
             caracteristicasContainer: document.getElementById('caracteristicasContainer'),
-            debugInfo: document.getElementById('debugInfo')
+            debugInfo: document.getElementById('debugInfo'),
+            btnAddRow: document.getElementById('btnAddRow'),
+            tbodyItems: document.getElementById('tbodyItems')
         };
 
         console.log('Elementos encontrados:', {
             idProducto: elementos.idProducto ? `SÍ (valor: ${elementos.idProducto.value})` : 'NO',
             opcionesContainer: elementos.opcionesContainer ? 'SÍ' : 'NO',
             caracteristicasContainer: elementos.caracteristicasContainer ? 'SÍ' : 'NO',
-            debugInfo: elementos.debugInfo ? 'SÍ' : 'NO'
+            debugInfo: elementos.debugInfo ? 'SÍ' : 'NO',
+            btnAddRow: elementos.btnAddRow ? 'SÍ' : 'NO',
+            tbodyItems: elementos.tbodyItems ? 'SÍ' : 'NO'
         });
 
         // Actualizar debugInfo inmediatamente
@@ -782,89 +929,25 @@
             }
         }
 
-        // Inicializar cálculos
-        recalcTotales();
+        // Event Listeners para gestión de filas
+        if (elementos.btnAddRow) {
+            elementos.btnAddRow.addEventListener('click', agregarFila);
+        }
 
-        // Agregar nueva fila
-        document.getElementById('btnAddRow').addEventListener('click', function() {
-            contadorFilas++;
-            const tbody = document.getElementById('tbodyItems');
-            const nuevaFila = document.createElement('tr');
-            nuevaFila.className = 'item-row';
-            nuevaFila.innerHTML = `
-            <td>
-                <select name="items[${contadorFilas}][idTalla]" class="form-select form-select-sm sel-talla" required>
-                    <option value="">Seleccionar talla</option>
-                    @foreach($tallas as $talla)
-                    <option value="{{ $talla->idTalla }}">{{ $talla->nombre }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td>
-                <input type="number" name="items[${contadorFilas}][cantidad]" 
-                    class="form-control form-control-sm inp-cantidad" 
-                    min="1" value="1" required>
-            </td>
-            <td>
-                <input type="text" name="items[${contadorFilas}][nombre]" 
-                    class="form-control form-control-sm inp-nombre" 
-                    placeholder="Nombre para la prenda">
-            </td>
-            <td>
-                <input type="number" name="items[${contadorFilas}][numero]" 
-                    class="form-control form-control-sm inp-numero" 
-                    placeholder="Número" min="0" max="999">
-            </td>
-            <td>
-                <textarea name="items[${contadorFilas}][observaciones]" 
-                    class="form-control form-control-sm inp-obs" 
-                    placeholder="Observaciones opcionales"
-                    rows="1"></textarea>
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-sm btn-outline-danger btnRemoveRow" 
-                    title="Quitar fila">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        `;
-            tbody.appendChild(nuevaFila);
-
-            // Habilitar botones de eliminar si hay más de una fila
-            actualizarBotonesEliminar();
-            recalcTotales();
-        });
-
-        // Eliminar fila
-        document.getElementById('tbodyItems').addEventListener('click', function(e) {
-            if (e.target.closest('.btnRemoveRow')) {
-                const filas = this.querySelectorAll('.item-row');
-                if (filas.length > 1) {
-                    e.target.closest('.item-row').remove();
-                    actualizarBotonesEliminar();
-                    recalcTotales();
+        if (elementos.tbodyItems) {
+            elementos.tbodyItems.addEventListener('click', function(e) {
+                if (e.target.closest('.btnRemoveRow')) {
+                    eliminarFila(e.target.closest('.item-row'));
                 }
-            }
-        });
-
-        // Actualizar botones de eliminar
-        function actualizarBotonesEliminar() {
-            const filas = document.querySelectorAll('.item-row');
-            const botones = document.querySelectorAll('.btnRemoveRow');
-
-            if (filas.length === 1) {
-                botones.forEach(btn => btn.disabled = true);
-            } else {
-                botones.forEach(btn => btn.disabled = false);
-            }
+            });
         }
 
         // Event listeners para actualizar totales
-        document.getElementById('montoAdelanto').addEventListener('input', recalcTotales);
-        document.getElementById('efectivoRecibido').addEventListener('input', recalcTotales);
-        document.getElementById('efectivoExacto').addEventListener('change', recalcTotales);
+        document.getElementById('montoAdelanto')?.addEventListener('input', recalcTotales);
+        document.getElementById('efectivoRecibido')?.addEventListener('input', recalcTotales);
+        document.getElementById('efectivoExacto')?.addEventListener('change', recalcTotales);
 
-        // Para actualizar cuando cambie la talla o cantidad
+        // Para actualizar cuando cambie la talla o cantidad (delegación de eventos)
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('sel-talla') || 
                 e.target.classList.contains('inp-cantidad')) {
@@ -873,7 +956,7 @@
         });
 
         // Manejar tipo de pago
-        document.getElementById('tipoPago').addEventListener('change', function() {
+        document.getElementById('tipoPago')?.addEventListener('change', function() {
             const tipo = this.value;
             const efectivoGroup = document.getElementById('efectivoGroup');
             const efectivoExactoGroup = document.getElementById('efectivoExactoGroup');
@@ -891,7 +974,7 @@
         });
 
         // Manejar selección de cliente
-        document.getElementById('clienteSelect').addEventListener('change', function() {
+        document.getElementById('clienteSelect')?.addEventListener('change', function() {
             const valor = this.value;
             const tipoCliente = document.getElementById('tipoCliente');
             const idCliente = document.getElementById('idCliente');
@@ -913,7 +996,7 @@
         });
 
         // Búsqueda de clientes
-        document.getElementById('clienteFilter').addEventListener('input', function() {
+        document.getElementById('clienteFilter')?.addEventListener('input', function() {
             const filtro = this.value.toLowerCase();
             const opciones = document.querySelectorAll('#clienteSelect option');
 
@@ -928,14 +1011,14 @@
         });
 
         // Validación del formulario
-        document.getElementById('formNuevoPedido').addEventListener('submit', function(e) {
+        document.getElementById('formNuevoPedido')?.addEventListener('submit', function(e) {
             const clienteSelect = document.getElementById('clienteSelect');
             const filas = document.querySelectorAll('.item-row');
 
-            if (!clienteSelect.value) {
+            if (!clienteSelect?.value) {
                 e.preventDefault();
                 alert('Por favor selecciona un cliente.');
-                clienteSelect.focus();
+                clienteSelect?.focus();
                 return;
             }
 
@@ -949,7 +1032,7 @@
             let tallasValidas = true;
             filas.forEach(fila => {
                 const tallaSelect = fila.querySelector('.sel-talla');
-                if (!tallaSelect.value) {
+                if (!tallaSelect?.value) {
                     tallasValidas = false;
                 }
             });
@@ -961,8 +1044,9 @@
             }
         });
 
-        // Inicializar botones de eliminar
+        // Inicializar cálculos y botones
+        recalcTotales();
         actualizarBotonesEliminar();
     });
 </script>
-@endpush
+@endpush        
