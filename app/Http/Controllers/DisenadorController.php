@@ -57,25 +57,31 @@ class DisenadorController extends Controller
         // Buscar el diseño
         $diseno = Diseno::findOrFail($idDiseno);
 
-        // Ya no verificamos el estado, el diseñador puede trabajar en cualquier diseño
-        return view('rolDiseñador.trabajar', compact('diseno'));
+        // ELIMINAR ESTA LÍNEA QUE CAUSA EL PROBLEMA:
+        // return view('rolDiseñador.trabajar', compact('diseno'));
 
+        try {
+            // Subir el archivo de diseño terminado
+            $rutaTerminado = $request->file('disenoTerminado')->store('disenos_terminados', 'public');
 
-        // Subir el archivo de diseño terminado
-        $rutaTerminado = $request->file('disenoTerminado')->store('disenos_terminados', 'public');
+            // Reemplazar la imagen de borrador con la imagen terminada
+            $diseno->archivo = $rutaTerminado;
+            $diseno->estadoDiseño = 'terminado';
+            $diseno->save();
 
-        // Reemplazar la imagen de borrador con la imagen terminada
-        $diseno->archivo = $rutaTerminado;
-        $diseno->estadoDiseño = 'terminado';
-        $diseno->save();
+            // Cambiar el estado del pedido a 'Producción' (estado 2)
+            if ($diseno->detalleVenta && $diseno->detalleVenta->venta) {
+                $venta = $diseno->detalleVenta->venta;
+                $venta->estadoPedido = '2'; // Cambiar a Producción
+                $venta->save();
+            }
 
-        // Cambiar el estado del pedido a 'Producción' (estado 2)
-        $venta = $diseno->detalleVenta->venta;
-        $venta->estadoPedido = '2'; // Cambiar a Producción
-        $venta->save();
-
-        return redirect()->route('dashboard.disenador')
-            ->with('success', '✅ ¡Excelente! El diseño ha sido marcado como terminado. El pedido ha pasado automáticamente a producción.');
+            return redirect()->route('dashboard.disenador')
+                ->with('success', '✅ ¡Excelente! El diseño ha sido marcado como terminado. El pedido ha pasado automáticamente a producción.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Error al subir el diseño: ' . $e->getMessage());
+        }
     }
     /**
      * Mostrar la vista de Mis Diseños con tabs de borradores y terminados

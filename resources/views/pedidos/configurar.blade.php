@@ -75,22 +75,7 @@
                                         <input type="text" name="lugarEntrega" class="form-control"
                                             value="{{ old('lugarEntrega', 'Recojo en tienda') }}" required>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Asignar Diseñador *</label>
-                                        <select name="idEmpleado" class="form-select" required>
-                                            <option value="">Seleccionar diseñador</option>
-                                            @foreach($diseñadores as $diseñador)
-                                            <option value="{{ $diseñador->idEmpleado }}"
-                                                {{ old('idEmpleado') == $diseñador->idEmpleado ? 'selected' : '' }}>
-                                                {{ $diseñador->user->name }} {{ $diseñador->user->primerApellido }}
-                                                @if($diseñador->user->segundApellido)
-                                                {{ $diseñador->user->segundApellido }}
-                                                @endif
-                                            </option>
-                                            @endforeach
-                                        </select>
-                                        <small class="text-muted">Diseñador responsable de este pedido</small>
-                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -144,55 +129,6 @@
                             </div>
                         </div>
 
-                        <!-- Personalización del producto -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-list me-2"></i>Personalización del Producto
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                {{-- Mostrar configuración previa si existe --}}
-                                @if(!empty($configuracion))
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        Tienes una configuración guardada. Puedes modificarla o continuar.
-                                    </div>
-                                @else
-                                    <div class="col-12 mt-2">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm align-middle mb-0" id="tablaCaracteristicas">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th>Característica</th>
-                                                        <th>Valor</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach($producto->opciones as $o)
-                                                        <tr>
-                                                            <th>{{$o->nombre}}:</th>
-                                                            <td>
-                                                                <select name="caracteristicas[{{ $o->idOpcion }}]" class="form-select form-select-sm" required>
-                                                                    <option value="">Seleccionar valor</option>
-                                                                    @foreach ($o->caracteristicas as $c)
-                                                                        <option value="{{ $c->idCaracteristica }}" 
-                                                                            {{ !empty($configuracion['caracteristicas']) && 
-                                                                                collect($configuracion['caracteristicas'])->contains('idCaracteristica', $c->idCaracteristica) ? 'selected' : '' }}>
-                                                                            {{ $c->nombre }}
-                                                                        </option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
 
                         <!-- Configuración de prendas -->
                         <div class="card mb-4">
