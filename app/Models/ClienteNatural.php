@@ -13,7 +13,9 @@ class ClienteNatural extends Model
 
     protected $table = 'cliente_naturals';
     protected $primaryKey = 'idCliente';
+    protected $keyType = 'int';
     public $incrementing = false;
+
 
     protected $fillable = [
         'idCliente',
@@ -30,7 +32,7 @@ class ClienteNatural extends Model
     // 🔸 Relación: tiene muchas ventas
     public function ventas()
     {
-        return $this->hasMany(Venta::class, 'idCliente');
+        return $this->hasMany(Venta::class, 'idCliente', 'idCliente');
     }
 
     // Accessor para mostrar estado como texto

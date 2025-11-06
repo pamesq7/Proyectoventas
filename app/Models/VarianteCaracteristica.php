@@ -10,9 +10,7 @@ class VarianteCaracteristica extends Model
     use HasFactory;
 
     protected $table = 'variante_caracteristicas';
-    protected $primaryKey = 'idVariantesCaracteristicas';
-    public $incrementing = true;
-    protected $keyType = 'int';
+    protected $primaryKey = 'idVarianteCaracteristica';
 
     protected $fillable = [
         'nombre',
@@ -33,26 +31,13 @@ class VarianteCaracteristica extends Model
     // Relación con variante
     public function variante()
     {
-        return $this->belongsTo(Variante::class, 'idVariante', 'id');
+        return $this->belongsTo(Variante::class, 'idVariante', 'idVariante');
     }
 
     // Relación con característica
     public function caracteristica()
     {
         return $this->belongsTo(Caracteristica::class, 'idCaracteristica', 'idCaracteristica');
-    }
-
-    // Relación con opción a través de característica
-    public function opcion()
-    {
-        return $this->hasOneThrough(
-            Opcion::class,
-            Caracteristica::class,
-            'idCaracteristica', // Foreign key en caracteristicas
-            'idOpcion', // Foreign key en opcions
-            'idCaracteristica', // Local key en variante_caracteristicas
-            'idOpcion' // Local key en caracteristicas
-        );
     }
 
     // Scope para activos
@@ -67,3 +52,4 @@ class VarianteCaracteristica extends Model
         return '$' . number_format($this->precioAdicional, 2);
     }
 }
+

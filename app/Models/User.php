@@ -14,9 +14,6 @@ class User extends Authenticatable
 
     protected $table = 'users';
     protected $primaryKey = 'idUser';
-    public $incrementing = true;
-    protected $keyType = 'int';
-    public $timestamps = true;
 
     protected $fillable = [
         'ci',
@@ -27,7 +24,6 @@ class User extends Authenticatable
         'telefono',
         'password',
         'estado',
-        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -39,12 +35,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'estado' => 'boolean',
-    ];
-
-    protected $appends = [
-        'nombre_completo',
-        'tipo_usuario',
-        'rol', // 🔥 NUEVO: Agregamos rol a los appends
     ];
 
     // 🔸 Relación: un usuario puede ser un cliente natural
@@ -65,11 +55,6 @@ class User extends Authenticatable
         return $this->hasOne(Empleado::class, 'idEmpleado', 'idUser');
     }
 
-    // 🔸 Relación: un usuario puede tener muchas transacciones
-    public function transacciones()
-    {
-        return $this->hasMany(Transaccion::class, 'idUser', 'idUser');
-    }
 
     // 🔸 Método helper: obtener tipo de usuario
     public function getTipoUsuarioAttribute()
@@ -152,30 +137,6 @@ class User extends Authenticatable
         return !$this->isEmpleado() && !$this->isCliente();
     }
 
-    /**
-     * 🔥 NUEVO: OBTENER ROLES PERMITIDOS PARA EMPLEADOS
-     */
-    public static function getRolesEmpleados()
-    {
-        return ['administrador', 'diseñador', 'operador', 'vendedor'];
-    }
-
-    /**
-     * 🔥 NUEVO: OBTENER ROL EN ESPAÑOL PARA MOSTRAR
-     */
-    public function getRolDisplayAttribute()
-    {
-        $roles = [
-            'administrador' => 'Administrador',
-            'vendedor' => 'Vendedor',
-            'diseñador' => 'Diseñador',
-            'operador' => 'Operador',
-            'cliente' => 'Cliente',
-            'usuario' => 'Usuario'
-        ];
-
-        return $roles[$this->rol] ?? 'Usuario';
-    }
 
     // 🔸 Método helper: verificar si está activo
     public function estaActivo()
@@ -213,9 +174,5 @@ class User extends Authenticatable
         }
 
         return $query;
-    }
-    public function pedidos()
-    {
-        return $this->hasMany(Venta::class, 'idCliente', 'idUser');
     }
 }

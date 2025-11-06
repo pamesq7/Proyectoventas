@@ -10,7 +10,7 @@ class Talla extends Model
     use HasFactory;
 
     protected $table = 'tallas';
-    protected $primaryKey = 'idTalla';
+    protected $primaryKey = 'idTallas';
 
     protected $fillable = [
         'nombre',
@@ -18,9 +18,9 @@ class Talla extends Model
     ];
 
     // 🔸 Relación: una talla puede pertenecer a muchos productos (producto_tallas)
-    public function productoTallas()
+    public function detalleTalla()
     {
-        return $this->hasMany(ProductoTalla::class, 'idTalla');
+        return $this->hasMany(DetalleTalla::class, 'idTallas', 'idTallas');
     }
 
     // Accesor opcional para mostrar el estado como texto

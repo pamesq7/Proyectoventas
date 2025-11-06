@@ -23,13 +23,13 @@ class ProductoOpcion extends Model
     // 🔸 Relación: pertenece a un producto
     public function producto()
     {
-        return $this->belongsTo(Producto::class, 'idProducto');
+        return $this->belongsTo(Producto::class, 'idProducto', 'idProducto');
     }
 
     // 🔸 Relación: pertenece a una opción
     public function opcion()
     {
-        return $this->belongsTo(Opcion::class, 'idOpcion');
+        return $this->belongsTo(Opcion::class, 'idOpcion', 'idOpcion');
     }
 
     // Accessor para mostrar estado como texto

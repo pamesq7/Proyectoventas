@@ -11,9 +11,6 @@ class Opcion extends Model
 
     protected $table = 'opcions';
     protected $primaryKey = 'idOpcion';
-    public $incrementing = true;
-    protected $keyType = 'int';
-    public $timestamps = true;
 
     protected $fillable = [
         'nombre',
@@ -42,7 +39,10 @@ class Opcion extends Model
     {
         return $query->where('estado', 1);
     }
-
+    public function productoOpcion()
+    {
+        return $this->hasMany(ProductoOpcion::class, 'idOpcion', 'idOpcion');
+    }
     // Relación: una opción puede tener muchas características
     public function caracteristicas()
     {

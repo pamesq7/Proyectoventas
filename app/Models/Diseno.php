@@ -16,26 +16,31 @@ class Diseno extends Model
         'archivo',
         'comentario',
         'estado',
-        'estadoDiseño',
-        'iddetalleVenta',
+        'estadoDiseno',
+        'idDetalleVenta',
         'idEmpleado'
     ];
 
     protected $casts = [
         'estado' => 'integer',
-        'estadoDiseño' => 'string'
+        'estadoDiseno' => 'string'
     ];
 
     // Relación con empleado (diseñador)
     public function empleado()
     {
-        return $this->belongsTo(Empleado::class, 'idEmpleado');
+        return $this->belongsTo(Empleado::class, 'idEmpleado', 'idEmpleado');
     }
 
     // Relación con detalle de venta (opcional)
     public function detalleVenta()
     {
-        return $this->belongsTo(DetalleVenta::class, 'iddetalleVenta');
+        return $this->belongsTo(DetalleVenta::class, 'idDetalleVenta', 'idDetalleVenta');
+    }
+
+     public function productoDiseno()
+    {
+        return $this->hasMany(ProductoDiseno::class, 'idDiseno', 'idDiseno');
     }
 
     // Scope para diseños activos
@@ -47,13 +52,13 @@ class Diseno extends Model
     // Scope para diseños en proceso
     public function scopeEnProceso($query)
     {
-        return $query->where('estadoDiseño', 'borrador');
+        return $query->where('estadoDiseno', 'borrador');
     }
 
     // Scope para diseños terminados
     public function scopeTerminados($query)
     {
-        return $query->where('estadoDiseño', 'terminado');
+        return $query->where('estadoDiseno', 'terminado');
     }
 
     // Accessor para URL de archivo
@@ -72,7 +77,7 @@ class Diseno extends Model
     {
         // Actualiza el archivo del diseño y el estado del diseño
         $this->archivo = $nuevaImagen;
-        $this->estadoDiseño = 'terminado'; // Cambiar de 'borrador' a 'terminado'
+        $this->estadoDiseno = 'terminado'; // Cambiar de 'borrador' a 'terminado'
         $this->save();
         // Actualizar el estado de la venta asociada a este diseño
         $venta = $this->detalleVenta->venta; // Obtenemos la venta asociada al detalle

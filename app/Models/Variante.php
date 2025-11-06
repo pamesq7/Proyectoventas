@@ -10,9 +10,7 @@ class Variante extends Model
     use HasFactory;
 
     protected $table = 'variantes';
-    protected $primaryKey = 'id';
-    public $incrementing = true;
-    protected $keyType = 'int';
+    protected $primaryKey = 'idVariante';
 
     protected $fillable = [
         'nombre',
@@ -23,23 +21,12 @@ class Variante extends Model
     // Relación con productos
     public function productos()
     {
-        return $this->hasMany(Producto::class, 'idVariante', 'id');
+        return $this->hasMany(Producto::class, 'idVariante', 'idVariante');
     }
 
-    // Relación con características a través de la tabla intermedia
-    public function caracteristicas()
-    {
-        return $this->belongsToMany(
-            Caracteristica::class,
-            'variante_caracteristicas', // nombre de la tabla intermedia
-            'idVariante',               // foreign key en la tabla intermedia
-            'idCaracteristica'          // related key en la tabla intermedia
-        )->withTimestamps();
-    }
-    
     // Alias para mantener compatibilidad con el código existente
     public function varianteCaracteristicas()
     {
-        return $this->caracteristicas();
+        return $this->hasMany(VarianteCaracteristica::class, 'idVariante', 'idVariante');
     }
 }

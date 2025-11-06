@@ -11,9 +11,6 @@ class Caracteristica extends Model
 
     protected $table = 'caracteristicas';
     protected $primaryKey = 'idCaracteristica';
-    public $incrementing = true;
-    protected $keyType = 'int';
-    public $timestamps = true;
 
     protected $fillable = [
         'nombre',
@@ -62,10 +59,5 @@ class Caracteristica extends Model
     {
         return $this->estado ? 'Activo' : 'Inactivo';
     }
-
-    // Método helper: contar productos asociados
-    public function getProductosCountAttribute()
-    {
-        return $this->productos()->count();
-    }
 }
+

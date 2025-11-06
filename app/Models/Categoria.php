@@ -20,7 +20,7 @@ class Categoria extends Model
     // 🔸 Relación: una categoría tiene muchos productos
     public function productos()
     {
-        return $this->hasMany(Producto::class, 'idCategoria');
+        return $this->hasMany(Producto::class, 'idCategoria', 'idCategoria');
     }
 
     // Accesor opcional para estado

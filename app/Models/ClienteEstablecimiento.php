@@ -11,8 +11,7 @@ class ClienteEstablecimiento extends Model
 
     protected $table = 'cliente_establecimientos';
     protected $primaryKey = 'idEstablecimiento';
-    public $incrementing = true; // Asegura que sea autoincremental
-    protected $keyType = 'int';   // Tipo de dato de la clave primaria
+    protected $keyType = 'int';
 
     protected $fillable = [
         'nit',
@@ -24,16 +23,15 @@ class ClienteEstablecimiento extends Model
     ];
 
     // 🔸 Relación: pertenece a un representante (usuario)
-    public function representante()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'idRepresentante', 'idUser')
-                   ->withDefault(); // Evita errores si no hay representante
+        return $this->belongsTo(User::class, 'idRepresentante', 'idUser');
     }
 
     // 🔸 Relación: puede tener muchas ventas
     public function ventas()
     {
-        return $this->hasMany(Venta::class, 'idEstablecimiento');
+        return $this->hasMany(Venta::class, 'idEstablecimiento', 'idEstablecimiento');
     }
 
     // Accessor para estado

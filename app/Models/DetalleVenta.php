@@ -11,47 +11,56 @@ class DetalleVenta extends Model
 
 
     protected $table = 'detalle_ventas';
-    protected $primaryKey = 'iddetalleVenta';
+    protected $primaryKey = 'idDetalleVenta';
 
     protected $fillable = [
         'cantidad',
-        'nombrePersonalizado',
-        'numeroPersonalizado',
-        'textoAdicional',
-        'observacion',
         'precioUnitario',
         'descuento',
         'descripcion',
+        'tipo_pack',
+        'subtotal',
         'estado',
-        'idTalla',
         'idVenta',
-        'idEmpleado',
+        'idProducto',
+        'idPack',
+        'idEmpleado'
     ];
 
     // Relación: pertenece a una talla
-    public function talla()
+    public function detalleTalla()
     {
-        return $this->belongsTo(Talla::class, 'idTalla');
+        return $this->hasMany(DetalleTalla::class, 'idDetalleVenta', 'idDetalleVenta');
+    }
+
+    public function pack()
+    {
+        return $this->belongsTo(Pack::class, 'idPack', 'idPack');
+    }
+    
+    public function empleado()
+    {
+        return $this->belongsTo(Empleado::class, 'idEmpleado', 'idEmpleado');
     }
 
     // Relación: pertenece a una venta
     public function venta()
     {
-        return $this->belongsTo(Venta::class, 'idVenta');
+        return $this->belongsTo(Venta::class, 'idVenta', 'idVenta');
     }
     // Relación: pertenece a un producto
     public function producto()
     {
-        return $this->belongsTo(Producto::class, 'idProducto');
+        return $this->belongsTo(Producto::class, 'idProducto', 'idProducto');
+    }
+    public function diseno()
+    {
+        return $this->hasMany(Diseno::class, 'idDetalleVenta', 'idDetalleVenta');
     }
 
     // Accesor: estado como texto
     public function getEstadoTextoAttribute()
     {
         return $this->estado == 1 ? 'Activo' : 'Anulado';
-    }
-    public function diseno()
-    {
-        return $this->hasOne(Diseno::class, 'iddetalleVenta'); // Ajusta clave foránea si aplica
     }
 }
