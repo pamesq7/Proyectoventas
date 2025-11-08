@@ -198,7 +198,7 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('producto/{idProducto}/configurar', [PedidoController::class, 'configurarProducto'])->name('pedidos.configurar');
     Route::get('personalizar', [PedidoController::class, 'personalizarDiseno'])->name('pedidos.personalizar');
     Route::post('personalizar/iniciar', [PedidoController::class, 'iniciarPedidoConDiseno'])->name('pedidos.personalizar.iniciar');
-
+    Route::get('producto/{idProducto}/opciones', [PedidoController::class, 'apiOpcionesPorProducto']);
     // Nuevo pedido con asignación de diseñador
     Route::get('pedidos/create', [PedidoController::class, 'create'])->name('pedidos.create');
     Route::get('pedidos/nuevo', [PedidoController::class, 'nuevoPedido'])->name('pedidos.nuevo');

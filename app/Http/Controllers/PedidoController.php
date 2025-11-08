@@ -101,33 +101,58 @@ class PedidoController extends Controller
     /**
      * API: Opciones de personalización por producto con sus características activas
      */
+    // app/Http/Controllers/PedidoController.php
     public function apiOpcionesPorProducto($idProducto)
     {
-        $producto = Producto::with([
-            'productoOpcion' => fn($q) => $q->where('estado', 1),
-            'productoOpcion.opcion' => fn($q) => $q->where('estado', 1)->orderBy('nombre'),
-            'productoOpcion.opcion.caracteristicas' => fn($q) => $q->where('estado', 1)->orderBy('nombre'),
-        ])->findOrFail($idProducto);
+        try {
+            // Cargar el producto con sus relaciones
+            $producto = Producto::with([
+                'productoOpcion' => function ($query) {
+                    $query->where('estado', 1)
+                        ->with(['opcion' => function ($q) {
+                            $q->where('estado', 1)
+                                ->with(['caracteristicas' => function ($q) {
+                                    $q->where('estado', 1);
+                                }]);
+                        }]);
+                }
+            ])->findOrFail($idProducto);
 
-        $opciones = $producto->productoOpcion->map(function ($po) {
-            $op = $po->opcion;
-            return [
-                'idOpcion'        => $op->idOpcion,
-                'nombreOpcion'    => $op->nombre,
-                'caracteristicas' => $op->caracteristicas->map(fn($c) => [
-                    'idCaracteristica' => $c->idCaracteristica,
-                    'nombre'           => $c->nombre,
-                ])->values()->all()
-            ];
-        })->values();
+            // Mapear las opciones y características
+            $opciones = $producto->productoOpcion->map(function ($po) {
+                if (!$po->opcion) return null;
 
-        return response()->json([
-            'producto' => ['idProducto' => $producto->idProducto, 'nombre' => $producto->nombre],
-            'opciones' => $opciones,
-        ]);
+                return [
+                    'idOpcion' => $po->opcion->idOpcion,
+                    'nombreOpcion' => $po->opcion->nombre,
+                    'caracteristicas' => $po->opcion->caracteristicas->map(function ($c) {
+                        return [
+                            'idCaracteristica' => $c->idCaracteristica,
+                            'nombre' => $c->nombre,
+                        ];
+                    })->values()->all()
+                ];
+            })->filter()->values();
+
+            return response()->json([
+                'success' => true,
+                'producto' => [
+                    'idProducto' => $producto->idProducto,
+                    'nombre' => $producto->nombre
+                ],
+                'opciones' => $opciones,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en apiOpcionesPorProducto: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al cargar las opciones del producto',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-
-
     /**
      * API: Características agrupadas por opción para una variante
      */
@@ -173,7 +198,7 @@ class PedidoController extends Controller
     {
         try {
             $producto = Producto::with([
-                'opciones.caracteristicas' => function ($query) {
+                'variante.varianteCaracteristicas.caracteristica.opcion' => function ($query) {
                     $query->where('estado', 1);
                 },
                 'productoDiseno.diseno'

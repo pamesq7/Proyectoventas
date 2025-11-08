@@ -44,11 +44,12 @@ class Opcion extends Model
         return $this->hasMany(ProductoOpcion::class, 'idOpcion', 'idOpcion');
     }
     // Relación: una opción puede tener muchas características
+    // app/Models/Opcion.php
     public function caracteristicas()
     {
-        return $this->hasMany(Caracteristica::class, 'idOpcion', 'idOpcion');
+        return $this->hasMany(Caracteristica::class, 'idOpcion', 'idOpcion')
+            ->where('estado', 1);
     }
-
     // Accesor: estado como texto
     public function getEstadoTextoAttribute()
     {

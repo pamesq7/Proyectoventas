@@ -343,7 +343,7 @@ class ProductoController extends Controller
                 ->with('error', 'Error al eliminar el producto: ' . $e->getMessage());
         }
     }
-
+    
     public function getCaracteristicasByOpcion($opcionId)
     {
         $caracteristicas = Caracteristica::where('idOpcion', $opcionId)

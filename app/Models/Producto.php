@@ -49,23 +49,26 @@ class Producto extends Model
     {
         return $this->hasMany(ProductoDiseno::class, 'idProducto', 'idProducto');
     }
-    
+
+    // app/Models/Producto.php
     public function productoOpcion()
     {
-        return $this->hasMany(ProductoOpcion::class, 'idProducto', 'idProducto');
+        return $this->hasMany(ProductoOpcion::class, 'idProducto', 'idProducto')
+            ->where('estado', 1)
+            ->with('opcion.caracteristicas');
     }
-    
+
     public function packProducto()
     {
         return $this->hasMany(PackProducto::class, 'idProducto', 'idProducto');
     }
-    
+
     public function detalleVenta()
     {
         return $this->hasMany(DetalleVenta::class, 'idProducto', 'idProducto');
     }
 
-        // Accesor para mostrar estado como texto
+    // Accesor para mostrar estado como texto
     public function getEstadoTextoAttribute()
     {
         return $this->estado == 1 ? 'Activo' : 'Inactivo';
