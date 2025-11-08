@@ -170,7 +170,7 @@ class UserController extends Controller
      * Update the specified resource in storage.
      */
 
-    public function update(Request $request, User $user)
+        public function update(Request $request, User $user)
     {
         // Validación básica
         $validator = Validator::make($request->all(), [
@@ -182,7 +182,7 @@ class UserController extends Controller
             'telefono' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6|confirmed',
             'estado' => 'required|boolean',
-            'rol' => 'required_if:tipo_usuario,empleado', // Validación condicional
+            'rol' => 'required_if:tipo_usuario,empleado',
         ]);
 
         if ($validator->fails()) {
@@ -208,42 +208,36 @@ class UserController extends Controller
             if ($request->filled('password')) {
                 $userData['password'] = Hash::make($request->password);
             }
-            
+
             $user->update($userData);
 
             // Actualizar según el tipo de usuario
             switch ($request->tipo_usuario) {
                 case 'cliente_natural':
-                    // Asumiendo que tienes una relación clienteNatural()
                     if ($user->clienteNatural) {
-                        $clienteData = [
+                        $user->clienteNatural->update([
                             'nit' => $request->nit_cliente,
-                        ];
-                        $user->clienteNatural->update($clienteData);
+                        ]);
                     }
                     break;
 
                 case 'cliente_establecimiento':
-                    // Asumiendo que tienes una relación clienteEstablecimiento()
                     if ($user->clienteEstablecimiento) {
-                        $establecimientoData = [
+                        $user->clienteEstablecimiento->update([
                             'nit' => $request->nit_establecimiento,
                             'razonSocial' => $request->razonSocial,
                             'tipoEstablecimiento' => $request->tipoEstablecimiento,
                             'domicilioFiscal' => $request->domicilioFiscal,
-                        ];
-                        $user->clienteEstablecimiento->update($establecimientoData);
+                        ]);
                     }
                     break;
 
                 case 'empleado':
-                    // Asumiendo que tienes una relación empleado()
                     if ($user->empleado) {
-                        $empleadoData = [
+                        $user->empleado->update([
                             'cargo' => $request->cargo,
                             'rol' => $request->rol,
-                        ];
-                        $user->empleado->update($empleadoData);
+                        ]);
                     }
                     break;
             }
@@ -251,45 +245,16 @@ class UserController extends Controller
             DB::commit();
             return redirect()->route('users.index')
                 ->with('success', 'Usuario actualizado exitosamente.');
-                
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
                 ->with('error', 'Error al actualizar el usuario: ' . $e->getMessage())
                 ->withInput();
-        }
-    }
+        } // <-- Cierra catch
+    } // <-- Cierra update
 
     /**
-     * Remove the specified resource from storage (Soft Delete).
-     */
-    public function destroy(User $user)
-    {
-        try {
-            // Eliminación lógica: cambiar estado a inactivo
-            $user->update(['estado' => 0]);
-
-            // También desactivar en las tablas relacionadas
-            if ($user->clienteNatural) {
-                $user->clienteNatural->update(['estado' => 0]);
-            }
-            if ($user->clienteEstablecimiento) {
-                $user->clienteEstablecimiento->update(['estado' => 0]);
-            }
-            if ($user->empleado) {
-                $user->empleado->update(['estado' => 0]);
-            }
-
-            return redirect()->route('users.index')
-                ->with('successdelete', 'Usuario eliminado exitosamente.');
-        } catch (\Exception $e) {
-            return redirect()->route('users.index')
-                ->with('error', 'Error al eliminar el usuario: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Get user type for display.
+     * Obtener el tipo de usuario
      */
     public function getUserType(User $user)
     {
@@ -302,4 +267,6 @@ class UserController extends Controller
         }
         return 'Usuario Base';
     }
-}
+} // <-- Cierra la clase
+
+

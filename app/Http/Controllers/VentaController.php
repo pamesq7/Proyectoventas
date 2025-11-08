@@ -122,6 +122,7 @@ class VentaController extends Controller
     public function show($id)
     {
         $venta = Venta::with([
+            'detalleVentas.detalleTallas.talla', // <-- así
             'empleado.user',
             'clienteNatural.user',
             'clienteEstablecimiento',
@@ -195,7 +196,7 @@ class VentaController extends Controller
     public function confirmacion($idVenta)
     {
         $venta = Venta::with([
-            'detalleVentas.talla',
+            'detalleVentas.detalleTallas.talla', // <-- así
             'clienteNatural',
             'clienteEstablecimiento',
             'transacciones'

@@ -27,10 +27,12 @@ class ProductoOpcion extends Model
     }
 
     // 🔸 Relación: pertenece a una opción
-    public function opcion()
+    public function opciones()
     {
-        return $this->belongsTo(Opcion::class, 'idOpcion', 'idOpcion');
+        return $this->belongsToMany(Opcion::class, 'producto_opcions', 'idProducto', 'idOpcion')
+            ->withTimestamps();
     }
+
 
     // Accessor para mostrar estado como texto
     public function getEstadoTextoAttribute()

@@ -23,11 +23,25 @@ class Empleado extends Model
     ];
 
 
-    // Relación: pertenece a un usuario
+    /**
+     * Relación con el modelo User
+     * Un empleado pertenece a un usuario
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function user()
     {
         return $this->belongsTo(User::class, 'idEmpleado', 'idUser')
-            ->withDefault();
+            ->withDefault(function ($user, $empleado) {
+                // Si no existe el usuario, creamos uno temporal para evitar errores
+                $user = new User([
+                    'name' => 'Usuario no encontrado',
+                    'email' => 'usuario-no-encontrado-'.$empleado->idEmpleado.'@sistema.com',
+                    'estado' => 0
+                ]);
+                $user->idUser = $empleado->idEmpleado;
+                return $user;
+            });
     }
 
     // Relación: puede tener muchas ventas

@@ -31,7 +31,7 @@ class PedidoController extends Controller
         $productos = Producto::with([
             'categoria',
             'variante.varianteCaracteristicas.caracteristica.opcion',
-            'diseno'
+            'productoDiseno.diseno'
         ])
             ->leftJoin('categorias', 'productos.idCategoria', '=', 'categorias.idCategoria')
             ->where('productos.estado', 1)
@@ -50,37 +50,33 @@ class PedidoController extends Controller
     /**
      * API: Precios por talla para un producto
      */
+    // PedidoController.php  (reemplaza el método entero)
+
     public function apiTallasPreciosPorProducto($idProducto)
     {
         $producto = Producto::findOrFail($idProducto);
 
         $tallas = Talla::where('estado', 1)
             ->orderBy('nombre')
-            ->get(['idTalla', 'nombre']);
+            ->get(['idTallas as idTalla', 'nombre']);
 
-        $pt = ProductoTalla::where('idProducto', $idProducto)
-            ->get()
-            ->keyBy('idTalla');
+        $base = (float)($producto->precioVenta ?? 0);
 
-        $base = (float) ($producto->precioVenta ?? 0);
-
-        $resp = $tallas->map(function ($t) use ($pt, $base) {
-            $row = $pt->get($t->idTalla);
-            $precioAdicional = (float) ($row->precioAdicional ?? 0);
-            return [
-                'idTalla' => $t->idTalla,
-                'nombreTalla' => $t->nombre,
-                'precioBase' => $base,
-                'precioAdicional' => $precioAdicional,
-                'precioUnitario' => $base + $precioAdicional,
-            ];
-        })->values();
+        $resp = $tallas->map(fn($t) => [
+            'idTalla'         => $t->idTalla,
+            'nombreTalla'     => $t->nombre,
+            'precioBase'      => $base,
+            'precioAdicional' => 0.0,               // no existe en BD
+            'precioUnitario'  => $base,             // base + 0
+        ])->values();
 
         return response()->json([
             'idProducto' => $producto->idProducto,
-            'precios' => $resp,
+            'precios'    => $resp,
         ]);
     }
+
+
 
     /**
      * API: Variantes disponibles para un producto
@@ -107,39 +103,30 @@ class PedidoController extends Controller
      */
     public function apiOpcionesPorProducto($idProducto)
     {
-        $producto = Producto::with(['opciones.caracteristicas' => function ($q) {
-            $q->where('estado', 1)->orderBy('nombre');
-        }])->where('idProducto', $idProducto)->firstOrFail();
+        $producto = Producto::with([
+            'productoOpcion' => fn($q) => $q->where('estado', 1),
+            'productoOpcion.opcion' => fn($q) => $q->where('estado', 1)->orderBy('nombre'),
+            'productoOpcion.opcion.caracteristicas' => fn($q) => $q->where('estado', 1)->orderBy('nombre'),
+        ])->findOrFail($idProducto);
 
-        $opciones = $producto->opciones()
-            ->where('opcions.estado', 1)
-            ->orderBy('opcions.nombre')
-            ->get()
-            ->map(function ($op) {
-                return [
-                    'idOpcion' => $op->idOpcion,
-                    'nombreOpcion' => $op->nombre,
-                    'caracteristicas' => $op->caracteristicas
-                        ->where('estado', 1)
-                        ->sortBy('nombre')
-                        ->values()
-                        ->map(function ($c) {
-                            return [
-                                'idCaracteristica' => $c->idCaracteristica,
-                                'nombre' => $c->nombre,
-                            ];
-                        })->all(),
-                ];
-            });
+        $opciones = $producto->productoOpcion->map(function ($po) {
+            $op = $po->opcion;
+            return [
+                'idOpcion'        => $op->idOpcion,
+                'nombreOpcion'    => $op->nombre,
+                'caracteristicas' => $op->caracteristicas->map(fn($c) => [
+                    'idCaracteristica' => $c->idCaracteristica,
+                    'nombre'           => $c->nombre,
+                ])->values()->all()
+            ];
+        })->values();
 
         return response()->json([
-            'producto' => [
-                'idProducto' => $producto->idProducto,
-                'nombre' => $producto->nombre,
-            ],
+            'producto' => ['idProducto' => $producto->idProducto, 'nombre' => $producto->nombre],
             'opciones' => $opciones,
         ]);
     }
+
 
     /**
      * API: Características agrupadas por opción para una variante
@@ -189,7 +176,7 @@ class PedidoController extends Controller
                 'opciones.caracteristicas' => function ($query) {
                     $query->where('estado', 1);
                 },
-                'diseno'
+                'productoDiseno.diseno'
             ])->where('estado', 1)->findOrFail($idProducto);
 
             $tallas = Talla::where('estado', 1)
@@ -207,12 +194,29 @@ class PedidoController extends Controller
             $clientesNaturales = ClienteNatural::with(['user' => function ($query) {
                 $query->where('estado', 1);
             }])->where('estado', 1)->get();
-            
+
             // Orden personalizado para tallas
             $ordenPersonalizado = [
-                '3XL', '2XL', 'XL', 'L', 'M', 'S', 'XS', 
-                '14', '12', '10', '8', '6', '4', '2',
-                '2XLD', 'XLD', 'LD', 'MD', 'SD', '14D'
+                '3XL',
+                '2XL',
+                'XL',
+                'L',
+                'M',
+                'S',
+                'XS',
+                '14',
+                '12',
+                '10',
+                '8',
+                '6',
+                '4',
+                '2',
+                '2XLD',
+                'XLD',
+                'LD',
+                'MD',
+                'SD',
+                '14D'
             ];
 
             $tallas = $tallas->sortBy(function ($talla) use ($ordenPersonalizado) {
@@ -247,7 +251,7 @@ class PedidoController extends Controller
             $validated = $request->validate([
                 'idProducto' => 'required|exists:productos,idProducto',
                 'items' => 'required|array|min:1',
-                'items.*.idTalla' => 'required|exists:tallas,idTalla',
+                'items.*.idTalla' => 'required|exists:tallas,idTallas',
                 'items.*.nombre' => 'nullable|string|max:100',
                 'items.*.numero' => 'nullable|integer|min:0|max:999',
                 'items.*.observaciones' => 'nullable|string|max:255',
@@ -334,9 +338,9 @@ class PedidoController extends Controller
             ->orderBy('idProducto')
             ->get();
 
-        $tallas = Talla::where('estado', 1)->orderBy('idTalla')->get();
+        $tallas = Talla::where('estado', 1)->orderBy('idTallas')->get();
         $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
-        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
 
         $diseñadores = Empleado::with('user')
             ->where('rol', 'diseñador')
@@ -393,7 +397,7 @@ class PedidoController extends Controller
                 if ($cant <= 0) continue;
 
                 $precioAdicional = (float) (ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTalla', $idTalla)
+                    ->where('idTallas', $idTalla)
                     ->value('precioAdicional') ?? 0);
 
                 $precioUnit = (float) ($producto->precioVenta ?? 0) + $precioAdicional;
@@ -521,7 +525,7 @@ class PedidoController extends Controller
             'idEmpleado' => 'required|exists:empleados,idEmpleado',
             'tipoCliente' => 'required|in:natural,establecimiento',
             'items' => 'required|array|min:1',
-            'items.*.idTalla' => 'required|exists:tallas,idTalla',
+            'items.*.idTalla' => 'required|exists:tallas,idTallas',
             'items.*.cantidad' => 'required|integer|min:1',
             'items.*.nombre' => 'nullable|string|max:100',
             'items.*.numero' => 'nullable|integer|min:0|max:999',
@@ -553,7 +557,7 @@ class PedidoController extends Controller
                 if ($cantidad <= 0) continue;
 
                 $precioAdicional = (float) ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTalla', $idTalla)
+                    ->where('idTallas', $idTalla)
                     ->value('precioAdicional') ?? 0;
 
                 $precioUnit = (float)($producto->precioVenta ?? 0) + $precioAdicional;
@@ -656,89 +660,6 @@ class PedidoController extends Controller
         }
     }
 
-    /**
-     * Agregar producto configurado al carrito
-     */
-    public function agregarAlCarrito(Request $request)
-    {
-        $request->validate([
-            'idProducto' => 'required|exists:productos,idProducto',
-            'idTalla' => 'required|exists:tallas,idTalla',
-            'cantidad' => 'required|integer|min:1',
-            'caracteristicas' => 'array',
-            'nombrePersonalizado' => 'nullable|string|max:50',
-            'numeroPersonalizado' => 'nullable|string|max:10',
-            'textoAdicional' => 'nullable|string|max:200',
-            'disenoPersonalizado' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120'
-        ]);
-
-        $producto = Producto::findOrFail($request->idProducto);
-        $talla = Talla::findOrFail($request->idTalla);
-
-        $rutaDisenoPersonalizado = null;
-        if ($request->hasFile('disenoPersonalizado')) {
-            $rutaDisenoPersonalizado = $request->file('disenoPersonalizado')
-                ->store('disenos_personalizados', 'public');
-        } elseif (session()->has('disenoTemporal')) {
-            $rutaDisenoPersonalizado = session()->get('disenoTemporal');
-        }
-
-        $itemCarrito = [
-            'id' => uniqid(),
-            'idProducto' => $producto->idProducto,
-            'nombreProducto' => $producto->nombre,
-            'idTalla' => $talla->idTalla,
-            'nombreTalla' => $talla->nombre,
-            'cantidad' => $request->cantidad,
-            'precioUnitario' => $producto->precioVenta,
-            'subtotal' => $producto->precioVenta * $request->cantidad,
-            'caracteristicas' => $request->caracteristicas ?? [],
-            'nombrePersonalizado' => $request->nombrePersonalizado,
-            'numeroPersonalizado' => $request->numeroPersonalizado,
-            'textoAdicional' => $request->textoAdicional,
-            'disenoPersonalizado' => $rutaDisenoPersonalizado,
-            'fotoProducto' => $producto->foto,
-            'archivoDiseno' => $producto->diseno->archivo ?? null
-        ];
-
-        $carrito = session()->get('carrito', []);
-        $carrito[] = $itemCarrito;
-        session()->put('carrito', $carrito);
-
-        if (session()->has('disenoTemporal')) {
-            session()->forget('disenoTemporal');
-        }
-
-        return redirect()->route('pedidos.carrito')
-            ->with('success', 'Producto agregado al carrito exitosamente');
-    }
-
-    /**
-     * Mostrar carrito de compras
-     */
-    public function carrito()
-    {
-        $carrito = session()->get('carrito', []);
-        $total = collect($carrito)->sum('subtotal');
-
-        return view('pedidos.carrito', compact('carrito', 'total'));
-    }
-
-    /**
-     * Eliminar item del carrito
-     */
-    public function eliminarDelCarrito($itemId)
-    {
-        $carrito = session()->get('carrito', []);
-        $carrito = collect($carrito)->reject(function ($item) use ($itemId) {
-            return $item['id'] === $itemId;
-        })->values()->toArray();
-
-        session()->put('carrito', $carrito);
-
-        return redirect()->route('pedidos.carrito')
-            ->with('success', 'Producto eliminado del carrito');
-    }
 
     /**
      * Mostrar formulario de checkout
@@ -855,14 +776,17 @@ class PedidoController extends Controller
     public function confirmacion($idVenta)
     {
         $venta = Venta::with([
-            'detalleVentas.talla',
+            'detalleVentas.detalleTallas.talla', // <-- así
             'clienteNatural.user',
             'clienteEstablecimiento.representante',
             'transacciones',
             'empleado.user'
         ])->findOrFail($idVenta);
 
-        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTalla', 'nombre']);
+        $tallas = Talla::where('estado', 1)
+            ->orderBy('nombre')
+            ->get(['idTallas as idTalla', 'nombre']);
+
 
         $metodosPago = collect([
             ['id' => null, 'nombre' => 'Efectivo', 'codigo' => 'efectivo'],
@@ -880,7 +804,7 @@ class PedidoController extends Controller
     public function agregarDetalle(Request $request, $idVenta)
     {
         $request->validate([
-            'idTalla' => 'required|exists:tallas,idTalla',
+            'idTalla' => 'required|exists:tallas,idTallas',
             'cantidad' => 'required|integer|min:1',
             'precioUnitario' => 'required|numeric|min:0',
             'nombrePersonalizado' => 'nullable|string|max:50',
@@ -1091,7 +1015,7 @@ class PedidoController extends Controller
         ]);
 
         $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
-        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
         $empleados = Empleado::with('user')->where('estado', 1)->get();
 
         return view('pedidos.edit', compact(
@@ -1537,7 +1461,7 @@ class PedidoController extends Controller
         $productos = Producto::where('estado', 1)->get();
         $tallas = Talla::where('estado', 1)->get();
         $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
-        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
 
         return view('pedidos.nuevo', compact(
             'productos',

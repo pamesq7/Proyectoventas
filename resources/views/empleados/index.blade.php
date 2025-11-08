@@ -96,131 +96,136 @@
         </div>
         <div class="card-body">
             @if($empleados->count() > 0)
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>N°</th>
-                                <th>Empleado</th>
-                                <th>Cargo</th>
-                                <th>Rol</th>
-                                <th>Contacto</th>
-                                <th>Estado</th>
-                                <th>Fecha Registro</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php $contador = ($empleados->currentPage() - 1) * $empleados->perPage() + 1; @endphp
-                            @foreach($empleados as $empleado)
-                                <tr>
-                                    <td>{{ $contador++ }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3">
-                                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
-                                                     style="width: 40px; height: 40px;">
-                                                    <i class="fas fa-user text-white"></i>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <strong>{{ $empleado->user->name ?? 'N/A' }} {{ $empleado->user->primerApellido ?? '' }}</strong>
-                                                <br>
-                                                <small class="text-muted">CI: {{ $empleado->user->ci ?? 'N/A' }}</small>
-                                            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>N°</th>
+                            <th>Empleado</th>
+                            <th>Cargo</th>
+                            <th>Rol</th>
+                            <th>Contacto</th>
+                            <th>Estado</th>
+                            <th>Fecha Registro</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $contador = ($empleados->currentPage() - 1) * $empleados->perPage() + 1; @endphp
+                        @foreach($empleados as $empleado)
+                        <tr>
+                            <td>{{ $contador++ }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center"
+                                            style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user text-white"></i>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info">{{ $empleado->cargo }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $rolColors = [
-                                                'administrador' => 'danger',
-                                                'vendedor' => 'success',
-                                                'diseñador' => 'warning',
-                                                'operador' => 'info',
-                                                'cliente' => 'secondary'
-                                            ];
-                                            $color = $rolColors[$empleado->rol] ?? 'secondary';
-                                        @endphp
-                                        <span class="badge bg-{{ $color }}">
-                                            {{ ucfirst($empleado->rol) }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if($empleado->user && $empleado->user->email)
-                                            <div>
-                                                <i class="fas fa-envelope text-muted me-1"></i>
-                                                <small>{{ $empleado->user->email }}</small>
-                                            </div>
-                                        @endif
-                                        @if($empleado->user && $empleado->user->telefono)
-                                            <div>
-                                                <i class="fas fa-phone text-muted me-1"></i>
-                                                <small>{{ $empleado->user->telefono }}</small>
-                                            </div>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($empleado->estado)
-                                            <span class="badge bg-success">Activo</span>
-                                        @else
-                                            <span class="badge bg-danger">Inactivo</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <small>{{ $empleado->created_at ? $empleado->created_at->format('d/m/Y') : 'No disponible' }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{{ route('empleados.show', $empleado) }}" 
-                                               class="btn btn-info btn-sm" title="Ver detalles">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ route('empleados.edit', $empleado) }}" 
-                                               class="btn btn-warning btn-sm" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <form action="{{ route('empleados.toggleEstado', $empleado) }}" 
-                                                  method="POST" style="display: inline;">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" 
-                                                        class="btn btn-{{ $empleado->estado ? 'secondary' : 'success' }} btn-sm"
-                                                        title="{{ $empleado->estado ? 'Desactivar' : 'Activar' }}">
-                                                    <i class="fas fa-{{ $empleado->estado ? 'times' : 'check' }}"></i>
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('users.destroy', $empleado->user->idUser) }}" 
-                                                  method="POST" 
-                                                  style="display:inline;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" 
-                                                        class="btn btn-danger btn-sm"
-                                                        title="Eliminar"
-                                                        onclick="return confirm('¿Estás seguro de que deseas eliminar el empleado {{ addslashes($empleado->user->name) }} {{ addslashes($empleado->user->primerApellido) }}? Se marcará como inactivo.')">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                                    </div>
+                                    <div>
+                                        <strong>{{ $empleado->user->name ?? 'N/A' }} {{ $empleado->user->primerApellido ?? '' }}</strong>
+                                        <br>
+                                        <small class="text-muted">CI: {{ $empleado->user->ci ?? 'N/A' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ $empleado->cargo }}</span>
+                            </td>
+                            <td>
+                                @php
+                                $rolColors = [
+                                'administrador' => 'danger',
+                                'vendedor' => 'success',
+                                'diseñador' => 'warning',
+                                'operador' => 'info',
+                                'cliente' => 'secondary'
+                                ];
+                                $color = $rolColors[$empleado->rol] ?? 'secondary';
+                                @endphp
+                                <span class="badge bg-{{ $color }}">
+                                    {{ ucfirst($empleado->rol) }}
+                                </span>
+                            </td>
+                            <td>
+                                @if($empleado->user && $empleado->user->email)
+                                <div>
+                                    <i class="fas fa-envelope text-muted me-1"></i>
+                                    <small>{{ $empleado->user->email }}</small>
+                                </div>
+                                @endif
+                                @if($empleado->user && $empleado->user->telefono)
+                                <div>
+                                    <i class="fas fa-phone text-muted me-1"></i>
+                                    <small>{{ $empleado->user->telefono }}</small>
+                                </div>
+                                @endif
+                            </td>
+                            <td>
+                                @if($empleado->estado)
+                                <span class="badge bg-success">Activo</span>
+                                @else
+                                <span class="badge bg-danger">Inactivo</span>
+                                @endif
+                            </td>
+                            <td>
+                                <small>{{ $empleado->created_at ? $empleado->created_at->format('d/m/Y') : 'No disponible' }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ route('empleados.show', $empleado) }}"
+                                        class="btn btn-info btn-sm" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ route('empleados.edit', $empleado) }}"
+                                        class="btn btn-warning btn-sm" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('empleados.toggleEstado', $empleado) }}"
+                                        method="POST" style="display: inline;">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                            class="btn btn-{{ $empleado->estado ? 'secondary' : 'success' }} btn-sm"
+                                            title="{{ $empleado->estado ? 'Desactivar' : 'Activar' }}">
+                                            <i class="fas fa-{{ $empleado->estado ? 'times' : 'check' }}"></i>
+                                        </button>
+                                    </form>
+                                    @if($empleado->user)
+                                        <form action="{{ route('users.destroy', ['user' => $empleado->user->idUser]) }}"
+                                            method="POST" style="display:inline;" 
+                                            onsubmit="return confirm('¿Estás seguro de eliminar este empleado? Esta acción no se puede deshacer.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm"
+                                                title="Eliminar empleado">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button class="btn btn-danger btn-sm" disabled 
+                                            title="No se puede eliminar - Usuario no encontrado">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
 
-                <!-- Paginación -->
-                <div class="d-flex justify-content-center mt-3">
-                    {{ $empleados->links() }}
-                </div>
+            <!-- Paginación -->
+            <div class="d-flex justify-content-center mt-3">
+                {{ $empleados->links() }}
+            </div>
             @else
-                <div class="alert alert-info" role="alert">
-                    <i class="fas fa-info-circle me-2"></i>
-                    No se encontraron empleados con los filtros aplicados.
-                </div>
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                No se encontraron empleados con los filtros aplicados.
+            </div>
             @endif
         </div>
     </div>
@@ -251,12 +256,12 @@
 
 @push('scripts')
 <script>
-function confirmarEliminacion(idEmpleado) {
-    const form = document.getElementById('formEliminar');
-    form.action = `{{ route('empleados.index') }}/${idEmpleado}`;
-    const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
-    modal.show();
-}
+    function confirmarEliminacion(idEmpleado) {
+        const form = document.getElementById('formEliminar');
+        form.action = `{{ route('empleados.index') }}/${idEmpleado}`;
+        const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modal.show();
+    }
 </script>
 @endpush
 @endsection

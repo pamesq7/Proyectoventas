@@ -135,6 +135,7 @@ class MorosoController extends Controller
     public function show(string $id)
     {
         $venta = Venta::with([
+            'detalleVentas.detalleTallas.talla', // <-- así
             'empleado.user',
             'clienteNatural.user',
             'clienteEstablecimiento',
@@ -148,6 +149,7 @@ class MorosoController extends Controller
     public function confirmacion($idVenta)
     {
         $venta = Venta::with([
+            'detalleVentas.detalleTallas.talla', // <-- así
             'detalleVentas.talla',
             'clienteNatural',
             'clienteEstablecimiento',

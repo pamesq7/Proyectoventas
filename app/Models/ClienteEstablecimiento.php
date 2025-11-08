@@ -57,4 +57,9 @@ class ClienteEstablecimiento extends Model
     {
         return $this->ventas()->exists();
     }
+    // 👇 Alias para que funcione ->with('representante') y ->clienteEstablecimiento->representante
+    public function representante()
+    {
+        return $this->belongsTo(User::class, 'idRepresentante', 'idUser');
+    }
 }

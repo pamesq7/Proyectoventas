@@ -28,4 +28,9 @@ class Talla extends Model
     {
         return $this->estado == 1 ? 'Disponible' : 'No disponible';
     }
+    // Alias para usar idTalla en vistas sin cambiar BD
+    public function getIdTallaAttribute()
+    {
+        return $this->attributes['idTallas'] ?? null;
+    }
 }

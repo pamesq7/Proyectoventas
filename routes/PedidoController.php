@@ -343,7 +343,7 @@ class PedidoController extends Controller
                 }
                 // Precio unitario = precio base del producto + adicional por talla (si existe)
                 $precioAdicional = (float) (ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTalla', $idTalla)
+                    ->where('idTallas', $idTalla)
                     ->value('precioAdicional') ?? 0);
                 $precioUnit = (float) ($producto->precioVenta ?? 0) + $precioAdicional;
                 $sub = $precioUnit * $cant;
@@ -681,7 +681,7 @@ class PedidoController extends Controller
     public function confirmacion($idVenta)
     {
         $venta = Venta::with([
-            'detalleVentas.talla',
+            'detalleVentas.detalleTallas.talla', // <-- así
             'clienteNatural',
             'clienteEstablecimiento',
             'transacciones'
@@ -707,7 +707,7 @@ class PedidoController extends Controller
     public function agregarDetalle(Request $request, $idVenta)
     {
         $request->validate([
-            'idTalla' => 'required|exists:tallas,idTalla',
+            'idTalla' => 'required|exists:tallas,idTallas',
             'cantidad' => 'required|integer|min:1',
             'precioUnitario' => 'required|numeric|min:0',
             'nombrePersonalizado' => 'nullable|string|max:50',

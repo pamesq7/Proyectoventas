@@ -10,6 +10,7 @@ class PedidoPdfController extends Controller
     public function generarRecibo($id)
     {
         $venta = Venta::with([
+            'detalleVentas.detalleTallas.talla', // <-- así
             'clienteNatural.user',
             'clienteEstablecimiento',
             'disenos.empleado.user',
@@ -23,6 +24,7 @@ class PedidoPdfController extends Controller
     public function verRecibo($id)
     {
         $venta = Venta::with([
+            'detalleVentas.detalleTallas.talla', // <-- así
             'clienteNatural.user',
             'clienteEstablecimiento',
             'disenos.empleado.user',

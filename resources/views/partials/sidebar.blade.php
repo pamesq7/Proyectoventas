@@ -88,7 +88,7 @@
                 <div class="sb-sidenav-menu-heading">📋 PEDIDOS</div>
                 <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
-                    🛒 Catálogo
+                    🛒 Hacer Mis pedidos
                 </a>
                 <a class="nav-link" href="{{ route('pedidos.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-clipboard-list"></i></div>
