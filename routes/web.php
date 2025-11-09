@@ -210,7 +210,9 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('api/variante/{idVariante}/caracteristicas', [PedidoController::class, 'apiCaracteristicasDeVariante'])->name('api.variante.caracteristicas');
     Route::get('api/variantes', [PedidoController::class, 'apiVariantesActivas'])->name('api.variantes.activas');
     Route::get('api/variante/{idVariante}/productos', [PedidoController::class, 'apiProductosPorVariante'])->name('api.variante.productos');
-    Route::get('api/producto/{idProducto}/tallas-precios', [PedidoController::class, 'apiTallasPreciosPorProducto'])->name('api.producto.tallas-precios');
+    // API para obtener precios por talla
+    Route::get('api/producto/{idProducto}/tallas-precios', [PedidoController::class, 'apiTallasPreciosPorProducto'])
+        ->name('api.producto.tallas-precios');
     Route::get('api/clientes/search', [PedidoController::class, 'apiBuscarClientes'])->name('api.clientes.search');
 
     // Carrito y checkout

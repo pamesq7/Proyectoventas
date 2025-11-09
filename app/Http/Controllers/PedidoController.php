@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Arr;
+
 
 class PedidoController extends Controller
 {
@@ -52,32 +54,185 @@ class PedidoController extends Controller
      */
     // PedidoController.php  (reemplaza el método entero)
 
+    // En PedidoController.php
+
+    // Método para la API de precios por talla
     public function apiTallasPreciosPorProducto($idProducto)
     {
-        $producto = Producto::findOrFail($idProducto);
-
-        $tallas = Talla::where('estado', 1)
-            ->orderBy('nombre')
-            ->get(['idTallas as idTalla', 'nombre']);
-
-        $base = (float)($producto->precioVenta ?? 0);
-
-        $resp = $tallas->map(fn($t) => [
-            'idTalla'         => $t->idTalla,
-            'nombreTalla'     => $t->nombre,
-            'precioBase'      => $base,
-            'precioAdicional' => 0.0,               // no existe en BD
-            'precioUnitario'  => $base,             // base + 0
-        ])->values();
-
-        return response()->json([
-            'idProducto' => $producto->idProducto,
-            'precios'    => $resp,
+        $producto = \App\Models\Producto::findOrFail($idProducto);
+        $tallas = \App\Models\Talla::orderBy('nombre', 'asc')->get();
+        $precios = $tallas->map(fn($t) => [
+            'idTalla' => (int)$t->idTallas,
+            'talla' => $t->nombre,
+            'precioUnitario' => (float)$producto->precioVenta,
         ]);
+        return response()->json(['precios' => $precios]);
     }
+    public function guardarNuevoPedido(Request $request)
+    {
+        // Validación principal (sin migraciones)
+        $request->validate([
+            'fechaEntrega'       => ['required', 'date'],
+            'lugarEntrega'       => ['required', 'string', 'max:255'],
+            'idProducto'         => ['required', 'integer', 'exists:productos,idProducto'],
+            'idEmpleado'         => ['required', 'integer', 'exists:empleados,idEmpleado'],
+            'tipoCliente'        => ['required', 'in:natural,establecimiento'],
+            'idCliente'          => ['required_if:tipoCliente,natural', 'nullable', 'integer'],
+            'idEstablecimiento'  => ['required_if:tipoCliente,establecimiento', 'nullable', 'integer'],
+            'itemsBySize_json'   => ['required', 'string'],  // [{idTalla,talla,cantidad,observaciones}]
+            'roster_json'        => ['nullable', 'string'],  // [{idTalla,nombre,numero}]
+            'tipoTransaccion'    => ['nullable', 'in:efectivo,qr,cheque,transferencia'],
+            'montoAdelanto'      => ['nullable', 'numeric', 'min:0'],
+        ]);
 
+        // Parseo de JSONs
+        $itemsBySize = json_decode($request->input('itemsBySize_json', '[]'), true);
+        $roster      = json_decode($request->input('roster_json', '[]'), true);
 
+        if (!is_array($itemsBySize) || empty($itemsBySize)) {
+            return back()->with('error', 'Debes cargar cantidades por talla.')->withInput();
+        }
+        if (!is_array($roster)) $roster = [];
 
+        // Indexar roster por idTalla (para guardarlo como JSON en cada detalle)
+        $rosterPorTalla = [];
+        foreach ($roster as $r) {
+            $tid = (int)($r['idTalla'] ?? 0);
+            if ($tid > 0) {
+                $rosterPorTalla[$tid][] = [
+                    'nombre' => (string)($r['nombre'] ?? ''),
+                    'numero' => (string)($r['numero'] ?? ''),
+                ];
+            }
+        }
+
+        // Cargar producto y regla de precios por talla (precio base + precioAdicional)
+        $producto    = Producto::findOrFail($request->idProducto);
+        $precioBase  = (float)($producto->precioVenta ?? 0);
+
+        // Empleado “seguro” (como ya usas en otros métodos)
+        $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado
+            ?? \DB::table('empleados')->value('idEmpleado');
+        if (!$idEmpleadoSeguro) {
+            return back()->with('error', 'No existe ningún empleado para asociar la venta.')->withInput();
+        }
+
+        \DB::beginTransaction();
+        try {
+            // Calcular totales
+            $subtotal = 0.0;
+            $itemsCalculados = [];
+
+            foreach ($itemsBySize as $it) {
+                $idTalla   = (int)($it['idTalla'] ?? 0);
+                $cantidad  = (int)($it['cantidad'] ?? 0);
+                if ($idTalla <= 0 || $cantidad <= 0) continue;
+
+                $precioAdicional = (float) (ProductoTalla::where('idProducto', $producto->idProducto)
+                    ->where('idTallas', $idTalla)
+                    ->value('precioAdicional') ?? 0);
+
+                $precioUnit = $precioBase + $precioAdicional;
+                $sub        = $precioUnit * $cantidad;
+                $subtotal  += $sub;
+
+                $itemsCalculados[] = [
+                    'idTalla'        => $idTalla,
+                    'cantidad'       => $cantidad,
+                    'precioUnitario' => $precioUnit,
+                    'subtotal'       => $sub,
+                    'observaciones'  => trim((string)($it['observaciones'] ?? '')),
+                    'roster'         => $rosterPorTalla[$idTalla] ?? [],
+                ];
+            }
+
+            if (empty($itemsCalculados)) {
+                throw new \Exception('No hay tallas válidas con cantidad > 0.');
+            }
+
+            $total  = $subtotal;
+            $saldo  = $total;
+            $adelanto = (float)($request->montoAdelanto ?? 0);
+            if ($adelanto > 0 && $adelanto <= $total) {
+                $saldo = max($total - $adelanto, 0);
+            }
+
+            // Crear venta
+            $venta = Venta::create([
+                'subtotal'          => $subtotal,
+                'total'             => $total,
+                'fechaEntrega'      => $request->fechaEntrega,
+                'lugarEntrega'      => $request->lugarEntrega,
+                'estadoPedido'      => '0',
+                'saldo'             => $saldo,
+                'estado'            => 1,
+                'idEmpleado'        => $idEmpleadoSeguro,
+                'idCliente'         => $request->tipoCliente === 'natural' ? ($request->idCliente ?: null) : null,
+                'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? ($request->idEstablecimiento ?: null) : null,
+            ]);
+
+            // Crear detalles (una fila por talla)
+            $primerDetalle = null;
+            foreach ($itemsCalculados as $it) {
+                $textoAdicional = [
+                    'obs'    => $it['observaciones'],
+                    'roster' => $it['roster'], // se guarda completo aquí
+                ];
+
+                $detalle = DetalleVenta::create([
+                    'cantidad'           => $it['cantidad'],
+                    'nombrePersonalizado' => null,   // si luego asignas por prenda, lo haces en edición
+                    'numeroPersonalizado' => null,
+                    'textoAdicional'     => json_encode($textoAdicional, JSON_UNESCAPED_UNICODE),
+                    'observacion'        => null,
+                    'precioUnitario'     => $it['precioUnitario'],
+                    'estado'             => 1,
+                    'idTalla'            => $it['idTalla'],
+                    'idVenta'            => $venta->idVenta,
+                    'idEmpleado'         => $idEmpleadoSeguro,
+                    // si tienes idProducto en DetalleVenta en tu esquema, agrégalo aquí:
+                    // 'idProducto'      => $producto->idProducto,
+                ]);
+
+                if (!$primerDetalle) $primerDetalle = $detalle;
+            }
+
+            // Asociar diseño temporal (si existe)
+            if (session()->has('disenoTemporal') && $primerDetalle) {
+                $rutaDiseno = session()->get('disenoTemporal');
+                Diseno::create([
+                    'archivo'        => $rutaDiseno,
+                    'iddetalleVenta' => $primerDetalle->iddetalleVenta,
+                    'estado'         => 1,
+                    'idEmpleado'     => (int)$request->idEmpleado, // diseñador asignado
+                ]);
+                session()->forget('disenoTemporal');
+            }
+
+            // Registrar adelanto (si corresponde)
+            if ($adelanto > 0) {
+                if ($adelanto > $venta->total) {
+                    throw new \Exception('El adelanto no puede ser mayor que el total.');
+                }
+                Transaccion::create([
+                    'tipoTransaccion' => 'pago',
+                    'monto'           => $adelanto,
+                    'metodoPago'      => $request->input('tipoTransaccion', 'efectivo'),
+                    'observaciones'   => 'Adelanto de pedido',
+                    'estado'          => 1,
+                    'idVenta'         => $venta->idVenta,
+                ]);
+            }
+
+            \DB::commit();
+            return redirect()->route('pedidos.confirmacion', $venta->idVenta)
+                ->with('success', 'Pedido creado exitosamente');
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Error al guardar nuevo pedido', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Error al guardar el pedido: ' . $e->getMessage())->withInput();
+        }
+    }
     /**
      * API: Variantes disponibles para un producto
      */
@@ -382,161 +537,7 @@ class PedidoController extends Controller
     /**
      * Guardar pedido desde formulario con diseño temporal
      */
-    public function guardarNuevoPedido(Request $request)
-    {
-        if (!session()->has('disenoTemporal')) {
-            return redirect()->route('pedidos.personalizar')
-                ->with('error', 'No se encontró el diseño subido.');
-        }
 
-        $disenadorId = $request->input('idEmpleado');
-
-        if ($disenadorId && !Empleado::where('idEmpleado', $disenadorId)->where('rol', 'diseñador')->where('estado', 1)->exists()) {
-            return back()->with('error', 'El diseñador seleccionado no es válido.')->withInput();
-        }
-
-        $producto = Producto::findOrFail($request->idProducto);
-        $rutaDiseno = session()->get('disenoTemporal');
-
-        $idsTalla = $request->input('idTalla', []);
-        $cantidades = $request->input('cantidad', []);
-        $nombres = $request->input('nombrePersonalizado', []);
-        $numeros = $request->input('numeroPersonalizado', []);
-        $observs = $request->input('observaciones', []);
-
-        DB::beginTransaction();
-        try {
-            $subtotal = 0.0;
-            $itemsCalculados = [];
-
-            $idEmpleadoSeguro = optional(optional(auth()->user())->empleado)->idEmpleado;
-            if (!$idEmpleadoSeguro) {
-                $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
-            }
-            if (!$idEmpleadoSeguro) {
-                return back()->with('error', 'No existe ningún empleado registrado para asociar la venta. Cree un empleado o asocie uno al usuario actual.');
-            }
-
-            foreach ($idsTalla as $i => $idTalla) {
-                $cant = (int)($cantidades[$i] ?? 0);
-                if ($cant <= 0) continue;
-
-                $precioAdicional = (float) (ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTallas', $idTalla)
-                    ->value('precioAdicional') ?? 0);
-
-                $precioUnit = (float) ($producto->precioVenta ?? 0) + $precioAdicional;
-                $sub = $precioUnit * $cant;
-                $subtotal += $sub;
-
-                $itemsCalculados[] = [
-                    'idTalla' => $idTalla,
-                    'cantidad' => $cant,
-                    'precioUnitario' => $precioUnit,
-                    'subtotal' => $sub,
-                    'nombre' => $nombres[$i] ?? null,
-                    'numero' => $numeros[$i] ?? null,
-                    'observacion' => $observs[$i] ?? null,
-                ];
-            }
-
-            if (empty($itemsCalculados)) {
-                throw new \Exception('Debes agregar al menos una fila válida (talla y cantidad).');
-            }
-
-            $ventaDestinoId = session()->get('ventaDestino');
-            if ($ventaDestinoId) {
-                $venta = Venta::with('transacciones')->findOrFail($ventaDestinoId);
-            } else {
-                $total = $subtotal;
-                $venta = Venta::create([
-                    'subtotal' => $subtotal,
-                    'total' => $total,
-                    'fechaEntrega' => $request->fechaEntrega,
-                    'lugarEntrega' => $request->lugarEntrega,
-                    'estadoPedido' => '0',
-                    'saldo' => $total,
-                    'estado' => 1,
-                    'idEmpleado' => $idEmpleadoSeguro,
-                    'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
-                    'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
-                ]);
-            }
-
-            $primerDetalle = null;
-
-            foreach ($itemsCalculados as $it) {
-                $detalle = DetalleVenta::create([
-                    'cantidad' => $it['cantidad'],
-                    'nombrePersonalizado' => $it['nombre'],
-                    'numeroPersonalizado' => $it['numero'],
-                    'textoAdicional' => null,
-                    'observacion' => $it['observacion'],
-                    'precioUnitario' => $it['precioUnitario'],
-                    'estado' => 1,
-                    'idTalla' => $it['idTalla'],
-                    'idVenta' => $venta->idVenta,
-                    'idEmpleado' => $idEmpleadoSeguro,
-                ]);
-
-                if (!$primerDetalle) {
-                    $primerDetalle = $detalle;
-                }
-            }
-
-            if ($rutaDiseno && $primerDetalle) {
-                Diseno::create([
-                    'archivo' => $rutaDiseno,
-                    'iddetalleVenta' => $primerDetalle->iddetalleVenta,
-                    'estado' => 1,
-                    'idEmpleado' => $disenadorId,
-                ]);
-            }
-
-            if ($ventaDestinoId) {
-                $nuevoSubtotal = DetalleVenta::where('idVenta', $venta->idVenta)
-                    ->selectRaw('COALESCE(SUM(cantidad * precioUnitario),0) as s')
-                    ->value('s');
-                $venta->subtotal = $nuevoSubtotal;
-                $venta->total = $nuevoSubtotal;
-
-                $pagos = $venta->transacciones
-                    ->where('tipoTransaccion', 'pago')
-                    ->sum('monto');
-                $venta->saldo = max($venta->total - (float) $pagos, 0);
-                $venta->save();
-            } else {
-                $montoAdelanto = (float) ($request->montoAdelanto ?? 0);
-                if ($montoAdelanto > 0) {
-                    if ($montoAdelanto > $venta->total) {
-                        throw new \Exception('El adelanto no puede ser mayor que el total.');
-                    }
-                    Transaccion::create([
-                        'tipoTransaccion' => 'pago',
-                        'monto' => $montoAdelanto,
-                        'metodoPago' => $request->tipoTransaccion ?? 'efectivo',
-                        'observaciones' => null,
-                        'estado' => 1,
-                        'idVenta' => $venta->idVenta,
-                    ]);
-                    $venta->saldo = max($venta->total - $montoAdelanto, 0);
-                    $venta->save();
-                }
-            }
-
-            DB::commit();
-
-            session()->forget('disenoTemporal');
-            if ($ventaDestinoId) session()->forget('ventaDestino');
-
-            return redirect()->route('pedidos.confirmacion', $venta->idVenta)
-                ->with('success', 'Pedido creado exitosamente');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error al guardar nuevo pedido', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Error al guardar el pedido: ' . $e->getMessage())->withInput();
-        }
-    }
 
     /**
      * Guardar pedido directamente desde catálogo (sin diseño)

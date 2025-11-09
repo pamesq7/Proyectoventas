@@ -167,6 +167,7 @@
                                 </div>
                             </div>
 
+
                             <div class="col-12 mt-3">
                                 <div class="alert alert-info d-flex align-items-center" role="alert">
                                     <i class="fas fa-image me-2"></i>
@@ -319,99 +320,54 @@
     }
 
     // Al cambiar producto, cargar sus opciones/características desde producto_opcions
-    // En tu archivo JavaScript
     async function onProductoChange(idProducto) {
         const cont = document.getElementById('caracteristicasContainer');
         const wrap = document.getElementById('opcionesContainer');
         cont.innerHTML = '';
         wrap.style.display = 'none';
-
         if (!idProducto) return;
-
         try {
-            const urlOpts = `/api/producto/${idProducto}/opciones`;
-            console.log('Solicitando opciones a:', urlOpts);
-
+            const urlOpts = `{{ url('api/producto') }}/${idProducto}/opciones`;
             const res = await fetch(urlOpts, {
                 headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'Accept': 'application/json'
                 }
             });
-
             if (!res.ok) {
-                const error = await res.json();
-                console.error('Error en la respuesta:', error);
+                console.error('Error opciones por producto', await res.text());
                 return;
             }
-
             const data = await res.json();
-            console.log('Respuesta recibida:', data);
-
-            if (!data.success) {
-                console.error('Error en la respuesta del servidor:', data.error);
-                return;
-            }
-
-            // Limpiar contenedor de características
-            cont.innerHTML = '';
-
-            // Verificar si hay opciones
-            if (data.opciones && data.opciones.length > 0) {
-                // Mostrar el contenedor de opciones
-                wrap.style.display = 'block';
-                
-                // Crear un elemento select para cada opción
-                data.opciones.forEach(opcion => {
-                    if (!opcion.caracteristicas || opcion.caracteristicas.length === 0) return;
-                    
-                    const col = document.createElement('div');
-                    col.className = 'col-md-4 mb-3';
-                    
-                    const label = document.createElement('label');
-                    label.className = 'form-label fw-bold';
-                    label.textContent = opcion.nombreOpcion || 'Opción';
-                    
-                    const select = document.createElement('select');
-                    select.className = 'form-select';
-                    select.name = `opciones[${opcion.idOpcion}]`;
-                    select.required = true;
-                    
-                    // Agregar opción por defecto
-                    const defaultOption = document.createElement('option');
-                    defaultOption.value = '';
-                    defaultOption.textContent = 'Seleccione una opción';
-                    defaultOption.selected = true;
-                    defaultOption.disabled = true;
-                    select.appendChild(defaultOption);
-                    
-                    // Agregar características como opciones
-                    opcion.caracteristicas.forEach(caracteristica => {
-                        const option = document.createElement('option');
-                        option.value = caracteristica.idCaracteristica;
-                        option.textContent = `${caracteristica.nombre}`;
-                        select.appendChild(option);
-                    });
-                    
-                    // Agregar elementos al DOM
-                    col.appendChild(label);
-                    col.appendChild(select);
-                    cont.appendChild(col);
+            const opciones = data.opciones || [];
+            opciones.forEach(op => {
+                const col = document.createElement('div');
+                col.className = 'col-md-3';
+                const label = document.createElement('label');
+                label.className = 'form-label';
+                label.textContent = op.nombreOpcion;
+                const select = document.createElement('select');
+                select.className = 'form-select';
+                select.name = `caracteristicas[${op.idOpcion || 'otros'}]`;
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Seleccionar';
+                select.appendChild(placeholder);
+                (op.caracteristicas || []).forEach(c => {
+                    const o = document.createElement('option');
+                    o.value = c.idCaracteristica;
+                    o.textContent = c.nombre;
+                    select.appendChild(o);
                 });
-            } else {
-                // Ocultar contenedor si no hay opciones
-                wrap.style.display = 'none';
-            }
-
+                col.appendChild(label);
+                col.appendChild(select);
+                cont.appendChild(col);
+            });
+            if (opciones.length) wrap.style.display = '';
         } catch (e) {
-            console.error('Error al cargar opciones:', e);
-            // Mostrar mensaje de error al usuario
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'alert alert-danger';
-            errorDiv.textContent = 'Error al cargar las opciones del producto. Por favor, intente nuevamente.';
-            cont.appendChild(errorDiv);
+            console.error(e);
         }
     }
+
     // Mapa de precios por talla del producto actual: { idTalla: precioUnitario }
     let tallaPriceMap = new Map();
 
@@ -948,7 +904,6 @@
             if (inpEfec) inpEfec.readOnly = false;
         }
     }
-    
 
     // Eliminado: dropdown personalizado de clientes (ahora se usa <select>)
 </script>
