@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Arr;
+use App\Models\Pack;
+
+
+
 
 
 class PedidoController extends Controller
@@ -48,6 +52,190 @@ class PedidoController extends Controller
 
         return view('pedidos.catalogo', compact('productos', 'categorias'));
     }
+    public function nuevoPersonalizado($tipo = null)
+    {
+        try {
+            // Obtener datos necesarios para el formulario
+            $tallas = Talla::where('estado', 1)->get();
+            $clientesNaturales = ClienteNatural::where('estado', 1)->get();
+            $establecimientos = ClienteEstablecimiento::where('estado', 1)->get();
+            $empleados = Empleado::where('estado', 1)->get();
+
+            // Obtener diseñadores (empleados con rol de diseñador)
+            $diseñadores = Empleado::whereHas('user', function ($query) {
+                $query->where('rol', 'diseñador')
+                    ->orWhere('rol', 'administrador');
+            })->where('estado', 1)->get();
+
+            // Obtener productos (solo IDs 1-4 como menciona el comentario en la vista)
+            $productos = Producto::whereIn('idProducto', [1, 2, 3, 4])
+                ->where('estado', 1)
+                ->get();
+
+            // Obtener información del producto si se especificó un tipo
+            $productoRapido = null;
+            if ($tipo) {
+                $productosRapidos = [
+                    'polera' => ['nombre' => 'Polera', 'precio' => 85],
+                    'corto' => ['nombre' => 'Corto', 'precio' => 75],
+                    'conjunto_pyc' => ['nombre' => 'Conjunto (Polera + Corto)', 'precio' => 150],
+                    'chamarra' => ['nombre' => 'Chamarra', 'precio' => 120],
+                    'buzo' => ['nombre' => 'Buzo', 'precio' => 110],
+                    'conjunto_cb' => ['nombre' => 'Conjunto (Chamarra + Buzo)', 'precio' => 210],
+                ];
+
+                if (array_key_exists($tipo, $productosRapidos)) {
+                    $productoRapido = (object)$productosRapidos[$tipo];
+                }
+            }
+
+            return view('pedidos.nuevoPersonalizado', compact(
+                'tallas',
+                'clientesNaturales',
+                'establecimientos',
+                'empleados',
+                'diseñadores',
+                'productos',  // Añadir productos a la vista
+                'productoRapido',
+                'tipo'
+            ));
+        } catch (\Exception $e) {
+            \Log::error('Error en nuevoPersonalizado: ' . $e->getMessage());
+            return back()->with('error', 'Error al cargar el formulario: ' . $e->getMessage());
+        }
+    }
+
+    public function guardarNuevoPersonalizado(Request $request)
+    {
+        try {
+            // Validación de los datos del formulario
+            $request->validate([
+                'fechaEntrega' => 'required|date',
+                'lugarEntrega' => 'required|string|max:255',
+                'tipoCliente' => 'required|in:natural,establecimiento',
+                'idCliente' => 'required_if:tipoCliente,natural|nullable|integer',
+                'idEstablecimiento' => 'required_if:tipoCliente,establecimiento|nullable|integer',
+                'idEmpleado' => 'required|integer|exists:empleados,idEmpleado',
+                'idProducto' => 'required|integer|exists:productos,idProducto',
+                'disenoPersonalizado' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
+                'ruta_diseno' => 'nullable|string',
+                'itemsBySize_json' => 'required|json',
+                'roster_json' => 'nullable|json',
+            ]);
+
+            DB::beginTransaction();
+
+            // Manejar la subida del diseño si se proporcionó
+            $disenoId = null;
+            if ($request->hasFile('disenoPersonalizado')) {
+                $archivo = $request->file('disenoPersonalizado');
+                $nombreArchivo = time() . '_' . $archivo->getClientOriginalName();
+
+                // Guardar el archivo en storage/app/public/disenos
+                $ruta = $archivo->storeAs('public/disenos', $nombreArchivo);
+
+                // Crear registro en la tabla disenos
+                $diseno = new Diseno();
+                $diseno->nombre = 'Diseño para pedido - ' . now()->format('Y-m-d H:i:s');
+                $diseno->ruta_archivo = 'disenos/' . $nombreArchivo;
+                $diseno->tipo_archivo = $archivo->getClientMimeType();
+                $diseno->tamanio_archivo = $archivo->getSize();
+                $diseno->estado = 1; // 1 = Activo
+                $diseno->save();
+
+                $disenoId = $diseno->idDiseno;
+            } elseif ($request->filled('ruta_diseno')) {
+                // Si se proporcionó una ruta de diseño existente (por ejemplo, de una sesión anterior)
+                $diseno = Diseno::where('ruta_archivo', 'like', '%' . $request->ruta_diseno)->first();
+                if ($diseno) {
+                    $disenoId = $diseno->idDiseno;
+                }
+            }
+
+            // Procesar el pedido (similar a guardarNuevoPedido)
+            $items = json_decode($request->itemsBySize_json, true);
+            $roster = json_decode($request->roster_json, true) ?? [];
+
+            // Validar que haya al menos un ítem
+            if (empty($items)) {
+                throw new \Exception('Debe ingresar al menos una talla con cantidad mayor a cero.');
+            }
+
+            // Obtener el producto
+            $producto = Producto::findOrFail($request->idProducto);
+            $precioBase = $producto->precioVenta ?? 0;
+
+            // Crear la venta
+            $venta = new Venta();
+            $venta->fecha = now();
+            $venta->fecha_entrega = $request->fechaEntrega;
+            $venta->lugar_entrega = $request->lugarEntrega;
+            $venta->estado = 1; // 1 = Activo
+            $venta->idEmpleado = $request->idEmpleado;
+
+            if ($request->tipoCliente === 'natural') {
+                $venta->idCliente = $request->idCliente;
+            } else {
+                $venta->idEstablecimiento = $request->idEstablecimiento;
+            }
+
+            $venta->save();
+
+            // Procesar ítems por talla
+            $subtotal = 0;
+            foreach ($items as $item) {
+                $idTallas = $item['idTallas'] ?? null;
+                $cantidad = $item['cantidad'] ?? 0;
+
+                if (!$idTallas || $cantidad <= 0) continue;
+
+                // Obtener precio adicional por talla si existe
+                $precioAdicional = 0;
+                $productoTalla = ProductoTalla::where('idProducto', $producto->idProducto)
+                    ->where('idTallas', $idTallas)
+                    ->first();
+
+                if ($productoTalla) {
+                    $precioAdicional = $productoTalla->precioAdicional ?? 0;
+                }
+
+                $precioUnitario = $precioBase + $precioAdicional;
+                $importe = $precioUnitario * $cantidad;
+                $subtotal += $importe;
+
+                // Crear detalle de venta
+                $detalle = new DetalleVenta();
+                $detalle->idVenta = $venta->idVenta;
+                $detalle->idProducto = $producto->idProducto;
+                $detalle->idTallas = $idTallas;
+                $detalle->cantidad = $cantidad;
+                $detalle->precioUnitario = $precioUnitario;
+                $detalle->importe = $importe;
+
+                // Asociar el diseño si existe
+                if ($disenoId) {
+                    $detalle->idDiseno = $disenoId;
+                }
+
+                $detalle->save();
+            }
+
+            // Actualizar totales de la venta
+            $venta->subtotal = $subtotal;
+            $venta->igv = $subtotal * 0.18; // 18% IGV
+            $venta->total = $subtotal * 1.18; // Subtotal + IGV
+            $venta->save();
+
+            DB::commit();
+
+            return redirect()->route('pedidos.show', $venta->idVenta)
+                ->with('success', 'Pedido personalizado creado exitosamente');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al guardar pedido personalizado: ' . $e->getMessage());
+            return back()->with('error', 'Error al guardar el pedido: ' . $e->getMessage())->withInput();
+        }
+    }
 
     /**
      * API: Precios por talla para un producto
@@ -62,7 +250,7 @@ class PedidoController extends Controller
         $producto = \App\Models\Producto::findOrFail($idProducto);
         $tallas = \App\Models\Talla::orderBy('nombre', 'asc')->get();
         $precios = $tallas->map(fn($t) => [
-            'idTalla' => (int)$t->idTallas,
+            'idTallas' => (int)$t->idTallas,
             'talla' => $t->nombre,
             'precioUnitario' => (float)$producto->precioVenta,
         ]);
@@ -79,8 +267,8 @@ class PedidoController extends Controller
             'tipoCliente'        => ['required', 'in:natural,establecimiento'],
             'idCliente'          => ['required_if:tipoCliente,natural', 'nullable', 'integer'],
             'idEstablecimiento'  => ['required_if:tipoCliente,establecimiento', 'nullable', 'integer'],
-            'itemsBySize_json'   => ['required', 'string'],  // [{idTalla,talla,cantidad,observaciones}]
-            'roster_json'        => ['nullable', 'string'],  // [{idTalla,nombre,numero}]
+            'itemsBySize_json'   => ['required', 'string'],  // [{idTallas,talla,cantidad,observaciones}]
+            'roster_json'        => ['nullable', 'string'],  // [{idTallas,nombre,numero}]
             'tipoTransaccion'    => ['nullable', 'in:efectivo,qr,cheque,transferencia'],
             'montoAdelanto'      => ['nullable', 'numeric', 'min:0'],
         ]);
@@ -94,10 +282,10 @@ class PedidoController extends Controller
         }
         if (!is_array($roster)) $roster = [];
 
-        // Indexar roster por idTalla (para guardarlo como JSON en cada detalle)
+        // Indexar roster por idTallas (para guardarlo como JSON en cada detalle)
         $rosterPorTalla = [];
         foreach ($roster as $r) {
-            $tid = (int)($r['idTalla'] ?? 0);
+            $tid = (int)($r['idTallas'] ?? 0);
             if ($tid > 0) {
                 $rosterPorTalla[$tid][] = [
                     'nombre' => (string)($r['nombre'] ?? ''),
@@ -124,12 +312,12 @@ class PedidoController extends Controller
             $itemsCalculados = [];
 
             foreach ($itemsBySize as $it) {
-                $idTalla   = (int)($it['idTalla'] ?? 0);
+                $idTallas   = (int)($it['idTallas'] ?? 0);
                 $cantidad  = (int)($it['cantidad'] ?? 0);
-                if ($idTalla <= 0 || $cantidad <= 0) continue;
+                if ($idTallas <= 0 || $cantidad <= 0) continue;
 
                 $precioAdicional = (float) (ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTallas', $idTalla)
+                    ->where('idTallas', $idTallas)
                     ->value('precioAdicional') ?? 0);
 
                 $precioUnit = $precioBase + $precioAdicional;
@@ -137,12 +325,12 @@ class PedidoController extends Controller
                 $subtotal  += $sub;
 
                 $itemsCalculados[] = [
-                    'idTalla'        => $idTalla,
+                    'idTallas'        => $idTallas,
                     'cantidad'       => $cantidad,
                     'precioUnitario' => $precioUnit,
                     'subtotal'       => $sub,
                     'observaciones'  => trim((string)($it['observaciones'] ?? '')),
-                    'roster'         => $rosterPorTalla[$idTalla] ?? [],
+                    'roster'         => $rosterPorTalla[$idTallas] ?? [],
                 ];
             }
 
@@ -187,7 +375,7 @@ class PedidoController extends Controller
                     'observacion'        => null,
                     'precioUnitario'     => $it['precioUnitario'],
                     'estado'             => 1,
-                    'idTalla'            => $it['idTalla'],
+                    'idTallas'            => $it['idTallas'],
                     'idVenta'            => $venta->idVenta,
                     'idEmpleado'         => $idEmpleadoSeguro,
                     // si tienes idProducto en DetalleVenta en tu esquema, agrégalo aquí:
@@ -346,6 +534,134 @@ class PedidoController extends Controller
         ]);
     }
 
+
+    public function configurar($idProducto)
+    {
+        // 1) Producto
+        $producto = Producto::findOrFail($idProducto);
+
+        // 2) Variante “fallback” (case-insensitive + trim)
+        $varianteId = $producto->idVariante
+            ?? Variante::whereRaw('TRIM(LOWER(nombre)) LIKE ?', ['polera%'])->value('idVariante');
+        $varianteNombre = Variante::where('idVariante', $varianteId)->value('nombre') ?? '—';
+
+        // 3) Opciones de la variante (NO PACK)
+        $opcionesVariante = $this->getOpcionesVariante($varianteId);
+
+        // 4) Tallas
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
+
+        // 5) Clientes naturales/establecimientos (igual que ya tenías)
+        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get()->map(function ($c) {
+            $u = $c->user;
+            return [
+                'id' => $c->idCliente,
+                'text' => trim(($u->ci ? 'CI: ' . $u->ci . ' - ' : '') . $u->name . ' ' . ($u->primerApellido ?? '')),
+                'ci' => $u->ci ?? '',
+                'telefono' => $u->telefono ?? '',
+                'nit' => $c->nit ?? ''
+            ];
+        })->toArray();
+
+        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get()->map(function ($e) {
+            $rep = $e->representante;
+            return [
+                'id' => $e->idEstablecimiento,
+                'text' => trim(($e->nit ? 'NIT: ' . $e->nit . ' - ' : '') . $e->razonSocial . ($rep && $rep->telefono ? ' - Tel: ' . $rep->telefono : '')),
+                'nit' => $e->nit ?? '',
+                'telefono' => $rep->telefono ?? ''
+            ];
+        })->toArray();
+
+        // 6) PACK — derivamos $packId aunque productos.idPackProducto sea NULL
+        $packId = $producto->idPackProducto;
+        if (is_null($packId)) {
+            $packId = DB::table('pack')->where('idProducto', $producto->idProducto)->value('idPackProducto');
+        }
+
+        $esPack = !is_null($packId);
+        $packInfo = null;
+        $packProductos = collect();
+        $variantesPack = collect();
+
+        if ($esPack) {
+            $packInfo = DB::table('pack')->where('idPackProducto', $packId)->first();
+
+            $idsDesdeProductos = Producto::where('idPackProducto', $packId)->pluck('idProducto');
+            $idsDesdePack      = DB::table('pack')->where('idPackProducto', $packId)->pluck('idProducto');
+
+            $ids = $idsDesdeProductos->merge($idsDesdePack)->filter()->unique()->values();
+
+            $packProductos = Producto::whereIn('idProducto', $ids)->orderBy('nombre')->get();
+
+            // 🔹 Variantes ÚNICAS del pack (p.ej. Polera + Corto + Buzo):
+            $variantesPack = $packProductos
+                ->pluck('idVariante')
+                ->filter()
+                ->unique()
+                ->map(function ($vId) {
+                    $vNombre = Variante::where('idVariante', $vId)->value('nombre') ?? '—';
+                    return [
+                        'idVariante'     => $vId,
+                        'nombreVariante' => trim($vNombre),
+                        'opciones'       => $this->getOpcionesVariante($vId),
+                    ];
+                })->values();
+        }
+
+        return view('pedidos.configurar', [
+            'producto'                  => $producto,
+            'tallas'                    => $tallas,
+            'opcionesVariante'          => $opcionesVariante,
+            'varianteId'                => $varianteId,
+            'varianteNombre'            => $varianteNombre,
+            'clientesNaturales'         => $clientesNaturales,
+            'clientesEstablecimientos'  => $clientesEstablecimientos,
+            'esPack'                    => $esPack,
+            'pack'                      => $packInfo,
+            'packProductos'             => $packProductos,
+            'variantesPack'             => $variantesPack,
+        ]);
+    }
+
+
+
+    // Método auxiliar para obtener opciones de variante
+    private function getOpcionesVariante($varianteId)
+    {
+        $rows = DB::table('caracteristicas as c')
+            ->join('opcions as o', 'o.idOpcion', '=', 'c.idOpcion')   // ✅ opcions
+            ->join('variante_caracteristicas as vc', 'vc.idCaracteristica', '=', 'c.idCaracteristica')
+            ->where('vc.idVariante', $varianteId)
+            ->where('c.estado', 1)
+            ->select(
+                'o.idOpcion',
+                DB::raw('TRIM(o.nombre) as nombreOpcion'),
+                'o.descripcion as descOpcion',
+                'c.idCaracteristica',
+                DB::raw('TRIM(c.nombre) as nombreCaracteristica'),
+                'vc.precioAdicional'
+            )
+            ->orderBy('o.nombre')
+            ->orderBy('c.nombre')
+            ->get();
+
+        return $rows->groupBy('idOpcion')->map(function ($grupo) {
+            return [
+                'idOpcion' => $grupo->first()->idOpcion,
+                'nombre' => $grupo->first()->nombreOpcion,
+                'descripcion' => $grupo->first()->descOpcion,
+                'caracteristicas' => $grupo->map(function ($car) {
+                    return [
+                        'idCaracteristica' => $car->idCaracteristica,
+                        'nombre' => $car->nombreCaracteristica,
+                        'precioAdicional' => $car->precioAdicional ?? 0,
+                    ];
+                })->values(),
+            ];
+        })->values();
+    }
+
     /**
      * Configurar producto con opciones de personalización
      */
@@ -407,6 +723,21 @@ class PedidoController extends Controller
             $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->get();
             $configuracion = session('configuracion_pedido', []);
 
+            // ¿Este producto participa en algún pack?
+            $pack = Pack::where('estado', 1)
+                ->whereHas('packProducto', function ($q) use ($idProducto) {
+                    $q->where('idProducto', $idProducto);
+                })
+                ->with(['packProducto.producto']) // para listar los ítems
+                ->first();
+            $pack = Pack::where('estado', 1)
+                ->whereHas('packProducto', function ($q) use ($idProducto) {
+                    $q->where('idProducto', $idProducto);
+                })
+                ->with(['packProducto.producto']) // para listar los ítems
+                ->first();
+
+
             return view('pedidos.configurar', compact(
                 'producto',
                 'tallas',
@@ -414,7 +745,9 @@ class PedidoController extends Controller
                 'productos',
                 'clientesNaturales',
                 'clientesEstablecimientos',
-                'configuracion'
+                'configuracion',
+                'pack' // ⬅️ pásalo a la vista
+
             ));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('pedidos.catalogo')
@@ -431,7 +764,7 @@ class PedidoController extends Controller
             $validated = $request->validate([
                 'idProducto' => 'required|exists:productos,idProducto',
                 'items' => 'required|array|min:1',
-                'items.*.idTalla' => 'required|exists:tallas,idTallas',
+                'items.*.idTallas' => 'required|exists:tallas,idTallas',
                 'items.*.nombre' => 'nullable|string|max:100',
                 'items.*.numero' => 'nullable|integer|min:0|max:999',
                 'items.*.observaciones' => 'nullable|string|max:255',
@@ -551,7 +884,7 @@ class PedidoController extends Controller
             'idEmpleado' => 'required|exists:empleados,idEmpleado',
             'tipoCliente' => 'required|in:natural,establecimiento',
             'items' => 'required|array|min:1',
-            'items.*.idTalla' => 'required|exists:tallas,idTallas',
+            'items.*.idTallas' => 'required|exists:tallas,idTallas',
             'items.*.cantidad' => 'required|integer|min:1',
             'items.*.nombre' => 'nullable|string|max:100',
             'items.*.numero' => 'nullable|integer|min:0|max:999',
@@ -577,13 +910,13 @@ class PedidoController extends Controller
             $itemsCalculados = [];
 
             foreach ($request->items as $item) {
-                $idTalla = $item['idTalla'];
+                $idTallas = $item['idTallas'];
                 $cantidad = (int)$item['cantidad'];
 
                 if ($cantidad <= 0) continue;
 
                 $precioAdicional = (float) ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTallas', $idTalla)
+                    ->where('idTallas', $idTallas)
                     ->value('precioAdicional') ?? 0;
 
                 $precioUnit = (float)($producto->precioVenta ?? 0) + $precioAdicional;
@@ -591,7 +924,7 @@ class PedidoController extends Controller
                 $subtotal += $sub;
 
                 $itemsCalculados[] = [
-                    'idTalla' => $idTalla,
+                    'idTallas' => $idTallas,
                     'cantidad' => $cantidad,
                     'precioUnitario' => $precioUnit,
                     'subtotal' => $sub,
@@ -631,7 +964,7 @@ class PedidoController extends Controller
                     'observacion' => $item['observacion'],
                     'precioUnitario' => $item['precioUnitario'],
                     'estado' => 1,
-                    'idTalla' => $item['idTalla'],
+                    'idTallas' => $item['idTallas'],
                     'idVenta' => $venta->idVenta,
                     'idEmpleado' => $idEmpleadoSeguro,
                 ]);
@@ -683,6 +1016,77 @@ class PedidoController extends Controller
             return redirect()->back()
                 ->with('error', 'Error al guardar el pedido: ' . $e->getMessage())
                 ->withInput();
+        }
+
+        DB::beginTransaction();
+        try {
+            $producto = Producto::findOrFail($request->idProducto);
+
+            // Validar que el producto esté disponible
+            if ($producto->estado != 1) {
+                throw new \Exception('El producto seleccionado no está disponible actualmente');
+            }
+
+            // Validar que haya suficiente stock
+            if ($producto->cantidad < $request->cantidad) {
+                throw new \Exception('No hay suficiente stock disponible para el producto seleccionado');
+            }
+
+            // Crear la venta
+            $venta = new Venta();
+            $venta->fecha = now();
+            $venta->total = $producto->precioVenta * $request->cantidad;
+            $venta->estado = 'pendiente';
+            $venta->idEmpleado = auth()->user()->empleado->idEmpleado;
+            $venta->save();
+
+            // Crear el detalle de la venta
+            $detalleVenta = new DetalleVenta();
+            $detalleVenta->idVenta = $venta->idVenta;
+            $detalleVenta->idProducto = $producto->idProducto;
+            $detalleVenta->cantidad = $request->cantidad;
+            $detalleVenta->precioUnitario = $producto->precioVenta;
+            $detalleVenta->importe = $producto->precioVenta * $request->cantidad;
+            $detalleVenta->tipo_pack = $producto->esPack() ? 'pack' : 'producto';
+            $detalleVenta->save();
+
+            // Si es un pack, registrar los productos individuales
+            if ($producto->esPack()) {
+                $pack = Pack::with('productos.producto')
+                    ->where('idProducto', $producto->idProducto)
+                    ->first();
+
+                if ($pack) {
+                    foreach ($pack->productos as $item) {
+                        $detalleItem = new DetalleVenta();
+                        $detalleItem->idVenta = $venta->idVenta;
+                        $detalleItem->idProducto = $item->idProducto;
+                        $detalleItem->cantidad = $item->cantidad * $request->cantidad;
+                        $detalleItem->precioUnitario = $item->precio;
+                        $detalleItem->importe = $item->precio * $item->cantidad * $request->cantidad;
+                        $detalleItem->tipo_pack = 'item_pack';
+                        $detalleItem->id_pack_padre = $detalleVenta->idDetalleVenta;
+                        $detalleItem->save();
+
+                        // Actualizar el stock del producto
+                        $productoItem = $item->producto;
+                        $productoItem->cantidad -= $item->cantidad * $request->cantidad;
+                        $productoItem->save();
+                    }
+                }
+            }
+
+            // Actualizar el stock del producto principal
+            $producto->cantidad -= $request->cantidad;
+            $producto->save();
+
+            DB::commit();
+
+            return redirect()->route('pedidos.confirmacion', $venta->idVenta)
+                ->with('success', 'Pedido creado exitosamente');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al procesar el pedido: ' . $e->getMessage());
         }
     }
 
@@ -764,7 +1168,7 @@ class PedidoController extends Controller
                     'observacion' => $request->observaciones,
                     'precioUnitario' => $item['precioUnitario'],
                     'estado' => 1,
-                    'idTalla' => $item['idTalla'],
+                    'idTallas' => $item['idTallas'],
                     'idVenta' => $venta->idVenta,
                     'idEmpleado' => $idEmpleadoSeguro,
                 ]);
@@ -811,7 +1215,7 @@ class PedidoController extends Controller
 
         $tallas = Talla::where('estado', 1)
             ->orderBy('nombre')
-            ->get(['idTallas as idTalla', 'nombre']);
+            ->get(['idTallas as idTallas', 'nombre']);
 
 
         $metodosPago = collect([
@@ -830,7 +1234,7 @@ class PedidoController extends Controller
     public function agregarDetalle(Request $request, $idVenta)
     {
         $request->validate([
-            'idTalla' => 'required|exists:tallas,idTallas',
+            'idTallas' => 'required|exists:tallas,idTallas',
             'cantidad' => 'required|integer|min:1',
             'precioUnitario' => 'required|numeric|min:0',
             'nombrePersonalizado' => 'nullable|string|max:50',
@@ -869,7 +1273,7 @@ class PedidoController extends Controller
             }
 
             $ids = $request->input('row_id', []);
-            $tallas = $request->input('idTalla', []);
+            $tallas = $request->input('idTallas', []);
             $cantidades = $request->input('cantidad', []);
             $precios = $request->input('precioUnitario', []);
             $nombres = $request->input('nombrePersonalizado', []);
@@ -887,7 +1291,7 @@ class PedidoController extends Controller
                     'descripcion' => $descrs[$i] ?? null,
                     'precioUnitario' => (float) ($precios[$i] ?? 0),
                     'estado' => 1,
-                    'idTalla' => (int) ($tallas[$i] ?? 0),
+                    'idTallas' => (int) ($tallas[$i] ?? 0),
                     'idVenta' => $venta->idVenta,
                     'idEmpleado' => $idEmpleadoSeguro,
                 ];
@@ -1030,7 +1434,7 @@ class PedidoController extends Controller
         ];
 
         $diseñadores = Empleado::where('rol', 'diseñador')->where('estado', 1)->get();
-        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTalla', 'nombre']);
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTallas', 'nombre']);
         $productos = Producto::where('estado', 1)->orderBy('nombre')->get(['idProducto', 'nombre']);
 
         $metodosPago = collect([
@@ -1133,8 +1537,8 @@ class PedidoController extends Controller
         $request->validate([
             'idProducto' => 'nullable|exists:productos,idProducto',
             'row_id' => 'required|array',
-            'idTalla' => 'required|array|min:1',
-            'idTalla.*' => 'required|exists:tallas,idTalla',
+            'idTallas' => 'required|array|min:1',
+            'idTallas.*' => 'required|exists:tallas,idTallas',
             'cantidad' => 'required|array|min:1',
             'cantidad.*' => 'required|integer|min:1',
             'precioUnitario' => 'required|array|min:1',
@@ -1161,7 +1565,7 @@ class PedidoController extends Controller
             }
 
             $ids = $request->input('row_id', []);
-            $tallas = $request->input('idTalla', []);
+            $tallas = $request->input('idTallas', []);
             $cantidades = $request->input('cantidad', []);
             $precios = $request->input('precioUnitario', []);
             $nombres = $request->input('nombrePersonalizado', []);
@@ -1186,7 +1590,7 @@ class PedidoController extends Controller
                     'descripcion' => $descrs[$i] ?? null,
                     'precioUnitario' => (float) ($precios[$i] ?? 0),
                     'estado' => 1,
-                    'idTalla' => (int) ($tallas[$i] ?? 0),
+                    'idTallas' => (int) ($tallas[$i] ?? 0),
                     'idVenta' => $pedido->idVenta,
                     'idEmpleado' => $idEmpleadoSeguro,
                 ];

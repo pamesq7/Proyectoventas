@@ -204,6 +204,28 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('pedidos/nuevo', [PedidoController::class, 'nuevoPedido'])->name('pedidos.nuevo');
     Route::post('pedidos/guardar-nuevo', [PedidoController::class, 'guardarNuevoPedido'])->name('pedidos.guardar-nuevo');
 
+
+
+    //Pedidos Catalogo personalizado
+    // Rutas para pedidos personalizados
+    Route::prefix('pedidos')->group(function () {
+        // Otras rutas existentes...
+
+        // Ruta para el formulario de nuevo pedido personalizado
+        Route::get('/nuevo-personalizado', [PedidoController::class, 'nuevoPersonalizado'])
+            ->name('pedidos.nuevoPersonalizado');
+
+        // Ruta para procesar el formulario (si es necesario)
+        Route::post('/nuevo-personalizado', [PedidoController::class, 'guardarNuevoPersonalizado'])
+            ->name('pedidos.guardarNuevoPersonalizado');
+    });
+
+    // Página de configurar (ajusta el controlador si ya existe)
+    Route::get('pedidos/producto/{id}/configurar', [\App\Http\Controllers\PedidoController::class, 'configurar'])
+        ->name('pedidos.configurar');
+
+
+
     // APIs para UI dinámica
     Route::get('api/producto/{idProducto}/variantes', [PedidoController::class, 'apiVariantesPorProducto'])->name('api.variantes.producto');
     Route::get('api/producto/{idProducto}/opciones', [PedidoController::class, 'apiOpcionesPorProducto'])->name('api.opciones.producto');

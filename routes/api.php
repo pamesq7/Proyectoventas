@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DisenoController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\ProductoApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,3 +29,7 @@ Route::get('/producto/{idProducto}/tallas-precios', [PedidoController::class, 'a
 
 // Búsqueda unificada de clientes (naturales y establecimientos)
 Route::get('/clientes/search', [PedidoController::class, 'apiBuscarClientes']);
+
+// Rutas para productos relacionados y opciones
+Route::get('producto/{id}/relacionados', [ProductoApiController::class, 'productosRelacionados']);
+Route::get('producto/{id}/opciones', [ProductoApiController::class, 'opcionesPorProducto']);

@@ -23,7 +23,9 @@ class Producto extends Model
         'pedidoMinimo',
         'estado',
         'idCategoria',
-        'idVariante'
+        'idVariante',
+        'idPackProducto',
+        'tipoProducto'    // 👈 
     ];
 
     protected $casts = [
@@ -33,6 +35,13 @@ class Producto extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+    // En tu modelo Producto.php
+    public function opciones()
+    {
+        return $this->belongsToMany(Opcion::class, 'producto_opcions', 'idProducto', 'idOpcion')
+            ->withPivot(['idProductoOpcion', 'estado'])
+            ->withTimestamps();
+    }
     // Relación inversa: un producto pertenece a una categoría
     public function categoria()
     {
@@ -58,9 +67,10 @@ class Producto extends Model
             ->with('opcion.caracteristicas');
     }
 
-    public function packProducto()
+    // Relación con el pack al que pertenece este producto (si es parte de un pack)
+    public function pack()
     {
-        return $this->hasMany(PackProducto::class, 'idProducto', 'idProducto');
+        return $this->belongsTo(Pack::class, 'idPackProducto', 'idPackProducto');
     }
 
     public function detalleVenta()
@@ -73,4 +83,28 @@ class Producto extends Model
     {
         return $this->estado == 1 ? 'Activo' : 'Inactivo';
     }
+
+
+    public function esPack(): bool
+    {
+        return $this->tipoProducto === 'pack';
+    }
+
+    public function esProducto(): bool
+    {
+        return $this->tipoProducto === 'producto';
+    }
+
+    // scope para filtrar solo packs
+    public function scopePacks($query)
+    {
+        return $query->where('tipoProducto', 'pack');
+    }
+
+    // scope para filtrar solo productos simples
+    public function scopeSimples($query)
+    {
+        return $query->where('tipoProducto', 'producto');
+    }
+
 }

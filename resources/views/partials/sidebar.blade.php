@@ -79,22 +79,21 @@
                     <div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>
                     📦 Productos
                 </a>
-                <a class="nav-link" href="{{ route('configuracion.index') }}">
+                <!-- <a class="nav-link" href="{{ route('configuracion.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>
                     ⚙️ Configuración de Productos
-                </a>
+                </a> -->
 
                 <hr class="sidebar-divider">
                 <div class="sb-sidenav-menu-heading">📋 PEDIDOS</div>
-                <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
-                    <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
-                    🛒 Hacer Mis pedidos
-                </a>
                 <a class="nav-link" href="{{ route('pedidos.index') }}">
                     <div class="sb-nav-link-icon"><i class="fas fa-clipboard-list"></i></div>
                     📑 Pedidos
                 </a>
-
+                <a class="nav-link" href="{{ route('pedidos.catalogo') }}">
+                    <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
+                    🛒 Catálogo
+                </a>
                 <hr class="sidebar-divider">
                 <div class="sb-sidenav-menu-heading">💰 VENTAS</div>
                 <a class="nav-link" href="{{ route('ventas.index') }}">

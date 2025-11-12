@@ -137,10 +137,10 @@
                                         <tbody id="tbodyItems">
                                             <tr class="item-row">
                                                 <td>
-                                                    <select name="idTalla[]" class="form-select form-select-sm sel-talla" required>
+                                                    <select name="idTallas[]" class="form-select form-select-sm sel-talla" required>
                                                         <option value="">Seleccionar talla</option>
                                                         @foreach($tallas as $t)
-                                                        <option value="{{ $t->idTalla }}">{{ $t->nombre }}</option>
+                                                        <option value="{{ $t->idTallas }}">{{ $t->nombre }}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>
@@ -368,7 +368,7 @@
         }
     }
 
-    // Mapa de precios por talla del producto actual: { idTalla: precioUnitario }
+    // Mapa de precios por talla del producto actual: { idTallas: precioUnitario }
     let tallaPriceMap = new Map();
 
     async function loadTallaPrecios(idProducto) {
@@ -387,7 +387,7 @@
             }
             const data = await res.json();
             (data.precios || []).forEach(p => {
-                tallaPriceMap.set(String(p.idTalla), Number(p.precioUnitario || 0));
+                tallaPriceMap.set(String(p.idTallas), Number(p.precioUnitario || 0));
             });
         } catch (e) {
             console.error('fetch tallas-precios', e);
@@ -544,10 +544,10 @@
         tr.className = 'item-row';
         tr.innerHTML = `
             <td>
-                <select name="idTalla[]" class="form-select form-select-sm sel-talla" required>
+                <select name="idTallas[]" class="form-select form-select-sm sel-talla" required>
                     <option value="">Seleccionar talla</option>
                     @foreach($tallas as $t)
-                        <option value="{{ $t->idTalla }}">{{ $t->nombre }}</option>
+                        <option value="{{ $t->idTallas }}">{{ $t->nombre }}</option>
                     @endforeach
                 </select>
             </td>
@@ -625,8 +625,8 @@
 
     // Precio unitario efectivo para una fila según la talla elegida.
     // Prioridad: precio específico por talla (BD) -> precio base del producto.
-    function precioUnitarioPorTalla(idTalla, nombreTalla) {
-        const key = String(idTalla || '');
+    function precioUnitarioPorTalla(idTallas, nombreTalla) {
+        const key = String(idTallas || '');
         if (key && tallaPriceMap.has(key)) {
             const v = Number(tallaPriceMap.get(key));
             if (!isNaN(v) && v > 0) return v;
@@ -670,11 +670,11 @@
             if (!sel || !cantInp) return;
             const optSel = sel.options[sel.selectedIndex];
             const nombreTalla = (optSel?.text || '').trim();
-            const idTalla = optSel?.value || '';
-            if (!nombreTalla || !idTalla) return;
+            const idTallas = optSel?.value || '';
+            if (!nombreTalla || !idTallas) return;
             const cant = parseInt(cantInp.value || '0');
             if (isNaN(cant) || cant <= 0) return;
-            const unit = precioUnitarioPorTalla(idTalla, nombreTalla);
+            const unit = precioUnitarioPorTalla(idTallas, nombreTalla);
             if (!map.has(nombreTalla)) {
                 map.set(nombreTalla, {
                     nombre: nombreTalla,
@@ -768,11 +768,11 @@
             if (!sel || !cantInp) return;
             const optSel = sel.options[sel.selectedIndex];
             const nombreTalla = (optSel?.text || '').trim();
-            const idTalla = optSel?.value || '';
+            const idTallas = optSel?.value || '';
             let c = parseInt(cantInp.value || '0');
             if (isNaN(c) || c <= 0) return;
             const g = grupoDeTalla(nombreTalla);
-            const unit = precioUnitarioPorTalla(idTalla, nombreTalla);
+            const unit = precioUnitarioPorTalla(idTallas, nombreTalla);
             grupos[g].cant += c;
             grupos[g].unit = unit; // mostrar en desglose
             grupos[g].total += unit * c;

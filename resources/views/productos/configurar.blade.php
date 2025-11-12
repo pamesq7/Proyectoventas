@@ -85,10 +85,10 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Talla *</label>
-                                    <select class="form-select" name="idTalla" required id="selectTalla">
+                                    <select class="form-select" name="idTallas" required id="selectTalla">
                                         <option value="">Seleccionar talla</option>
                                         @foreach($tallas as $talla)
-                                            <option value="{{ $talla->idTalla }}">{{ $talla->nombre }}</option>
+                                            <option value="{{ $talla->idTallas }}">{{ $talla->nombre }}</option>
                                         @endforeach
                                     </select>
                                 </div>

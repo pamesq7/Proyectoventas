@@ -10,23 +10,28 @@ class Pack extends Model
     use HasFactory;
 
     protected $table = 'pack';
-    protected $primaryKey = 'idPack';
+    protected $primaryKey = 'idPackProducto';
 
     protected $fillable = [
-        'nombre',
-        'descripcion',
-        'estado',
+        'idProducto',
+        'estado'
     ];
 
-    // Relación con productos
-    public function detalleVenta()
+    protected $casts = [
+        'estado' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    // El producto principal del pack
+    public function producto()
     {
-        return $this->hasMany(DetalleVenta::class, 'idPack', 'idPack');
+        return $this->belongsTo(Producto::class, 'idProducto', 'idProducto');
     }
 
-    public function packProducto()
+    // Los productos que pertenecen a este pack
+    public function productos()
     {
-        return $this->hasMany(PackProducto::class, 'idPack', 'idPack');
+        return $this->hasMany(Producto::class, 'idPackProducto', 'idPackProducto');
     }
-
 }

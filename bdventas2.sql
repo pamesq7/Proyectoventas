@@ -175,12 +175,12 @@ CREATE TABLE `personal_access_tokens` (
 
 DROP TABLE IF EXISTS `tallas`;
 CREATE TABLE `tallas` (
-  `idTalla` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+  `idTallas` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `nombre` varchar(6) NOT NULL,
   `estado` tinyint(4) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`idTalla`)
+  PRIMARY KEY (`idTallas`)
 ) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
@@ -388,15 +388,15 @@ CREATE TABLE `detalle_ventas` (
   `estado` tinyint(4) NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `idTalla` smallint(5) unsigned NOT NULL,
+  `idTallas` smallint(5) unsigned NOT NULL,
   `idVenta` int(10) unsigned NOT NULL,
   `idEmpleado` int(10) unsigned NOT NULL,
   PRIMARY KEY (`iddetalleVenta`),
-  KEY `detalle_ventas_idtalla_foreign` (`idTalla`),
+  KEY `detalle_ventas_idtalla_foreign` (`idTallas`),
   KEY `detalle_ventas_idventa_foreign` (`idVenta`),
   KEY `detalle_ventas_idempleado_foreign` (`idEmpleado`),
   CONSTRAINT `detalle_ventas_idempleado_foreign` FOREIGN KEY (`idEmpleado`) REFERENCES `empleados` (`idEmpleado`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `detalle_ventas_idtalla_foreign` FOREIGN KEY (`idTalla`) REFERENCES `tallas` (`idTalla`) ON DELETE CASCADE,
+  CONSTRAINT `detalle_ventas_idtalla_foreign` FOREIGN KEY (`idTallas`) REFERENCES `tallas` (`idTallas`) ON DELETE CASCADE,
   CONSTRAINT `detalle_ventas_idventa_foreign` FOREIGN KEY (`idVenta`) REFERENCES `ventas` (`idVenta`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -476,14 +476,14 @@ INSERT INTO `productos` VALUES (1,'POLF100','Polera',NULL,NULL,NULL,70.00,NULL,1
 
 DROP TABLE IF EXISTS `producto_tallas`;
 CREATE TABLE `producto_tallas` (
-  `idTalla` smallint(5) unsigned NOT NULL,
+  `idTallas` smallint(5) unsigned NOT NULL,
   `precioAdicional` varchar(45) DEFAULT NULL,
   `stock` varchar(45) DEFAULT NULL,
   `idProducto` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`idTalla`),
+  PRIMARY KEY (`idTallas`),
   KEY `producto_tallas_idproducto_foreign` (`idProducto`),
   CONSTRAINT `producto_tallas_idproducto_foreign` FOREIGN KEY (`idProducto`) REFERENCES `productos` (`idProducto`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `producto_tallas_idtalla_foreign` FOREIGN KEY (`idTalla`) REFERENCES `tallas` (`idTalla`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `producto_tallas_idtalla_foreign` FOREIGN KEY (`idTallas`) REFERENCES `tallas` (`idTallas`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
