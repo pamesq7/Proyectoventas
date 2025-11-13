@@ -204,6 +204,10 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('pedidos/nuevo', [PedidoController::class, 'nuevoPedido'])->name('pedidos.nuevo');
     Route::post('pedidos/guardar-nuevo', [PedidoController::class, 'guardarNuevoPedido'])->name('pedidos.guardar-nuevo');
 
+    Route::post('/pedidos/agregar-carrito', [PedidoController::class, 'agregarAlCarrito'])
+        ->name('pedidos.agregar-carrito');
+
+
 
 
     //Pedidos Catalogo personalizado

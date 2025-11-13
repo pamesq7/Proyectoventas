@@ -551,24 +551,24 @@ class PedidoController extends Controller
         // 4) Tallas
         $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
 
-        // 5) Clientes naturales/establecimientos (igual que ya tenías)
+        // 5) Clientes naturales/establecimientos
         $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get()->map(function ($c) {
             $u = $c->user;
             return [
-                'id' => $c->idCliente,
-                'text' => trim(($u->ci ? 'CI: ' . $u->ci . ' - ' : '') . $u->name . ' ' . ($u->primerApellido ?? '')),
-                'ci' => $u->ci ?? '',
+                'id'       => $c->idCliente,
+                'text'     => trim(($u->ci ? 'CI: ' . $u->ci . ' - ' : '') . $u->name . ' ' . ($u->primerApellido ?? '')),
+                'ci'       => $u->ci ?? '',
                 'telefono' => $u->telefono ?? '',
-                'nit' => $c->nit ?? ''
+                'nit'      => $c->nit ?? ''
             ];
         })->toArray();
 
         $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get()->map(function ($e) {
             $rep = $e->representante;
             return [
-                'id' => $e->idEstablecimiento,
-                'text' => trim(($e->nit ? 'NIT: ' . $e->nit . ' - ' : '') . $e->razonSocial . ($rep && $rep->telefono ? ' - Tel: ' . $rep->telefono : '')),
-                'nit' => $e->nit ?? '',
+                'id'       => $e->idEstablecimiento,
+                'text'     => trim(($e->nit ? 'NIT: ' . $e->nit . ' - ' : '') . $e->razonSocial . ($rep && $rep->telefono ? ' - Tel: ' . $rep->telefono : '')),
+                'nit'      => $e->nit ?? '',
                 'telefono' => $rep->telefono ?? ''
             ];
         })->toArray();
@@ -579,8 +579,8 @@ class PedidoController extends Controller
             $packId = DB::table('pack')->where('idProducto', $producto->idProducto)->value('idPackProducto');
         }
 
-        $esPack = !is_null($packId);
-        $packInfo = null;
+        $esPack        = !is_null($packId);
+        $packInfo      = null;
         $packProductos = collect();
         $variantesPack = collect();
 
@@ -609,20 +609,107 @@ class PedidoController extends Controller
                 })->values();
         }
 
+        /*
+     * 7) MODOS DE PRODUCTO PARA LAS PESTAÑAS (nav-pills)
+     *    - pack_polera_corto / solo_polera / solo_corto
+     *    - pack_chamarra_buzo / solo_chamarra / solo_buzo
+     *    - o 'individual' si no es pack
+     */
+        $modosProducto = [];
+
+        if ($esPack && $variantesPack->isNotEmpty()) {
+
+            // Buscamos variantes por nombre, case-insensitive
+            $polera = $variantesPack->first(function ($v) {
+                return strcasecmp($v['nombreVariante'], 'polera') === 0;
+            });
+            $corto = $variantesPack->first(function ($v) {
+                return strcasecmp($v['nombreVariante'], 'corto') === 0;
+            });
+            $chamarra = $variantesPack->first(function ($v) {
+                return strcasecmp($v['nombreVariante'], 'chamarra') === 0;
+            });
+            $buzo = $variantesPack->first(function ($v) {
+                return strcasecmp($v['nombreVariante'], 'buzo') === 0;
+            });
+
+            if ($polera && $corto) {
+                // Familia Polera + Corto
+                $modosProducto = [
+                    [
+                        'key'   => 'pack_polera_corto',
+                        'label' => 'PACK: ' . $polera['nombreVariante'] . ' + ' . $corto['nombreVariante'],
+                        'icon'  => 'tshirt',
+                    ],
+                    [
+                        'key'   => 'solo_polera',
+                        'label' => $polera['nombreVariante'],
+                        'icon'  => 'tshirt',
+                    ],
+                    [
+                        'key'   => 'solo_corto',
+                        'label' => $corto['nombreVariante'],
+                        'icon'  => 'shorts',
+                    ],
+                ];
+            } elseif ($chamarra && $buzo) {
+                // Familia Chamarra + Buzo
+                $modosProducto = [
+                    [
+                        'key'   => 'pack_chamarra_buzo',
+                        'label' => 'PACK: ' . $chamarra['nombreVariante'] . ' + ' . $buzo['nombreVariante'],
+                        'icon'  => 'jacket',
+                    ],
+                    [
+                        'key'   => 'solo_chamarra',
+                        'label' => $chamarra['nombreVariante'],
+                        'icon'  => 'jacket',
+                    ],
+                    [
+                        'key'   => 'solo_buzo',
+                        'label' => $buzo['nombreVariante'],
+                        'icon'  => 'hoodie',
+                    ],
+                ];
+            } else {
+                // Pack raro con otras variantes: dejamos una sola pestaña genérica
+                $modosProducto[] = [
+                    'key'   => 'pack_generico',
+                    'label' => 'Pack: ' . $producto->nombre,
+                    'icon'  => 'tshirt',
+                ];
+            }
+        } else {
+            // Producto individual (no pack)
+            $modosProducto[] = [
+                'key'   => 'individual',
+                'label' => $producto->nombre,
+                'icon'  => 'tshirt', // Icono por defecto
+            ];
+        }
+
+        // Clave del modo seleccionado por defecto (la primera pestaña)
+        $modoSeleccionado = $modosProducto[0]['key'] ?? 'individual';
+
         return view('pedidos.configurar', [
-            'producto'                  => $producto,
-            'tallas'                    => $tallas,
-            'opcionesVariante'          => $opcionesVariante,
-            'varianteId'                => $varianteId,
-            'varianteNombre'            => $varianteNombre,
-            'clientesNaturales'         => $clientesNaturales,
-            'clientesEstablecimientos'  => $clientesEstablecimientos,
-            'esPack'                    => $esPack,
-            'pack'                      => $packInfo,
-            'packProductos'             => $packProductos,
-            'variantesPack'             => $variantesPack,
+            'producto'                 => $producto,
+            'tallas'                   => $tallas,
+            'opcionesVariante'         => $opcionesVariante,
+            'varianteId'               => $varianteId,
+            'varianteNombre'           => $varianteNombre,
+            'clientesNaturales'        => $clientesNaturales,
+            'clientesEstablecimientos' => $clientesEstablecimientos,
+            'esPack'                   => $esPack,
+            'pack'                     => $packInfo,
+            'packProductos'            => $packProductos,
+            'variantesPack'            => $variantesPack,
+
+            // 🔹 NUEVO: para las pestañas de la UI
+            'modosProducto'            => $modosProducto,
+            'modoSeleccionado'         => $modoSeleccionado,
         ]);
     }
+
 
 
 
@@ -877,41 +964,47 @@ class PedidoController extends Controller
      */
     public function guardarDesdeCatalogo(Request $request)
     {
+        // ✅ 1. Validación limpia (agregamos modo_producto y quitamos código viejo)
         $request->validate([
-            'idProducto' => 'required|exists:productos,idProducto',
-            'fechaEntrega' => 'required|date|after:today',
-            'lugarEntrega' => 'required|string|max:255',
-            'idEmpleado' => 'required|exists:empleados,idEmpleado',
-            'tipoCliente' => 'required|in:natural,establecimiento',
-            'items' => 'required|array|min:1',
-            'items.*.idTallas' => 'required|exists:tallas,idTallas',
-            'items.*.cantidad' => 'required|integer|min:1',
-            'items.*.nombre' => 'nullable|string|max:100',
-            'items.*.numero' => 'nullable|integer|min:0|max:999',
+            'idProducto'        => 'required|exists:productos,idProducto',
+            'fechaEntrega'      => 'required|date|after:today',
+            'lugarEntrega'      => 'required|string|max:255',
+            'idEmpleado'        => 'required|exists:empleados,idEmpleado',
+            'tipoCliente'       => 'required|in:natural,establecimiento',
+            'idCliente'         => 'required_if:tipoCliente,natural',
+            'idEstablecimiento' => 'required_if:tipoCliente,establecimiento',
+            'modo_producto'     => 'nullable|string|max:50',          // 👈 NUEVO
+            'items'             => 'required|array|min:1',
+            'items.*.idTallas'  => 'required|exists:tallas,idTallas',
+            'items.*.cantidad'  => 'required|integer|min:1',
+            'items.*.nombre'    => 'nullable|string|max:100',
+            'items.*.numero'    => 'nullable|integer|min:0|max:999',
             'items.*.observaciones' => 'nullable|string|max:255',
-            'caracteristicas' => 'nullable|array',
-            'tipoTransaccion' => 'nullable|in:efectivo,qr,cheque,transferencia',
-            'montoAdelanto' => 'nullable|numeric|min:0'
+            'caracteristicas'   => 'nullable|array',
+            'tipoTransaccion'   => 'nullable|in:efectivo,qr,cheque,transferencia',
+            'montoAdelanto'     => 'nullable|numeric|min:0'
         ]);
 
         DB::beginTransaction();
         try {
             $producto = Producto::findOrFail($request->idProducto);
 
-            $idEmpleadoSeguro = optional(auth()->user()->empleado)->idEmpleado;
-            if (!$idEmpleadoSeguro) {
-                $idEmpleadoSeguro = DB::table('empleados')->value('idEmpleado');
-            }
+            // si quieres usar el modo para algo:
+            $modoProducto = $request->input('modo_producto'); // ej: pack_polera_corto / solo_polera / etc.
+
+            $idEmpleadoSeguro = optional(auth()->user()->empleado)->idEmpleado
+                ?? DB::table('empleados')->value('idEmpleado');
+
             if (!$idEmpleadoSeguro) {
                 throw new \Exception('No existe ningún empleado registrado para asociar la venta.');
             }
 
-            $subtotal = 0;
+            $subtotal        = 0;
             $itemsCalculados = [];
 
             foreach ($request->items as $item) {
                 $idTallas = $item['idTallas'];
-                $cantidad = (int)$item['cantidad'];
+                $cantidad = (int) $item['cantidad'];
 
                 if ($cantidad <= 0) continue;
 
@@ -920,17 +1013,17 @@ class PedidoController extends Controller
                     ->value('precioAdicional') ?? 0;
 
                 $precioUnit = (float)($producto->precioVenta ?? 0) + $precioAdicional;
-                $sub = $precioUnit * $cantidad;
-                $subtotal += $sub;
+                $sub        = $precioUnit * $cantidad;
+                $subtotal  += $sub;
 
                 $itemsCalculados[] = [
-                    'idTallas' => $idTallas,
-                    'cantidad' => $cantidad,
+                    'idTallas'       => $idTallas,
+                    'cantidad'       => $cantidad,
                     'precioUnitario' => $precioUnit,
-                    'subtotal' => $sub,
-                    'nombre' => $item['nombre'] ?? null,
-                    'numero' => $item['numero'] ?? null,
-                    'observacion' => $item['observaciones'] ?? null,
+                    'subtotal'       => $sub,
+                    'nombre'         => $item['nombre'] ?? null,
+                    'numero'         => $item['numero'] ?? null,
+                    'observacion'    => $item['observaciones'] ?? null,
                 ];
             }
 
@@ -939,44 +1032,47 @@ class PedidoController extends Controller
             }
 
             $total = $subtotal;
+
+            // 👇 Si en tu tabla ventas tienes una columna para guardar el modo, podrías agregarla aquí:
             $venta = Venta::create([
-                'subtotal' => $subtotal,
-                'total' => $total,
-                'fechaEntrega' => $request->fechaEntrega,
-                'lugarEntrega' => $request->lugarEntrega,
-                'estadoPedido' => '0',
-                'saldo' => $total,
-                'estado' => 1,
-                'idEmpleado' => $idEmpleadoSeguro,
-                'idCliente' => $request->tipoCliente === 'natural' ? $request->idCliente : null,
+                'subtotal'         => $subtotal,
+                'total'            => $total,
+                'fechaEntrega'     => $request->fechaEntrega,
+                'lugarEntrega'     => $request->lugarEntrega,
+                'estadoPedido'     => '0',
+                'saldo'            => $total,
+                'estado'           => 1,
+                'idEmpleado'       => $idEmpleadoSeguro,
+                'idCliente'        => $request->tipoCliente === 'natural' ? $request->idCliente : null,
                 'idEstablecimiento' => $request->tipoCliente === 'establecimiento' ? $request->idEstablecimiento : null,
+                // 'modo_producto'  => $modoProducto, // solo si tienes esta columna en la BD
             ]);
 
-            $primerDetalle = null;
+            $primerDetalle               = null;
             $caracteristicasSeleccionadas = $request->input('caracteristicas', []);
 
             foreach ($itemsCalculados as $item) {
                 $detalle = DetalleVenta::create([
-                    'cantidad' => $item['cantidad'],
+                    'cantidad'           => $item['cantidad'],
                     'nombrePersonalizado' => $item['nombre'],
                     'numeroPersonalizado' => $item['numero'],
-                    'textoAdicional' => null,
-                    'observacion' => $item['observacion'],
-                    'precioUnitario' => $item['precioUnitario'],
-                    'estado' => 1,
-                    'idTallas' => $item['idTallas'],
-                    'idVenta' => $venta->idVenta,
-                    'idEmpleado' => $idEmpleadoSeguro,
+                    'textoAdicional'     => null,
+                    'observacion'        => $item['observacion'],
+                    'precioUnitario'     => $item['precioUnitario'],
+                    'estado'             => 1,
+                    'idTallas'           => $item['idTallas'],
+                    'idVenta'            => $venta->idVenta,
+                    'idEmpleado'         => $idEmpleadoSeguro,
                 ]);
 
                 if (!empty($caracteristicasSeleccionadas) && !$primerDetalle) {
                     foreach ($caracteristicasSeleccionadas as $idOpcion => $idCaracteristica) {
                         if ($idCaracteristica) {
                             DB::table('variante_caracteristicas')->insert([
-                                'iddetalleVenta' => $detalle->iddetalleVenta,
+                                'iddetalleVenta'  => $detalle->iddetalleVenta,
                                 'idCaracteristica' => $idCaracteristica,
-                                'created_at' => now(),
-                                'updated_at' => now(),
+                                'created_at'      => now(),
+                                'updated_at'      => now(),
                             ]);
                         }
                     }
@@ -995,11 +1091,11 @@ class PedidoController extends Controller
 
                 Transaccion::create([
                     'tipoTransaccion' => 'pago',
-                    'monto' => $montoAdelanto,
-                    'metodoPago' => $request->tipoTransaccion ?? 'efectivo',
-                    'observaciones' => null,
-                    'estado' => 1,
-                    'idVenta' => $venta->idVenta,
+                    'monto'           => $montoAdelanto,
+                    'metodoPago'      => $request->tipoTransaccion ?? 'efectivo',
+                    'observaciones'   => null,
+                    'estado'          => 1,
+                    'idVenta'         => $venta->idVenta,
                 ]);
 
                 $venta->saldo = max($venta->total - $montoAdelanto, 0);
@@ -1016,77 +1112,6 @@ class PedidoController extends Controller
             return redirect()->back()
                 ->with('error', 'Error al guardar el pedido: ' . $e->getMessage())
                 ->withInput();
-        }
-
-        DB::beginTransaction();
-        try {
-            $producto = Producto::findOrFail($request->idProducto);
-
-            // Validar que el producto esté disponible
-            if ($producto->estado != 1) {
-                throw new \Exception('El producto seleccionado no está disponible actualmente');
-            }
-
-            // Validar que haya suficiente stock
-            if ($producto->cantidad < $request->cantidad) {
-                throw new \Exception('No hay suficiente stock disponible para el producto seleccionado');
-            }
-
-            // Crear la venta
-            $venta = new Venta();
-            $venta->fecha = now();
-            $venta->total = $producto->precioVenta * $request->cantidad;
-            $venta->estado = 'pendiente';
-            $venta->idEmpleado = auth()->user()->empleado->idEmpleado;
-            $venta->save();
-
-            // Crear el detalle de la venta
-            $detalleVenta = new DetalleVenta();
-            $detalleVenta->idVenta = $venta->idVenta;
-            $detalleVenta->idProducto = $producto->idProducto;
-            $detalleVenta->cantidad = $request->cantidad;
-            $detalleVenta->precioUnitario = $producto->precioVenta;
-            $detalleVenta->importe = $producto->precioVenta * $request->cantidad;
-            $detalleVenta->tipo_pack = $producto->esPack() ? 'pack' : 'producto';
-            $detalleVenta->save();
-
-            // Si es un pack, registrar los productos individuales
-            if ($producto->esPack()) {
-                $pack = Pack::with('productos.producto')
-                    ->where('idProducto', $producto->idProducto)
-                    ->first();
-
-                if ($pack) {
-                    foreach ($pack->productos as $item) {
-                        $detalleItem = new DetalleVenta();
-                        $detalleItem->idVenta = $venta->idVenta;
-                        $detalleItem->idProducto = $item->idProducto;
-                        $detalleItem->cantidad = $item->cantidad * $request->cantidad;
-                        $detalleItem->precioUnitario = $item->precio;
-                        $detalleItem->importe = $item->precio * $item->cantidad * $request->cantidad;
-                        $detalleItem->tipo_pack = 'item_pack';
-                        $detalleItem->id_pack_padre = $detalleVenta->idDetalleVenta;
-                        $detalleItem->save();
-
-                        // Actualizar el stock del producto
-                        $productoItem = $item->producto;
-                        $productoItem->cantidad -= $item->cantidad * $request->cantidad;
-                        $productoItem->save();
-                    }
-                }
-            }
-
-            // Actualizar el stock del producto principal
-            $producto->cantidad -= $request->cantidad;
-            $producto->save();
-
-            DB::commit();
-
-            return redirect()->route('pedidos.confirmacion', $venta->idVenta)
-                ->with('success', 'Pedido creado exitosamente');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Error al procesar el pedido: ' . $e->getMessage());
         }
     }
 
