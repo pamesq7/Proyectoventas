@@ -7,7 +7,6 @@ use App\Models\DetalleVenta;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Talla;
-use App\Models\ProductoTalla;
 use App\Models\Variante;
 use App\Models\Caracteristica;
 use App\Models\ClienteNatural;
@@ -189,17 +188,8 @@ class PedidoController extends Controller
 
                 if (!$idTallas || $cantidad <= 0) continue;
 
-                // Obtener precio adicional por talla si existe
-                $precioAdicional = 0;
-                $productoTalla = ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTallas', $idTallas)
-                    ->first();
-
-                if ($productoTalla) {
-                    $precioAdicional = $productoTalla->precioAdicional ?? 0;
-                }
-
-                $precioUnitario = $precioBase + $precioAdicional;
+                // Precio base del producto (sin adicional por talla)
+                $precioUnitario = $precioBase;
                 $importe = $precioUnitario * $cantidad;
                 $subtotal += $importe;
 
@@ -316,11 +306,8 @@ class PedidoController extends Controller
                 $cantidad  = (int)($it['cantidad'] ?? 0);
                 if ($idTallas <= 0 || $cantidad <= 0) continue;
 
-                $precioAdicional = (float) (ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTallas', $idTallas)
-                    ->value('precioAdicional') ?? 0);
-
-                $precioUnit = $precioBase + $precioAdicional;
+                // Precio base del producto (sin adicional por talla)
+                $precioUnit = $precioBase;
                 $sub        = $precioUnit * $cantidad;
                 $subtotal  += $sub;
 
@@ -473,9 +460,9 @@ class PedidoController extends Controller
                             'idCaracteristica' => $c->idCaracteristica,
                             'nombre' => $c->nombre,
                         ];
-                    })->values()->all()
+                    })->toArray()
                 ];
-            })->filter()->values();
+            });
 
             return response()->json([
                 'success' => true,
@@ -1008,11 +995,8 @@ class PedidoController extends Controller
 
                 if ($cantidad <= 0) continue;
 
-                $precioAdicional = (float) ProductoTalla::where('idProducto', $producto->idProducto)
-                    ->where('idTallas', $idTallas)
-                    ->value('precioAdicional') ?? 0;
-
-                $precioUnit = (float)($producto->precioVenta ?? 0) + $precioAdicional;
+                // Precio base del producto (sin adicional por talla)
+                $precioUnit = (float)($producto->precioVenta ?? 0);
                 $sub        = $precioUnit * $cantidad;
                 $subtotal  += $sub;
 
@@ -1378,6 +1362,163 @@ class PedidoController extends Controller
     /**
      * Eliminar imagen del pedido vía AJAX
      */
+
+
+    public function agregarAlCarrito(Request $request)
+    {
+        // Validación
+        $request->validate([
+            'idProducto'        => 'required|exists:productos,idProducto',
+            'modo_producto'     => 'nullable|string|max:50',
+            'items'             => 'required|array|min:1',
+            'items.*.idTallas'  => 'required|exists:tallas,idTallas',
+            'items.*.cantidad'  => 'required|integer|min:1',
+            'items.*.nombre'    => 'nullable|string|max:100',
+            'items.*.numero'    => 'nullable|string|max:10',
+        ]);
+
+        $producto     = Producto::findOrFail($request->idProducto);
+        $modoProducto = $request->input('modo_producto');
+
+        // 👇 NUEVO: resolver imagen del producto
+        $imagen = null;
+        if (!empty($producto->foto)) {
+            // columna foto en productos (por ej: 'productos/foto.jpg')
+            $imagen = $producto->foto;
+        } elseif ($producto->diseno && !empty($producto->diseno->archivo)) {
+            // si tiene relación diseno
+            $imagen = $producto->diseno->archivo;
+        }
+
+        // Traer carrito actual de sesión
+        $carrito = session()->get('carrito', []);
+
+        foreach ($request->items as $item) {
+            $talla = Talla::findOrFail($item['idTallas']);
+
+            // Precio base del producto (sin adicional por talla)
+            $precioUnit = (float) ($producto->precioVenta ?? 0);
+            $cantidad   = (int) $item['cantidad'];
+            $subtotal   = $precioUnit * $cantidad;
+
+            $carrito[] = [
+                'idProducto'          => $producto->idProducto,
+                'producto'            => $producto->nombre,
+                'modo_producto'       => $modoProducto,
+                'idTallas'            => $talla->idTallas,
+                'talla'               => $talla->nombre,
+                'cantidad'            => $cantidad,
+                'precioUnitario'      => $precioUnit,
+                'subtotal'            => $subtotal,
+                'nombrePersonalizado' => $item['nombre'] ?? null,
+                'numeroPersonalizado' => $item['numero'] ?? null,
+
+                // 👇 NUEVO: guardamos solo la ruta relativa (sin asset())
+                'imagen'              => $imagen,
+            ];
+        }
+
+        // Guardar carrito actualizado en sesión
+        session()->put('carrito', $carrito);
+
+        // Renderizar el HTML del carrito lateral
+        $htmlCarrito = view('pedidos.carrito-lateral-contenido', [
+            'carrito' => $carrito,
+            'total'   => collect($carrito)->sum('subtotal'),
+        ])->render();
+
+        // Calcular items por producto (no por talla)
+        $itemsPorProducto = collect($carrito)
+            ->groupBy('idProducto')
+            ->count();
+
+        // Respuesta para el JS (fetch)
+        return response()->json([
+            'ok'               => true,
+            'mensaje'          => 'Producto(s) agregado(s) al carrito.',
+            'html_carrito'     => $htmlCarrito,
+            'items_en_carrito' => $itemsPorProducto,
+        ]);
+    }
+
+    public function eliminarDelCarrito($index)
+    {
+        $carrito = session()->get('carrito', []);
+
+        if (!isset($carrito[$index])) {
+            return response()->json(['ok' => false, 'mensaje' => 'Ítem no encontrado en el carrito'], 404);
+        }
+
+        unset($carrito[$index]);
+        $carrito = array_values($carrito); // reindexar
+        session()->put('carrito', $carrito);
+
+        $htmlCarrito = view('pedidos.carrito-lateral-contenido', [
+            'carrito' => $carrito,
+            'total'   => collect($carrito)->sum('subtotal'),
+        ])->render();
+
+        // Calcular items por producto (no por talla)
+        $itemsPorProducto = collect($carrito)
+            ->groupBy('idProducto')
+            ->count();
+
+        return response()->json([
+            'ok'           => true,
+            'html_carrito' => $htmlCarrito,
+            'items_en_carrito' => $itemsPorProducto,
+        ]);
+    }
+
+    public function eliminarProductoDelCarrito($idProducto)
+    {
+        $carrito = session()->get('carrito', []);
+        
+        // Filtrar carrito para eliminar todos los items del producto
+        $carritoFiltrado = array_filter($carrito, function($item) use ($idProducto) {
+            return $item['idProducto'] != $idProducto;
+        });
+        
+        // Reindexar array
+        $carritoFiltrado = array_values($carritoFiltrado);
+        
+        // Guardar carrito actualizado
+        session()->put('carrito', $carritoFiltrado);
+        
+        // Renderizar HTML
+        $htmlCarrito = view('pedidos.carrito-lateral-contenido', [
+            'carrito' => $carritoFiltrado,
+            'total'   => collect($carritoFiltrado)->sum('subtotal'),
+        ])->render();
+        
+        // Calcular items por producto (no por talla)
+        $itemsPorProducto = collect($carritoFiltrado)
+            ->groupBy('idProducto')
+            ->count();
+        
+        return response()->json([
+            'ok'           => true,
+            'html_carrito' => $htmlCarrito,
+            'items_en_carrito' => $itemsPorProducto,
+        ]);
+    }
+
+    public function vaciarCarrito()
+    {
+        session()->forget('carrito');
+
+        $htmlCarrito = view('pedidos.carrito-lateral-contenido', [
+            'carrito' => [],
+            'total'   => 0,
+        ])->render();
+
+        return response()->json([
+            'ok'           => true,
+            'html_carrito' => $htmlCarrito,
+            'items_en_carrito' => 0,
+        ]);
+    }
+
     public function eliminarImagen($idVenta)
     {
         try {
@@ -1925,5 +2066,26 @@ class PedidoController extends Controller
             'clientesEstablecimientos',
             'diseñadores'
         ));
+    }
+
+    /**
+     * Mostrar el carrito de compras
+     */
+    public function verCarrito()
+    {
+        $carrito = session()->get('carrito', []);
+        $total = collect($carrito)->sum('subtotal');
+
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'carrito' => $carrito,
+                'total' => $total,
+                'count' => count($carrito),
+                'html' => view('pedidos.carrito-lateral-contenido', compact('carrito', 'total'))->render()
+            ]);
+        }
+
+        return view('pedidos.carrito', compact('carrito', 'total'));
     }
 }

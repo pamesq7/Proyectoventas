@@ -26,6 +26,7 @@ use App\Http\Controllers\OperadorController;
 use App\Http\Controllers\ClienteDashboardController;
 use App\Http\Controllers\MorosoController;
 use App\Http\Controllers\PedidoPdfController;
+            
 
 /*
 |--------------------------------------------------------------------------
@@ -204,9 +205,13 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('pedidos/nuevo', [PedidoController::class, 'nuevoPedido'])->name('pedidos.nuevo');
     Route::post('pedidos/guardar-nuevo', [PedidoController::class, 'guardarNuevoPedido'])->name('pedidos.guardar-nuevo');
 
-    Route::post('/pedidos/agregar-carrito', [PedidoController::class, 'agregarAlCarrito'])
-        ->name('pedidos.agregar-carrito');
-
+    Route::prefix('carrito')->group(function () {
+        Route::post('/agregar', [PedidoController::class, 'agregarAlCarrito'])->name('carrito.agregar');
+        Route::get('/', [PedidoController::class, 'verCarrito'])->name('carrito.ver');
+        Route::delete('/{index}', [PedidoController::class, 'eliminarDelCarrito'])->name('carrito.eliminar');
+        Route::delete('/producto/{idProducto}', [PedidoController::class, 'eliminarProductoDelCarrito'])->name('carrito.eliminar-producto');
+        Route::delete('/', [PedidoController::class, 'vaciarCarrito'])->name('carrito.vaciar');
+    });
 
 
 
@@ -250,7 +255,9 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('pedido/{idVenta}/confirmacion', [PedidoController::class, 'confirmacion'])->name('pedidos.confirmacion');
     Route::post('pedidos/{idVenta}/detalle', [PedidoController::class, 'agregarDetalle'])->name('pedidos.detalle.agregar');
     Route::post('pedido/{idVenta}/pagos', [PedidoController::class, 'registrarPago'])->name('pedidos.registrar-pago');
-
+    Route::get('/carrito/ver', [CarritoController::class, 'ver'])->name('carrito.ver');
+    Route::delete('/carrito/vaciar', [CarritoController::class, 'vaciar'])->name('carrito.vaciar');
+    Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
     // =========================================================================
     // GESTIÓN DE PEDIDOS
     // =========================================================================

@@ -47,26 +47,29 @@
                     <i class="fas fa-plus me-1"></i>
                     Crear Nuevo Pedido
                 </div>
-                <div>
-                    <a href="{{ route('pedidos.catalogo') }}" class="btn btn-secondary btn-sm me-2">
-                        <i class="fas fa-arrow-left me-1"></i> Volver al Catálogo
-                    </a>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-success btn-sm" id="btnAgregarCarrito">
+                        <i class="fas fa-cart-plus me-1"></i> Agregar al carrito
+                    </button>
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="fas fa-save me-1"></i> Guardar Pedido
                     </button>
+                    <a href="{{ route('pedidos.catalogo') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Volver al Catálogo
+                    </a>
                 </div>
             </div>
-            <!-- Información del producto -->
-            <div class="card mb-4">
-                <div class="card-header">
 
+            {{-- Información del producto --}}
+            <div class="card mb-4 mt-3">
+                <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fas fa-cube me-2"></i>Producto Seleccionado
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 text-center">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center mb-3 mb-md-0">
                             @php
                             $imagenSrc = null;
                             if ($producto->foto) {
@@ -89,8 +92,8 @@
                             @endif
                         </div>
                         <div class="col-md-8">
-                            <h5>{{ $producto->nombre }}</h5>
-                            <p class="text-muted">{{ $producto->descripcion }}</p>
+                            <h5 class="mb-1">{{ $producto->nombre }}</h5>
+                            <p class="text-muted mb-2">{{ $producto->descripcion }}</p>
                             <div class="row">
                                 <div class="col-6">
                                     <strong>Precio Base:</strong><br>
@@ -106,8 +109,7 @@
                 </div>
             </div>
 
-
-            <!-- Detalles del producto -->
+            {{-- Detalles del producto --}}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
@@ -115,10 +117,8 @@
                     </h5>
                 </div>
 
-
-
                 @if(isset($pack))
-                <div class="alert alert-primary d-flex align-items-start">
+                <div class="alert alert-primary d-flex align-items-start m-3">
                     <i class="fas fa-boxes me-2 mt-1"></i>
                     <div>
                         <strong>Este producto es un PACK:</strong> {{ $pack->nombre ?? 'Pack' }}<br>
@@ -135,252 +135,230 @@
                 </div>
                 @endif
 
-
-                {{-- PACK: un bloque por cada VARIANTE incluida --}}
+                {{-- PACK --}}
                 @if($esPack && !empty($variantesPack) && count($variantesPack))
                 <div class="card-body">
-                    <div>
+                    @foreach($variantesPack as $var)
+                    <div class="border rounded p-3 mb-3">
+                        <span class="badge bg-primary mb-2">
+                            Variante del pack: {{ strtoupper($var['nombreVariante'] ?? '—') }}
+                        </span>
+                        <input type="hidden" name="idVariante[]" value="{{ $var['idVariante'] }}">
 
-                        @foreach($variantesPack as $var)
-                        <div class="border rounded p-3 mb-3">
-                            <span class="badge bg-primary mb-2">
-                                Variante del pack: {{ strtoupper($var['nombreVariante'] ?? '—') }}
-                            </span>
-                            <input type="hidden" name="idVariante[]" value="{{ $var['idVariante'] }}">
-
-                            @forelse($var['opciones'] as $opcion)
-                            <div class="mb-3">
-                                <label for="opcion_{{ $var['idVariante'] }}_{{ $opcion['idOpcion'] }}" class="form-label">
-                                    <strong>{{ $opcion['nombre'] }}</strong>
-                                    @if(!empty($opcion['descripcion']))
-                                    <small class="text-muted">({{ $opcion['descripcion'] }})</small>
-                                    @endif
-                                </label>
-
-                                @if(!empty($opcion['caracteristicas']))
-                                <select
-                                    class="form-select opcion-select"
-                                    id="opcion_{{ $var['idVariante'] }}_{{ $opcion['idOpcion'] }}"
-                                    name="opciones[{{ $var['idVariante'] }}][{{ $opcion['idOpcion'] }}]"
-                                    data-variante-id="{{ $var['idVariante'] }}"
-                                    data-opcion-id="{{ $opcion['idOpcion'] }}"
-                                    required>
-                                    <option value="">Seleccione una opción</option>
-                                    @foreach($opcion['caracteristicas'] as $car)
-                                    <option value="{{ $car['idCaracteristica'] }}"
-                                        data-precio-extra="{{ $car['precioAdicional'] ?? 0 }}">
-                                        {{ $car['nombre'] }}
-                                        @if(($car['precioAdicional'] ?? 0) > 0)
-                                        (+{{ number_format($car['precioAdicional'], 2) }} Bs)
-                                        @endif
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @else
-                                <div class="alert alert-warning">No hay características disponibles para esta opción.</div>
+                        @forelse($var['opciones'] as $opcion)
+                        <div class="mb-3">
+                            <label for="opcion_{{ $var['idVariante'] }}_{{ $opcion['idOpcion'] }}" class="form-label">
+                                <strong>{{ $opcion['nombre'] }}</strong>
+                                @if(!empty($opcion['descripcion']))
+                                <small class="text-muted">({{ $opcion['descripcion'] }})</small>
                                 @endif
+                            </label>
+
+                            @if(!empty($opcion['caracteristicas']))
+                            <select
+                                class="form-select opcion-select"
+                                id="opcion_{{ $var['idVariante'] }}_{{ $opcion['idOpcion'] }}"
+                                name="opciones[{{ $var['idVariante'] }}][{{ $opcion['idOpcion'] }}]"
+                                data-variante-id="{{ $var['idVariante'] }}"
+                                data-opcion-id="{{ $opcion['idOpcion'] }}"
+                                required>
+                                <option value="">Seleccione una opción</option>
+                                @foreach($opcion['caracteristicas'] as $car)
+                                <option value="{{ $car['idCaracteristica'] }}"
+                                    data-precio-extra="{{ $car['precioAdicional'] ?? 0 }}">
+                                    {{ $car['nombre'] }}
+                                    @if(($car['precioAdicional'] ?? 0) > 0)
+                                    (+{{ number_format($car['precioAdicional'], 2) }} Bs)
+                                    @endif
+                                </option>
+                                @endforeach
+                            </select>
+                            @else
+                            <div class="alert alert-warning">No hay características disponibles para esta opción.</div>
+                            @endif
+                        </div>
+                        @empty
+                        <div class="alert alert-info">Esta variante no tiene opciones configuradas.</div>
+                        @endforelse
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+
+                {{-- NO PACK --}}
+                @if(!$esPack)
+                <div class="card-body">
+                    @if(isset($opcionesVariante) && $opcionesVariante->count())
+                    @foreach($opcionesVariante as $opcion)
+                    <div class="mb-3">
+                        <label for="opcion_{{ $opcion['idOpcion'] }}" class="form-label">
+                            <strong>{{ $opcion['nombre'] }}</strong>
+                            @if(!empty($opcion['descripcion']))
+                            <small class="text-muted">({{ $opcion['descripcion'] }})</small>
+                            @endif
+                        </label>
+
+                        @if(!empty($opcion['caracteristicas']))
+                        <select
+                            class="form-select opcion-select"
+                            id="opcion_{{ $opcion['idOpcion'] }}"
+                            name="caracteristicas[{{ $opcion['idOpcion'] }}]"
+                            data-opcion-id="{{ $opcion['idOpcion'] }}"
+                            required>
+                            <option value="">Seleccione una opción</option>
+                            @foreach($opcion['caracteristicas'] as $car)
+                            <option
+                                value="{{ $car['idCaracteristica'] }}"
+                                data-precio-extra="{{ $car['precioAdicional'] ?? 0 }}">
+                                {{ $car['nombre'] }}
+                                @if(($car['precioAdicional'] ?? 0) > 0)
+                                (+{{ number_format($car['precioAdicional'], 2) }} Bs)
+                                @endif
+                            </option>
+                            @endforeach
+                        </select>
+                        @else
+                        <div class="alert alert-warning">No hay características disponibles para esta opción.</div>
+                        @endif
+                    </div>
+                    @endforeach
+                    @else
+                    <div class="alert alert-info m-3">No hay opciones configuradas para esta variante.</div>
+                    @endif
+                </div>
+                @endif
+            </div>
+
+            {{-- Modo de producto --}}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Seleccione el modo de producto</h5>
+                </div>
+                <div class="card-body">
+                    <input type="hidden" name="modo_producto" id="modoProducto" value="{{ $modoSeleccionado }}">
+
+                    <div class="nav nav-pills mb-3" id="modoProductoTabs" role="tablist">
+                        @foreach($modosProducto as $index => $modo)
+                        <button class="nav-link {{ $index === 0 ? 'active' : '' }}"
+                            id="modo-{{ $modo['key'] }}-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#modo-{{ $modo['key'] }}"
+                            type="button"
+                            role="tab"
+                            data-modokey="{{ $modo['key'] }}"
+                            aria-controls="modo-{{ $modo['key'] }}"
+                            aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
+                            <i class="fas fa-{{ $modo['icon'] ?? 'tshirt' }} me-1"></i>
+                            {{ $modo['label'] }}
+                        </button>
+                        @endforeach
+                    </div>
+
+                    <div class="tab-content" id="modoProductoTabContent">
+                        @foreach($modosProducto as $index => $modo)
+                        <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}"
+                            id="modo-{{ $modo['key'] }}"
+                            role="tabpanel"
+                            aria-labelledby="modo-{{ $modo['key'] }}-tab">
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Has seleccionado: <strong>{{ $modo['label'] }}</strong>
                             </div>
-                            @empty
-                            <div class="alert alert-info">Esta variante no tiene opciones configuradas.</div>
-                            @endforelse
                         </div>
                         @endforeach
-    </form>
-
-    <button type="submit" class="btn btn-success btn-lg">
-        <i class="fas fa-cart-plus me-2"></i> Agregar al carrito
-    </button>
-    <a href="{{ route('pedidos.catalogo') }}" class="btn btn-link mt-2">
-        ← Agregar más pedidos (volver al catálogo)
-    </a>
-
-
-</div>
-@endif
-
-
-
-{{-- === NO PACK: muestra una sola variante === --}}
-@if(!$esPack)
-<div class="card-body">
-    @if(isset($opcionesVariante) && $opcionesVariante->count())
-    <div>
-
-        @foreach($opcionesVariante as $opcion)
-        <div class="mb-3">
-            <label for="opcion_{{ $opcion['idOpcion'] }}" class="form-label">
-                <strong>{{ $opcion['nombre'] }}</strong>
-                @if(!empty($opcion['descripcion']))
-                <small class="text-muted">({{ $opcion['descripcion'] }})</small>
-                @endif
-            </label>
-
-            @if(!empty($opcion['caracteristicas']))
-            <select
-                class="form-select opcion-select"
-                id="opcion_{{ $opcion['idOpcion'] }}"
-                name="caracteristicas[{{ $opcion['idOpcion'] }}]"
-
-                data-opcion-id="{{ $opcion['idOpcion'] }}"
-                required>
-                <option value="">Seleccione una opción</option>
-                @foreach($opcion['caracteristicas'] as $car)
-                <option
-                    value="{{ $car['idCaracteristica'] }}"
-                    data-precio-extra="{{ $car['precioAdicional'] ?? 0 }}">
-                    {{ $car['nombre'] }}
-                    @if(($car['precioAdicional'] ?? 0) > 0)
-                    (+{{ number_format($car['precioAdicional'], 2) }} Bs)
-                    @endif
-                </option>
-                @endforeach
-            </select>
-            @else
-            <div class="alert alert-warning">No hay características disponibles para esta opción.</div>
-            @endif
-        </div>
-        @endforeach
-        </form>
-        @else
-        <div class="alert alert-info">No hay opciones configuradas para esta variante.</div>
-        @endif
-    </div>
-    @endif
-</div>
-
-</div> -->
-
-<!-- Sección de Modo de Producto -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Seleccione el modo de producto</h5>
-    </div>
-    <div class="card-body">
-        <input type="hidden" name="modo_producto" id="modoProducto" value="{{ $modoSeleccionado }}">
-
-        <div class="nav nav-pills mb-3" id="modoProductoTabs" role="tablist">
-            @foreach($modosProducto as $index => $modo)
-            <button class="nav-link {{ $index === 0 ? 'active' : '' }}"
-                id="modo-{{ $modo['key'] }}-tab"
-                data-bs-toggle="pill"
-                data-bs-target="#modo-{{ $modo['key'] }}"
-                type="button"
-                role="tab"
-                data-modokey="{{ $modo['key'] }}"
-                aria-controls="modo-{{ $modo['key'] }}"
-                aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
-                <i class="fas fa-{{ $modo['icon'] ?? 'tshirt' }} me-1"></i>
-                {{ $modo['label'] }}
-            </button>
-            @endforeach
-        </div>
-
-        <div class="tab-content" id="modoProductoTabContent">
-            @foreach($modosProducto as $index => $modo)
-            <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}"
-                id="modo-{{ $modo['key'] }}"
-                role="tabpanel"
-                aria-labelledby="modo-{{ $modo['key'] }}-tab">
-                <div class="alert alert-info mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Has seleccionado: <strong>{{ $modo['label'] }}</strong>
+                    </div>
                 </div>
             </div>
-            @endforeach
-        </div>
-    </div>
-</div>
 
-{{-- === CONFIGURADOR RÁPIDO DE TALLAS === --}}
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Tallas, cantidad y datos base</h5>
-    </div>
-    <div class="card-body">
-        {{-- TALLAS COMO BOTONES --}}
-        <div class="mb-3">
-            <label class="form-label">Tallas</label>
-            <div id="tallasButtons" class="d-flex flex-wrap gap-2">
-                @foreach($tallas as $talla)
-                <button type="button"
-                    class="btn btn-outline-secondary btn-sm talla-btn"
-                    data-id="{{ $talla->idTallas }}"
-                    data-nombre="{{ $talla->nombre }}">
-                    {{ $talla->nombre }}
-                </button>
-                @endforeach
+            {{-- Configurador rápido de tallas --}}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Tallas, cantidad y datos base</h5>
+                </div>
+                <div class="card-body">
+                    {{-- Tallas --}}
+                    <div class="mb-3">
+                        <label class="form-label">Tallas</label>
+                        <div id="tallasButtons" class="d-flex flex-wrap gap-2">
+                            @foreach($tallas as $talla)
+                            <button type="button"
+                                class="btn btn-outline-secondary btn-sm talla-btn"
+                                data-id="{{ $talla->idTallas }}"
+                                data-nombre="{{ $talla->nombre }}">
+                                {{ $talla->nombre }}
+                            </button>
+                            @endforeach
+                        </div>
+                        <small class="text-muted">Haz clic para seleccionar una talla.</small>
+                    </div>
+
+                    {{-- Cantidad --}}
+                    <div class="mb-3">
+                        <label class="form-label d-block">Cantidad</label>
+                        <div class="input-group" style="max-width: 220px;">
+                            <button type="button" class="btn btn-outline-secondary" id="btnCantMenos">-</button>
+                            <input type="number" class="form-control text-center" id="cantidadBase" value="1" min="1">
+                            <button type="button" class="btn btn-outline-secondary" id="btnCantMas">+</button>
+                        </div>
+                    </div>
+
+                    {{-- Número / Nombre base --}}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Número (opcional)</label>
+                            <input type="text"
+                                id="numeroBase"
+                                class="form-control"
+                                placeholder="SIN NÚMERO">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre (opcional)</label>
+                            <input type="text"
+                                id="nombreBase"
+                                class="form-control"
+                                placeholder="SIN NOMBRE">
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="button" class="btn btn-primary btn-lg" id="btnGenerarFilas">
+                            <i class="fas fa-plus me-2"></i> GENERAR FILAS
+                        </button>
+                    </div>
+                </div>
             </div>
-            <small class="text-muted">Haz clic para seleccionar una o varias tallas.</small>
-        </div>
 
-        {{-- CANTIDAD --}}
-        <div class="mb-3">
-            <label class="form-label d-block">Cantidad</label>
-            <div class="input-group" style="max-width: 220px;">
-                <button type="button" class="btn btn-outline-secondary" id="btnCantMenos">-</button>
-                <input type="number" class="form-control text-center" id="cantidadBase" value="1" min="1">
-                <button type="button" class="btn btn-outline-secondary" id="btnCantMas">+</button>
+            {{-- Tabla de filas generadas --}}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Filas generadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle" id="tablaItems">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 8%">Talla</th>
+                                    <th style="width: 22%">Producto</th>
+                                    <th style="width: 12%">Cantidad</th>
+                                    <th style="width: 23%">Nombre</th>
+                                    <th style="width: 15%">Número</th>
+                                    <th style="width: 10%">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyItems">
+                                {{-- Aquí se inyectan las filas vía JS --}}
+                            </tbody>
+                        </table>
+                        <small class="text-muted">
+                            Estas filas se enviarán al servidor como <code>items[...][...]</code>,
+                            y tu <strong>PedidoController</strong> las procesará igual que antes.
+                        </small>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        {{-- NÚMERO / NOMBRE BASE --}}
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <label class="form-label">Número (opcional)</label>
-                <input type="text"
-                    id="numeroBase"
-                    class="form-control"
-                    placeholder="SIN NÚMERO">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Nombre (opcional)</label>
-                <input type="text"
-                    id="nombreBase"
-                    class="form-control"
-                    placeholder="SIN NOMBRE">
-            </div>
-        </div>
-
-        {{-- BOTÓN PARA GENERAR FILAS --}}
-        <div class="text-center">
-            <button type="button" class="btn btn-primary btn-lg" id="btnGenerarFilas">
-                <i class="fas fa-plus me-2"></i> GENERAR FILAS
-            </button>
-        </div>
-    </div>
-</div>
-
-{{-- === TABLA DE FILAS GENERADAS === --}}
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Filas generadas</h5>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle" id="tablaItems">
-                <thead class="table-dark">
-                    <tr>
-                        <th style="width: 8%">Talla</th>
-                        <th style="width: 22%">Producto</th>
-                        <th style="width: 12%">Cantidad</th>
-                        <th style="width: 23%">Nombre</th>
-                        <th style="width: 15%">Número</th>
-                        <th style="width: 10%">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tbodyItems">
-                    {{-- Aquí se inyectan las filas vía JS --}}
-                </tbody>
-            </table>
-            <small class="text-muted">
-                Estas filas se enviarán al servidor como <code>items[...][...]</code>,
-                y tu <strong>PedidoController</strong> las procesará igual que antes.
-            </small>
-        </div>
-    </div>
-</div>
-
-</form>
+        </div> {{-- fin card principal --}}
+    </form>
 </div>
 @endsection
 
@@ -408,7 +386,6 @@
         function cambiarModo(modoKey, tabElement) {
             if (inputModoProducto) {
                 inputModoProducto.value = modoKey;
-                // Disparar evento personalizado
                 document.dispatchEvent(new CustomEvent('modoProductoCambiado', {
                     detail: {
                         modo: modoKey,
@@ -417,7 +394,6 @@
                 }));
             }
 
-            // Activar/desactivar pestañas y paneles
             modoTabs.forEach(tab => {
                 const key = tab.getAttribute('data-modokey');
                 const isActive = (key === modoKey);
@@ -435,21 +411,26 @@
         }
 
         function getProductoLabelActual() {
-            if (!inputModoProducto) return @json($producto->nombre);
+            // Nombre por defecto del producto (PHP → JS)
+            const nombreBase = @json($producto->nombre);
+
+            if (!inputModoProducto) return nombreBase;
+
             const modoKey = inputModoProducto.value;
-            if (!modoKey) return @json($producto->nombre);
+            if (!modoKey) return nombreBase;
 
             const tab = document.querySelector('#modo-' + CSS.escape(modoKey) + '-tab');
-            if (!tab) return @json($producto->nombre);
+            if (!tab) return nombreBase;
 
             return tab.textContent.trim();
         }
+
+
 
         // ========================
         // 3) Manejadores de eventos
         // ========================
         function inicializarEventos() {
-            // Tabs de modo de producto
             modoTabs.forEach(tab => {
                 tab.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -458,20 +439,14 @@
                 });
             });
 
-            // Botones de talla
-            // Botones de talla
-            // Botones de talla (solo 1 a la vez)
+            // Tallas (solo una activa)
             tallaButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    // quitar active de todas
                     tallaButtons.forEach(b => b.classList.remove('active'));
-                    // activar solo la clickeada
                     this.classList.add('active');
                 });
             });
 
-
-            // Controles de cantidad
             btnCantMenos?.addEventListener('click', () => {
                 let v = parseInt(inputCantidad.value || '1', 10);
                 if (v > 1) inputCantidad.value = v - 1;
@@ -482,14 +457,11 @@
                 inputCantidad.value = v + 1;
             });
 
-            // Botón generar filas
             btnGenerar?.addEventListener('click', generarFilas);
 
-            // Eliminar filas
             tbodyItems?.addEventListener('click', function(e) {
                 const btn = e.target.closest('.btnRemoveRow');
                 if (!btn) return;
-
                 const tr = btn.closest('tr');
                 if (tr) tr.remove();
             });
@@ -526,32 +498,31 @@
             tr.dataset.index = contadorFilas;
 
             tr.innerHTML = `
-        <td><strong>${nombreTal}</strong>
-            <input type="hidden" name="items[${contadorFilas}][idTallas]" value="${idTalla}">
-        </td>
-        <td>${productoLabel}</td>
-        <td>
-            <input type="number" class="form-control form-control-sm"
-                   name="items[${contadorFilas}][cantidad]" min="1" value="${cantidad}">
-        </td>
-        <td>
-            <input type="text" class="form-control form-control-sm"
-                   name="items[${contadorFilas}][nombre]" placeholder="SIN NOMBRE" value="${nombreBase}">
-        </td>
-        <td>
-            <input type="text" class="form-control form-control-sm"
-                   name="items[${contadorFilas}][numero]" placeholder="SIN NÚMERO" value="${numeroBase}">
-        </td>
-        <td class="text-center">
-            <button type="button" class="btn btn-sm btn-outline-danger btnRemoveRow" title="Eliminar fila">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    `;
+                <td><strong>${nombreTal}</strong>
+                    <input type="hidden" name="items[${contadorFilas}][idTallas]" value="${idTalla}">
+                </td>
+                <td>${productoLabel}</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm"
+                           name="items[${contadorFilas}][cantidad]" min="1" value="${cantidad}">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm"
+                           name="items[${contadorFilas}][nombre]" placeholder="SIN NOMBRE" value="${nombreBase}">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm"
+                           name="items[${contadorFilas}][numero]" placeholder="SIN NÚMERO" value="${numeroBase}">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger btnRemoveRow" title="Eliminar fila">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
 
             tbodyItems.appendChild(tr);
 
-            // limpiar selección y resetear a 1
             btnTalla.classList.remove('active');
             if (inputCantidad) inputCantidad.value = '1';
         }
@@ -560,18 +531,73 @@
         // 5) Inicialización
         // ========================
         function inicializar() {
-            // Establecer modo inicial
             if (inputModoProducto && modoTabs.length) {
                 const modoInicial = inputModoProducto.value || modoTabs[0].getAttribute('data-modokey');
                 cambiarModo(modoInicial, modoTabs[0]);
             }
-
-            // Inicializar eventos
             inicializarEventos();
         }
 
-        // Iniciar
         inicializar();
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnAgregarCarrito = document.getElementById('btnAgregarCarrito');
+        const formNuevoPedido = document.getElementById('formNuevoPedido');
+        const carritoOffcanvasEl = document.getElementById('carritoLateral');
+        const carritoContenido = document.getElementById('carritoContenido');
+        const contadorCarrito = document.getElementById('carritoCantidadBadge');
+
+        const carritoOffcanvas = carritoOffcanvasEl ?
+            bootstrap.Offcanvas.getOrCreateInstance(carritoOffcanvasEl) :
+            null;
+
+        function abrirCarrito() {
+            if (carritoOffcanvas) {
+                carritoOffcanvas.show();
+            }
+        }
+
+        btnAgregarCarrito?.addEventListener('click', function() {
+            if (!formNuevoPedido) return;
+
+            const formData = new FormData(formNuevoPedido);
+
+            fetch("{{ route('pedidos.agregar-carrito') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) {
+                        alert(data.mensaje || 'Error al agregar al carrito');
+                        return;
+                    }
+
+                    if (carritoContenido && data.html_carrito) {
+                        carritoContenido.innerHTML = data.html_carrito;
+                    }
+
+                    if (contadorCarrito && typeof data.items_en_carrito !== 'undefined') {
+                        contadorCarrito.textContent = data.items_en_carrito;
+                        contadorCarrito.style.display = data.items_en_carrito > 0 ? 'inline-block' : 'none';
+                    }
+
+                    abrirCarrito();
+
+                    const tbody = document.getElementById('tbodyItems');
+                    if (tbody) tbody.innerHTML = '';
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Error de conexión al agregar al carrito');
+                });
+        });
     });
 </script>
 @endpush

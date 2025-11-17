@@ -6,7 +6,7 @@
     <!-- Navbar Search-->
     <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
         <div class="input-group">
-           
+
         </div>
     </form>
     <!-- Navbar-->
@@ -19,7 +19,9 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                 <li><a class="dropdown-item" href="#">{{ auth()->user()->name ?? auth()->user()->email }}</a></li>
-                <li><hr class="dropdown-divider" /></li>
+                <li>
+                    <hr class="dropdown-divider" />
+                </li>
                 <li>
                     <form method="POST" action="{{ route('logout') }}" class="d-inline">
                         @csrf
@@ -30,6 +32,15 @@
                 </li>
             </ul>
         </li>
+        <button class="btn btn-outline-light position-relative"
+            id="carritoLateralToggle" type="button">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                id="carritoCantidadBadge">
+                {{ count(session('carrito', [])) }}
+            </span>
+        </button>
+
         @else
         <li class="nav-item">
             <a class="nav-link" href="{{ route('login') }}">Iniciar Sesión</a>
