@@ -21,6 +21,14 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Arr;
 use App\Models\Pack;
+use App\Models\Departamento;
+use App\Models\Provincia;
+use App\Models\Municipio;
+use App\Models\Direccion;
+    
+
+
+
 
 
 
@@ -539,26 +547,9 @@ class PedidoController extends Controller
         $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
 
         // 5) Clientes naturales/establecimientos
-        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get()->map(function ($c) {
-            $u = $c->user;
-            return [
-                'id'       => $c->idCliente,
-                'text'     => trim(($u->ci ? 'CI: ' . $u->ci . ' - ' : '') . $u->name . ' ' . ($u->primerApellido ?? '')),
-                'ci'       => $u->ci ?? '',
-                'telefono' => $u->telefono ?? '',
-                'nit'      => $c->nit ?? ''
-            ];
-        })->toArray();
+        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
 
-        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get()->map(function ($e) {
-            $rep = $e->representante;
-            return [
-                'id'       => $e->idEstablecimiento,
-                'text'     => trim(($e->nit ? 'NIT: ' . $e->nit . ' - ' : '') . $e->razonSocial . ($rep && $rep->telefono ? ' - Tel: ' . $rep->telefono : '')),
-                'nit'      => $e->nit ?? '',
-                'telefono' => $rep->telefono ?? ''
-            ];
-        })->toArray();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
 
         // 6) PACK — derivamos $packId aunque productos.idPackProducto sea NULL
         $packId = $producto->idPackProducto;
@@ -1112,13 +1103,178 @@ class PedidoController extends Controller
                 ->with('error', 'El carrito está vacío');
         }
 
-        $total = collect($carrito)->sum('subtotal');
+        // Total del carrito
+        $total = collect($carrito)->sum(function ($item) {
+            return $item['subtotal'] ?? 0;
+        });
 
-        $clientesNaturales = ClienteNatural::where('estado', 1)->get();
-        $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->get();
+        $clientesNaturales = ClienteNatural::where('estado', 1)->with('user')->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::where('estado', 1)->with('representante')->get();
+        $departamentos = Departamento::where('estado', '1')
+            ->orderBy('nombreDepartamento')
+            ->get();
 
-        return view('pedidos.checkout', compact('carrito', 'total', 'clientesNaturales', 'clientesEstablecimientos'));
+        // Cargar valores antiguos para repoblación
+        $oldDepartamento = old('idDepartamento');
+        $oldProvincia = old('idProvincia');
+        $oldMunicipio = old('idMunicipio');
+
+        $provincias = [];
+        $municipios = [];
+
+        // Si hay departamento seleccionado (old o por defecto), cargar sus provincias
+        $selectedDepartamento = $oldDepartamento ?: request('idDepartamento');
+        if ($selectedDepartamento) {
+            $provincias = Provincia::where('idDepartamento', $selectedDepartamento)
+                ->where('estado', '1')
+                ->orderBy('nombreProvincia')
+                ->get(['idProvincia', 'nombreProvincia']);
+        }
+
+        // Si hay provincia seleccionada (old o por defecto), cargar sus municipios
+        $selectedProvincia = $oldProvincia ?: request('idProvincia');
+        if ($selectedProvincia) {
+            $municipios = Municipio::where('idProvincia', $selectedProvincia)
+                ->where('estado', '1')
+                ->orderBy('nombreMunicipio')
+                ->get(['idMunicipio', 'nombreMunicipio']);
+        }
+
+        return view('pedidos.checkout', compact(
+            'carrito',
+            'total',
+            'clientesNaturales',
+            'clientesEstablecimientos',
+            'departamentos',
+            'provincias',
+            'municipios',
+            'oldDepartamento',
+            'oldProvincia',
+            'oldMunicipio'
+        ));
     }
+
+
+
+    public function getProvincias($idDepartamento)
+    {
+        $provincias = Provincia::where('idDepartamento', $idDepartamento)
+            ->where('estado', '1')
+            ->orderBy('nombreProvincia')
+            ->get(['idProvincia', 'nombreProvincia']);
+
+        return response()->json($provincias);
+    }
+
+    public function getMunicipios($idProvincia)
+    {
+        $municipios = Municipio::where('idProvincia', $idProvincia)
+            ->where('estado', '1')
+            ->orderBy('nombreMunicipio')
+            ->get(['idMunicipio', 'nombreMunicipio']);
+
+        return response()->json($municipios);
+    }
+
+
+    public function procesarCheckout(Request $request)
+    {
+        $carrito = session()->get('carrito', []);
+
+        if (empty($carrito)) {
+            return redirect()->route('pedidos.catalogo')
+                ->with('error', 'El carrito está vacío');
+        }
+
+        // 1) Validar datos
+        $request->validate([
+            'clienteSeleccionado' => 'required|string',
+            'fechaEntrega'        => 'required|date|after:today',
+            'tipoTransaccion'     => 'required|in:efectivo,qr,cheque,transferencia',
+            'montoAdelanto'       => 'nullable|numeric|min:0',
+            'idDepartamento'      => 'required|integer|exists:departamentos,idDepartamento',
+            'idProvincia'         => 'required|integer|exists:provincias,idProvincia',
+            'idMunicipio'         => 'required|integer|exists:municipios,idMunicipio',
+            'nombreDireccion'     => 'required|string|max:255',
+        ]);
+
+        // 2) Resolver cliente
+        [$tipoCliente, $idRaw] = explode(':', $request->clienteSeleccionado);
+
+        $idCliente = null;
+        $idEstablecimiento = null;
+
+        if ($tipoCliente === 'natural') {
+            $idCliente = (int) $idRaw;
+        } elseif ($tipoCliente === 'establecimiento') {
+            $idEstablecimiento = (int) $idRaw;
+        } else {
+            return back()->with('error', 'Tipo de cliente inválido')->withInput();
+        }
+
+        // 3) Totales del carrito
+        $total = collect($carrito)->sum(fn($item) => $item['subtotal'] ?? 0);
+        $adelanto = (float) $request->input('montoAdelanto', 0);
+        $saldo = max($total - $adelanto, 0);
+
+        // 4) Crear venta + detalles en transacción
+        DB::beginTransaction();
+
+        try {
+            // 4.1 Crear dirección normalizada
+            $direccion = Direccion::create([
+                'nombreDireccion' => $request->nombreDireccion,
+                'estado'          => '1',
+                'idMunicipio'     => $request->idMunicipio,
+            ]);
+
+            // 4.2 Crear venta
+            $venta = Venta::create([
+                'subtotal'       => $total,
+                'total'          => $total,
+                'fechaEntrega'   => $request->fechaEntrega,
+                'estadoPedido'   => 0,    // 0: Solicitado
+                'saldo'          => $saldo,
+                'estado'         => '1',
+                'idCliente'      => $idCliente,
+                'idEstablecimiento' => $idEstablecimiento,
+                'idDireccion'    => $direccion->idDireccion,
+                'idEmpleado'     => auth()->user()->empleado->idEmpleado ?? 1, // ajusta según tu lógica
+            ]);
+
+            // 4.3 Crear detalle_ventas desde el carrito
+            foreach ($carrito as $item) {
+                DetalleVenta::create([
+                    'cantidad'       => $item['cantidad'] ?? 1,
+                    'precioUnitario' => $item['precioUnitario'] ?? 0,
+                    'descuento'      => $item['descuento'] ?? 0,
+                    'descripcion'    => $item['descripcion'] ?? null,
+                    'tipo_pack'      => $item['tipo_pack'] ?? 'producto',
+                    'subtotal'       => $item['subtotal'] ?? 0,
+                    'estado'         => 1,
+                    'idProducto'     => $item['idProducto'] ?? null,
+                    'idPack'         => $item['idPack'] ?? null,
+                    'idEmpleado'     => $venta->idEmpleado,
+                    'idVenta'        => $venta->idVenta,
+                ]);
+            }
+
+            DB::commit();
+
+            // 5) Limpiar carrito
+            session()->forget('carrito');
+
+            return redirect()->route('pedidos.catalogo')
+                ->with('success', 'Pedido procesado correctamente. Nº Venta: ' . $venta->idVenta);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return back()->with('error', 'Ocurrió un error al procesar el pedido.')
+                ->withInput();
+        }
+    }
+
 
     /**
      * Procesar pedido final
@@ -1473,29 +1629,29 @@ class PedidoController extends Controller
     public function eliminarProductoDelCarrito($idProducto)
     {
         $carrito = session()->get('carrito', []);
-        
+
         // Filtrar carrito para eliminar todos los items del producto
-        $carritoFiltrado = array_filter($carrito, function($item) use ($idProducto) {
+        $carritoFiltrado = array_filter($carrito, function ($item) use ($idProducto) {
             return $item['idProducto'] != $idProducto;
         });
-        
+
         // Reindexar array
         $carritoFiltrado = array_values($carritoFiltrado);
-        
+
         // Guardar carrito actualizado
         session()->put('carrito', $carritoFiltrado);
-        
+
         // Renderizar HTML
         $htmlCarrito = view('pedidos.carrito-lateral-contenido', [
             'carrito' => $carritoFiltrado,
             'total'   => collect($carritoFiltrado)->sum('subtotal'),
         ])->render();
-        
+
         // Calcular items por producto (no por talla)
         $itemsPorProducto = collect($carritoFiltrado)
             ->groupBy('idProducto')
             ->count();
-        
+
         return response()->json([
             'ok'           => true,
             'html_carrito' => $htmlCarrito,

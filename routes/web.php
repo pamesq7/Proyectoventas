@@ -26,6 +26,7 @@ use App\Http\Controllers\OperadorController;
 use App\Http\Controllers\ClienteDashboardController;
 use App\Http\Controllers\MorosoController;
 use App\Http\Controllers\PedidoPdfController;
+        
             
 
 /*
@@ -248,10 +249,17 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
 
     // Carrito y checkout
     Route::post('carrito/agregar', [PedidoController::class, 'agregarAlCarrito'])->name('pedidos.agregar-carrito');
-    Route::get('carrito', [PedidoController::class, 'carrito'])->name('pedidos.carrito');
+    Route::get('carrito', [PedidoController::class, 'verCarrito'])->name('pedidos.carrito');
     Route::delete('carrito/{itemId}', [PedidoController::class, 'eliminarDelCarrito'])->name('pedidos.eliminar-carrito');
     Route::get('checkout', [PedidoController::class, 'checkout'])->name('pedidos.checkout');
-    Route::post('procesar-pedido', [PedidoController::class, 'procesarPedido'])->name('pedidos.procesar');
+    Route::post('pedidos/checkout', [PedidoController::class, 'procesarPedido'])->name('pedidos.checkout.procesar');
+
+    // AJAX Ubicación
+    Route::get('ubicacion/provincias/{idDepartamento}', [PedidoController::class, 'getProvincias'])
+        ->name('ubicacion.provincias');
+
+    Route::get('ubicacion/municipios/{idProvincia}', [PedidoController::class, 'getMunicipios'])
+        ->name('ubicacion.municipios');
     Route::get('pedido/{idVenta}/confirmacion', [PedidoController::class, 'confirmacion'])->name('pedidos.confirmacion');
     Route::post('pedidos/{idVenta}/detalle', [PedidoController::class, 'agregarDetalle'])->name('pedidos.detalle.agregar');
     Route::post('pedido/{idVenta}/pagos', [PedidoController::class, 'registrarPago'])->name('pedidos.registrar-pago');

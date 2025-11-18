@@ -358,6 +358,8 @@
                 </div>
             </div>
         </div> {{-- fin card principal --}}
+
+       
     </form>
 </div>
 @endsection
@@ -601,3 +603,4 @@
     });
 </script>
 @endpush
+
