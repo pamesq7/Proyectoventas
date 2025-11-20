@@ -26,8 +26,10 @@ use App\Http\Controllers\OperadorController;
 use App\Http\Controllers\ClienteDashboardController;
 use App\Http\Controllers\MorosoController;
 use App\Http\Controllers\PedidoPdfController;
-        
-            
+use App\Http\Controllers\CarritoController;
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -252,8 +254,9 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('carrito', [PedidoController::class, 'verCarrito'])->name('pedidos.carrito');
     Route::delete('carrito/{itemId}', [PedidoController::class, 'eliminarDelCarrito'])->name('pedidos.eliminar-carrito');
     Route::get('checkout', [PedidoController::class, 'checkout'])->name('pedidos.checkout');
-    Route::post('pedidos/checkout', [PedidoController::class, 'procesarPedido'])->name('pedidos.checkout.procesar');
-
+    Route::post('pedidos/checkout', [PedidoController::class, 'procesarCheckout'])->name('pedidos.checkout.procesar');
+    Route::post('/pedidos/checkout/procesar', [PedidoController::class, 'procesarCheckout'])
+        ->name('pedidos.checkout.procesar');
     // AJAX Ubicación
     Route::get('ubicacion/provincias/{idDepartamento}', [PedidoController::class, 'getProvincias'])
         ->name('ubicacion.provincias');

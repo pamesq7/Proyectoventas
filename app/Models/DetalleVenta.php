@@ -9,7 +9,6 @@ class DetalleVenta extends Model
 {
     use HasFactory;
 
-
     protected $table = 'detalle_ventas';
     protected $primaryKey = 'idDetalleVenta';
 
@@ -23,21 +22,16 @@ class DetalleVenta extends Model
         'estado',
         'idVenta',
         'idProducto',
-        'idPack',
         'idEmpleado'
     ];
 
-    // Relación: pertenece a una talla
+    // Relación: tiene muchos detalles de talla
     public function detalleTalla()
     {
         return $this->hasMany(DetalleTalla::class, 'idDetalleVenta', 'idDetalleVenta');
     }
-
-    public function pack()
-    {
-        return $this->belongsTo(Pack::class, 'idPack', 'idPack');
-    }
     
+    // Relación: pertenece a un empleado
     public function empleado()
     {
         return $this->belongsTo(Empleado::class, 'idEmpleado', 'idEmpleado');
@@ -48,11 +42,14 @@ class DetalleVenta extends Model
     {
         return $this->belongsTo(Venta::class, 'idVenta', 'idVenta');
     }
+
     // Relación: pertenece a un producto
     public function producto()
     {
         return $this->belongsTo(Producto::class, 'idProducto', 'idProducto');
     }
+
+    // Relación: tiene muchos diseños
     public function diseno()
     {
         return $this->hasMany(Diseno::class, 'idDetalleVenta', 'idDetalleVenta');
