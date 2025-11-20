@@ -103,9 +103,7 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
 
 
     // Gestión de pagos
-    Route::get('pagos', [PagoController::class, 'index'])->name('pagos.index');
-    Route::get('pagos/{id}/edit', [PagoController::class, 'editPago'])->name('pagos.edit');
-    Route::put('pagos/{id}', [PagoController::class, 'updatePago'])->name('pagos.update');
+    Route::resource('pagos', \App\Http\Controllers\TransaccionController::class);
 
     /*
      |--------------------------------------------------------------------------

@@ -33,4 +33,14 @@ class Talla extends Model
     {
         return $this->attributes['idTallas'] ?? null;
     }
+    // En app/Models/Talla.php
+    public function detalleVentas()
+    {
+        return $this->belongsToMany(
+            DetalleVenta::class,
+            'detalle_tallas',
+            'idTallas',           // Ajustado a idTallas
+            'idDetalleVenta'
+        )->withPivot('cantidad');
+    }
 }

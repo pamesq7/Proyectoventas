@@ -26,11 +26,28 @@ class DetalleVenta extends Model
     ];
 
     // Relación: tiene muchos detalles de talla
-    public function detalleTalla()
+
+    // Relación con la tabla intermedia detalle_tallas
+    public function detalleTallas()
     {
         return $this->hasMany(DetalleTalla::class, 'idDetalleVenta', 'idDetalleVenta');
     }
-    
+
+    // Relación many-to-many con Talla a través de detalle_tallas
+    // En app/Models/DetalleVenta.php
+
+    // Relación many-to-many con Talla a través de detalle_tallas
+    public function tallas()
+    {
+        return $this->belongsToMany(
+            Talla::class,
+            'detalle_tallas',     // tabla intermedia
+            'idDetalleVenta',     // FK en detalle_tallas
+            'idTallas',           // Ajustado a idTallas (en plural)
+            'idDetalleVenta',     // Clave local en detalle_ventas
+            'idTallas'            // Clave local en tallas
+        )->withPivot('cantidad');
+    }
     // Relación: pertenece a un empleado
     public function empleado()
     {
@@ -52,7 +69,7 @@ class DetalleVenta extends Model
     // Relación: tiene muchos diseños
     public function diseno()
     {
-        return $this->hasMany(Diseno::class, 'idDetalleVenta', 'idDetalleVenta');
+        return $this->hasOne(Diseno::class, 'idDetalleVenta', 'idDetalleVenta');
     }
 
     // Accesor: estado como texto

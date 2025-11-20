@@ -1745,9 +1745,12 @@ class PedidoController extends Controller
             'clienteNatural',
             'clienteEstablecimiento',
             'empleado',
-            'detalleVentas',
-            'disenos.empleado.user'
-        ])->where('estado', 1)
+            'detalleVentas' => function ($query) {
+                $query->with(['producto', 'diseno']); // Cargar producto y diseño
+            },
+            'disenos' // Ya incluye 'empleado.user' gracias al with() en el modelo
+        ])
+            ->where('estado', 1)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -1758,28 +1761,28 @@ class PedidoController extends Controller
 
         return view('pedidos.index', compact('pedidos'));
     }
-
     /**
      * Ver detalle de pedido
      */
     public function show($pedido)
     {
         $pedido = Venta::with([
-            'detalleVentas.talla',
-            'detalleVentas.diseno',
-            'clienteNatural',
+            'detalleVentas' => function ($query) {
+                $query->with([
+                    'producto',
+                    'detalleTallas' => function ($q) {
+                        $q->with('talla');
+                    }
+                ]);
+            },
+            'clienteNatural.user',
             'clienteEstablecimiento',
-            'empleado'
+            'empleado.user',
+            'disenos'  // Cargar la relación disenos (en plural)
         ])->findOrFail($pedido);
 
-        $disenoUrl = null;
-        if (session()->has('disenoTemporal')) {
-            $disenoUrl = asset('storage/' . session()->get('disenoTemporal'));
-        }
-
-        return view('pedidos.show', compact('pedido', 'disenoUrl'));
+        return view('pedidos.show', compact('pedido'));
     }
-
     /**
      * Editar pedido (datos básicos)
      */
@@ -2303,48 +2306,61 @@ class PedidoController extends Controller
      */
     public function registrarPago(Request $request, $idVenta)
     {
-        $request->validate([
-            'monto' => 'required|numeric|min:0.01',
-            'metodoPago' => 'required|string|max:100',
-            'observaciones' => 'nullable|string|max:500',
+        // Obtener la venta con el saldo actual
+        $venta = Venta::findOrFail($idVenta);
+        $saldoPendiente = (float) $venta->saldo;
+
+        $validated = $request->validate([
+            'monto' => [
+                'required',
+                'numeric',
+                'min:0.01',
+                'max:' . $saldoPendiente,
+                function ($attribute, $value, $fail) use ($saldoPendiente) {
+                    if ((float)$value > $saldoPendiente) {
+                        $fail('El monto no puede ser mayor al saldo pendiente: $' . number_format($saldoPendiente, 2));
+                    }
+                }
+            ],
+            'metodoPago' => 'required|string|max:50',
+            'observaciones' => 'nullable|string|max:255'
         ]);
 
-        DB::beginTransaction();
         try {
-            $venta = Venta::where('idVenta', $idVenta)->lockForUpdate()->firstOrFail();
+            DB::beginTransaction();
 
-            $monto = (float) $request->monto;
+            // Crear la transacción
+            $transaccion = new Transaccion([
+                'idVenta' => $venta->idVenta,
+                'monto' => $validated['monto'],
+                'fecha' => now(),
+                'metodoPago' => $validated['metodoPago'],
+                'observaciones' => $validated['observaciones'] ?? null,
+                'estado' => 1, // 1 = Activo
+            ]);
+            $transaccion->save();
 
-            $pagosAcumulados = Transaccion::where('idVenta', $venta->idVenta)
-                ->where('tipoTransaccion', 'pago')
-                ->sum('monto');
-            $saldoActual = max(0, ((float) $venta->total) - (float) $pagosAcumulados);
+            // Actualizar el saldo de la venta
+            $venta->saldo = max(0, $venta->saldo - $validated['monto']);
 
-            if ($monto > $saldoActual) {
-                DB::rollBack();
-                return redirect()->back()->with('error', 'El monto del pago no puede superar el saldo pendiente.');
+            // Si el saldo llega a cero, marcar como pagado
+            if ($venta->saldo <= 0) {
+                $venta->estadoPago = 'pagado';
+            } else {
+                $venta->estadoPago = 'parcial';
             }
 
-            Transaccion::create([
-                'tipoTransaccion' => 'pago',
-                'monto' => $monto,
-                'metodoPago' => $request->metodoPago,
-                'observaciones' => $request->observaciones,
-                'estado' => 1,
-                'idVenta' => $venta->idVenta,
-            ]);
-
-            $nuevoSaldo = max($saldoActual - $monto, 0);
-            $venta->saldo = $nuevoSaldo;
             $venta->save();
 
             DB::commit();
-            return redirect()->route('pedidos.confirmacion', $venta->idVenta)
-                ->with('success', 'Pago registrado correctamente.');
+
+            return redirect()
+                ->route('pedidos.confirmacion', $venta->idVenta)
+                ->with('success', 'Pago registrado correctamente. Saldo restante: $' . number_format($venta->saldo, 2));
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al registrar pago', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Error al registrar el pago: ' . $e->getMessage());
+            Log::error('Error al registrar pago: ' . $e->getMessage());
+            return back()->with('error', 'Ocurrió un error al registrar el pago: ' . $e->getMessage());
         }
     }
 

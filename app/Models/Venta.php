@@ -63,6 +63,20 @@ class Venta extends Model
     {
         return $this->belongsTo(Direccion::class, 'idDireccion', 'idDireccion');
     }
+    // En app/Models/Venta.php
+
+    // Agrega esta relación al final de la clase Venta
+    public function disenos()
+    {
+        return $this->hasManyThrough(
+            Diseno::class,        // Modelo destino
+            DetalleVenta::class,  // Modelo intermedio
+            'idVenta',           // Clave foránea en la tabla detalle_ventas
+            'idDetalleVenta',    // Clave foránea en la tabla disenos
+            'idVenta',           // Clave local en ventas
+            'idDetalleVenta'     // Clave local en detalle_ventas
+        )->with('empleado.user'); // Cargar la relación con empleado y usuario
+    }
 
 
     // Accessor: estado textual
