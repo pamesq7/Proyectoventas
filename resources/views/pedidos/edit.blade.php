@@ -28,12 +28,20 @@
     </div>
     @endif
 
-    {{-- =========================================================
-         TARJETA: RESUMEN
-       ========================================================= --}}
-    <div class="card mb-3">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Datos del pedido</h5>
+            <div>
+                <a href="{{ route('pedidos.show', $pedido->idVenta) }}" class="btn btn-info btn-sm">
+                    <i class="fas fa-eye me-1"></i> Ver
+                </a>
+                <a href="{{ route('pedidos.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+        </div>
         <div class="card-body">
-            <div class="row g-3">
+            <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="p-3 bg-light rounded h-100">
                         <h6 class="text-muted mb-2">Cliente</h6>
@@ -44,7 +52,9 @@
                         ($pedido->clienteNatural->user->segundApellido ?? ''));
                         $tipoCliente = 'Cliente Natural';
                         } elseif ($pedido->clienteEstablecimiento) {
-                        $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ?? 'Establecimiento';
+                        $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ??
+                        $pedido->clienteEstablecimiento->razonSocial ??
+                        'Establecimiento';
                         $tipoCliente = 'Establecimiento';
                         } else {
                         $nombreCliente = 'No especificado';
@@ -72,29 +82,10 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    {{-- =========================================================
-         FORM #1: DATOS BÁSICOS (pedidos.update)
-       ========================================================= --}}
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <div><i class="fas fa-edit me-1"></i>Datos del pedido</div>
-            <div>
-                <a href="{{ route('pedidos.show', $pedido->idVenta) }}" class="btn btn-info btn-sm">
-                    <i class="fas fa-eye me-1"></i> Ver
-                </a>
-                <a href="{{ route('pedidos.index') }}" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-1"></i> Volver
-                </a>
-            </div>
-        </div>
-        <div class="card-body">
             <form action="{{ route('pedidos.update', $pedido->idVenta) }}" method="POST" enctype="multipart/form-data" class="row g-3">
                 @csrf
                 @method('PUT')
-
 
                 <div class="col-md-4">
                     <label for="fechaEntrega" class="form-label">Fecha de entrega *</label>
@@ -102,74 +93,42 @@
                         id="fechaEntrega"
                         name="fechaEntrega"
                         class="form-control"
-                        value="{{ old('fechaEntrega', $pedido->fechaEntrega ? $pedido->fechaEntrega->format('Y-m-d') : '') }}"
+                        value="{{ old('fechaEntrega', $pedido->fechaEntrega ? \Carbon\Carbon::parse($pedido->fechaEntrega)->format('Y-m-d') : '') }}"
                         required>
                 </div>
 
                 <div class="col-md-5">
                     <label for="lugarEntrega" class="form-label">Lugar de entrega *</label>
-                    <input type="text"
-                        id="lugarEntrega"
-                        name="lugarEntrega"
-                        class="form-control"
-                        maxlength="200"
-                        value="{{ old('lugarEntrega', $pedido->lugarEntrega) }}"
-                        required>
+                    <input type="text" id="lugarEntrega" name="lugarEntrega" class="form-control" maxlength="200" value="{{ old('lugarEntrega', $pedido->lugarEntrega) }}" required>
                 </div>
 
                 <div class="col-md-3">
                     <label for="estadoPedido" class="form-label">Estado *</label>
                     <select id="estadoPedido" name="estadoPedido" class="form-select" required>
                         @foreach($estados as $k => $label)
-                        <option value="{{ $k }}" {{ old('estadoPedido', (string)$pedido->estadoPedido) === (string)$k ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
+                        <option value="{{ $k }}" {{ old('estadoPedido', (string)$pedido->estadoPedido) === (string)$k ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Asignar Diseñador *</label>
-
-                    <select name="idEmpleado" class="form-select" required>
-                        <option value="">Seleccionar diseñador</option>
-
-                        @foreach($diseñadores as $d)
-                        <option value="{{ $d->idEmpleado }}"
-                            {{ old('idEmpleado', $pedido->idEmpleado) == $d->idEmpleado ? 'selected' : '' }}>
-                            {{ $d->user->name }} {{ $d->user->primerApellido }}
-                            {{ $d->user->segundApellido ?? '' }}
-                        </option>
-                        @endforeach
-                    </select>
-
-                    <small class="text-muted">Diseñador responsable de este pedido</small>
-                </div>
-                {{-- Imagen del pedido (muestra actual si existe) --}}
                 <div class="col-12">
                     <label for="imagenPedido" class="form-label">Imagen del Pedido</label>
                     <div class="imagen-container">
                         <input type="file" id="imagenPedido" name="imagenPedido" class="form-control" accept="image/*">
+                        {{-- Mostrar imagen desde diseños --}}
                         @if($pedido->disenos && $pedido->disenos->first() && $pedido->disenos->first()->archivo)
-                        <div class="mt-2 position-relative" style="display:inline-block;">
-                            <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}"
-                                alt="Imagen del pedido"
-                                class="img-thumbnail"
-                                style="max-width:200px;height:auto;">
-                            <button type="button"
-                                class="btn btn-sm btn-outline-danger position-absolute"
-                                style="top:5px;right:5px;padding:2px 6px;"
-                                data-id="{{ $pedido->idVenta }}"
-                                onclick="confirmDeleteImage(this)">
+                        <div class="mt-2 position-relative" style="display: inline-block;">
+                            <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}" alt="Imagen del pedido" class="img-thumbnail" style="max-width: 200px; height: auto;">
+                            <button type="button" class="btn btn-sm btn-outline-danger position-absolute" style="top: 5px; right: 5px; padding: 2px 6px;" data-id="{{ $pedido->idVenta }}" onclick="confirmDeleteImage(this)">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                         @endif
                     </div>
-
+                    {{-- Checkbox para eliminación (solo si hay imagen) --}}
                     @if($pedido->disenos && $pedido->disenos->first() && $pedido->disenos->first()->archivo)
                     <div class="form-check mt-2">
-                        <input class="form-check-input" type="checkbox" id="delete_imagen" name="delete_imagen" value="1" style="display:none;">
+                        <input class="form-check-input" type="checkbox" id="delete_imagen" name="delete_imagen" value="1" style="display: none;">
                         <label class="form-check-label" for="delete_imagen">
                             Eliminar imagen actual (se activa al confirmar)
                         </label>
@@ -186,10 +145,8 @@
         </div>
     </div>
 
-    {{-- =========================================================
-         FORM #2: DETALLES (pedidos.update-detalles)
-       ========================================================= --}}
-    <div class="card">
+    <!-- Edición completa de detalles -->
+    <div class="card mt-4">
         <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-list me-2"></i>Detalles del pedido</h5>
         </div>
@@ -199,15 +156,29 @@
                 @method('PUT')
 
                 <div id="detalles-bloques">
+                    <!-- Bloque 0: detalles existentes -->
                     <div class="bloque-detalle" data-index="0">
+                        <!-- Selector de producto por bloque -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Producto (precarga precio por talla en filas nuevas)</label>
+                                <select class="form-select form-select-sm productoSelector">
+                                    <option value="">Seleccionar producto</option>
+                                    @foreach(($productos ?? []) as $p)
+                                    <option value="{{ $p->idProducto }}">[#{{ $p->idProducto }}] {{ $p->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">No cambia el historial del pedido; solo ayuda a rellenar precios de nuevas filas.</div>
+                            </div>
+                        </div>
 
                         <div class="table-responsive">
                             <table class="table table-sm align-middle tabla-detalles">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 12rem">Talla *</th>
-                                        <th style="width: 7rem">Cant. *</th>
-                                        <th style="width: 9rem">Precio *</th>
+                                        <th style="width: 12rem">Talla</th>
+                                        <th style="width: 7rem">Cant.</th>
+                                        <th style="width: 9rem">Precio</th>
                                         <th style="width: 14rem">Nombre</th>
                                         <th style="width: 10rem">Número</th>
                                         <th>Descripción</th>
@@ -221,9 +192,9 @@
                                     <tr>
                                         <input type="hidden" name="row_id[]" value="{{ $det->iddetalleVenta }}">
                                         <td>
-                                            <select name="idTalla[]" class="form-select form-select-sm tallaSel" required>
+                                            <select name="idTallas[]" class="form-select form-select-sm tallaSel" required>
                                                 @foreach(($tallas ?? []) as $t)
-                                                <option value="{{ $t->idTalla }}" {{ $det->idTalla == $t->idTalla ? 'selected' : '' }}>{{ $t->nombre }}</option>
+                                                <option value="{{ $t->idTallas }}" {{ $det->idTallas == $t->idTallas ? 'selected' : '' }}>{{ $t->nombre }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
@@ -231,7 +202,6 @@
                                             <input type="number" name="cantidad[]" class="form-control form-control-sm cantidad" min="1" value="{{ $det->cantidad }}" required>
                                         </td>
                                         <td>
-                                            {{-- ✅ precioUnitario requerido por updateDetalles --}}
                                             <input type="number" step="0.01" name="precioUnitario[]" class="form-control form-control-sm precio" min="0" value="{{ number_format($det->precioUnitario, 2, '.', '') }}" required>
                                         </td>
                                         <td>
@@ -246,13 +216,9 @@
                                         <td>
                                             <input type="text" name="observacion[]" class="form-control form-control-sm" value="{{ $det->observacion }}">
                                         </td>
-                                        <td class="text-end subtotal">
-                                            {{ number_format($det->cantidad * $det->precioUnitario, 2) }}
-                                        </td>
+                                        <td class="text-end subtotal">{{ number_format($det->cantidad * $det->precioUnitario, 2) }}</td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm btn-del" title="Eliminar fila">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm btn-del" data-id="{{ $det->iddetalleVenta }}"><i class="fas fa-trash"></i></button>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -271,6 +237,11 @@
                     </div>
                 </div>
 
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-agregar-bloque">
+                        <i class="fas fa-layer-group me-1"></i> Agregar otro pedido
+                    </button>
+                </div>
 
                 <div class="row g-3 mt-3">
                     <div class="col-md-4">
@@ -278,9 +249,7 @@
                         <select name="tipoTransaccion" class="form-select form-select-sm">
                             <option value="">Sin registrar pago</option>
                             @foreach(($metodosPago ?? []) as $mp)
-                            <option value="{{ $mp['codigo'] }}" {{ old('tipoTransaccion') === $mp['codigo'] ? 'selected':'' }}>
-                                {{ $mp['nombre'] }}
-                            </option>
+                            <option value="{{ $mp['codigo'] }}">{{ $mp['nombre'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -288,7 +257,7 @@
                         <label class="form-label">Adelanto</label>
                         <div class="input-group input-group-sm">
                             <span class="input-group-text">Bs</span>
-                            <input type="number" step="0.01" min="0" name="montoAdelanto" class="form-control" value="{{ old('montoAdelanto') ?? '' }}" placeholder="0.00">
+                            <input type="number" step="0.01" min="0" name="montoAdelanto" class="form-control" placeholder="0.00">
                         </div>
                         <div class="form-text">Se registrará como pago y ajustará el saldo.</div>
                     </div>
@@ -301,18 +270,237 @@
                 </div>
 
                 <input type="hidden" name="delete_ids" id="delete_ids_holder">
-
                 <div class="d-flex justify-content-end mt-3">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-save me-1"></i>Guardar detalles
-                    </button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Guardar detalles</button>
                 </div>
             </form>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        (function() {
+            const bloquesContainer = document.getElementById('detalles-bloques');
+            const deleteIdsHolder = document.getElementById('delete_ids_holder');
+            const btnAgregarBloque = document.getElementById('btn-agregar-bloque');
+            let deleteIds = [];
+            let bloqueCount = 1; // ya existe el bloque 0
+
+            // Precios por talla por bloque
+            const preciosPorTallaByBlock = {}; // { index: { idTalla: precio } }
+
+            function initBloqueEvents(bloque) {
+                // Producto selector por bloque
+                const sel = bloque.querySelector('.productoSelector');
+                if (sel) {
+                    sel.addEventListener('change', async function() {
+                        const idProd = this.value;
+                        const idx = bloque.dataset.index;
+                        preciosPorTallaByBlock[idx] = {};
+                        if (!idProd) return;
+                        try {
+                            const url = "{{ route('api.producto.tallas-precios', ['idProducto' => ':id']) }}".replace(':id', idProd);
+                            const res = await fetch(url);
+                            const data = await res.json();
+                            if (data && Array.isArray(data.precios)) {
+                                data.precios.forEach(p => {
+                                    preciosPorTallaByBlock[idx][String(p.idTalla)] = parseFloat(p.precioUnitario);
+                                });
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    });
+                }
+
+                const tbody = bloque.querySelector('.tabla-detalles tbody');
+                // Inputs cantidad/precio
+                tbody.addEventListener('input', function(e) {
+                    const tr = e.target.closest('tr');
+                    if (tr) calcRowSubtotal(tr);
+                });
+                // Cambio de talla: solo filas nuevas
+                tbody.addEventListener('change', function(e) {
+                    if (e.target.classList.contains('tallaSel')) {
+                        const tr = e.target.closest('tr');
+                        const rowId = tr.querySelector('input[name="row_id[]"]').value;
+                        if (!rowId) {
+                            const idx = bloque.dataset.index;
+                            const idT = String(e.target.value);
+                            const mapa = preciosPorTallaByBlock[idx] || {};
+                            if (mapa[idT] != null) {
+                                const precioInput = tr.querySelector('.precio');
+                                precioInput.value = mapa[idT].toFixed(2);
+                                calcRowSubtotal(tr);
+                            }
+                        }
+                    }
+                });
+
+                // Agregar fila
+                const btnAdd = bloque.querySelector('.btn-agregar-fila');
+                btnAdd.addEventListener('click', function() {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <input type=\"hidden\" name=\"row_id[]\" value=\"\">
+                        <td>
+                            <select name=\"idTallas[]\" class=\"form-select form-select-sm tallaSel\" required>
+                                @foreach(($tallas ?? []) as $t)
+                                    <option value=\"{{ $t->idTallas }}\">{{ $t->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td><input type=\"number\" name=\"cantidad[]\" class=\"form-control form-control-sm cantidad\" min=\"1\" value=\"1\" required></td>
+                        <td><input type=\"number\" step=\"0.01\" name=\"precioUnitario[]\" class=\"form-control form-control-sm precio\" min=\"0\" value=\"0.00\" required></td>
+                        <td><input type=\"text\" name=\"nombrePersonalizado[]\" class=\"form-control form-control-sm\"></td>
+                        <td><input type=\"text\" name=\"numeroPersonalizado[]\" class=\"form-control form-control-sm\"></td>
+                        <td><input type=\"text\" name=\"descripcion[]\" class=\"form-control form-control-sm\"></td>
+                        <td><input type=\"text\" name=\"observacion[]\" class=\"form-control form-control-sm\"></td>
+                        <td class=\"text-end subtotal\">0.00</td>
+                        <td class=\"text-center\"><button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-del\"><i class=\"fas fa-trash\"></i></button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Eliminar fila
+                tbody.addEventListener('click', function(e) {
+                    if (e.target.closest('.btn-del')) {
+                        const tr = e.target.closest('tr');
+                        const id = tr.querySelector('input[name=\"row_id[]\"]').value;
+                        if (id) {
+                            deleteIds.push(id);
+                            deleteIdsHolder.value = deleteIds.join(',');
+                            // Evitar que se envíe esta fila al backend
+                            tr.querySelectorAll('input,select').forEach(el => {
+                                el.name = el.name + '_ignored';
+                            });
+                        }
+                        tr.remove();
+                        calcTotalsGlobal();
+                    }
+                });
+            }
+
+            function calcRowSubtotal(tr) {
+                const q = parseFloat(tr.querySelector('.cantidad')?.value || '0');
+                const p = parseFloat(tr.querySelector('.precio')?.value || '0');
+                tr.querySelector('.subtotal').textContent = (q * p).toFixed(2);
+                calcTotalsGlobal();
+            }
+
+            function calcTotalsGlobal() {
+                let sum = 0;
+                bloquesContainer.querySelectorAll('.tabla-detalles tbody tr').forEach(tr => {
+                    const c = parseFloat(tr.querySelector('.cantidad')?.value || '0');
+                    const p = parseFloat(tr.querySelector('.precio')?.value || '0');
+                    sum += (c * p);
+                });
+                document.getElementById('sum-total').textContent = sum.toFixed(2);
+            }
+
+            // Inicializar bloque 0
+            initBloqueEvents(bloquesContainer.querySelector('.bloque-detalle[data-index="0"]'));
+            // Inicializar subtotales existentes
+            bloquesContainer.querySelectorAll('.tabla-detalles tbody tr').forEach(tr => calcRowSubtotal(tr));
+            calcTotalsGlobal();
+
+            // Agregar nuevo bloque
+            btnAgregarBloque.addEventListener('click', function() {
+                const idx = bloqueCount++;
+                const bloque = document.createElement('div');
+                bloque.className = 'bloque-detalle';
+                bloque.dataset.index = String(idx);
+                bloque.innerHTML = `
+                    <hr class=\"my-3\">
+                    <div class=\"row g-3 mb-3\">
+                        <div class=\"col-md-6\">
+                            <label class=\"form-label\">Producto (precarga precio por talla en filas nuevas)</label>
+                            <select class=\"form-select form-select-sm productoSelector\">
+                                <option value=\"\">Seleccionar producto</option>
+                                @foreach(($productos ?? []) as $p)
+                                    <option value=\"{{ $p->idProducto }}\">[#{{ $p->idProducto }}] {{ $p->nombre }}</option>
+                                @endforeach
+                            </select>
+                            <div class=\"form-text\">Este bloque crea filas nuevas independientes del resto.</div>
+                        </div>
+                    </div>
+                    <div class=\"table-responsive\"> 
+                        <table class=\"table table-sm align-middle tabla-detalles\">
+                            <thead class=\"table-light\">
+                                <tr>
+                                    <th style=\"width: 12rem\">Talla</th>
+                                    <th style=\"width: 7rem\">Cant.</th>
+                                    <th style=\"width: 9rem\">Precio</th>
+                                    <th style=\"width: 14rem\">Nombre</th>
+                                    <th style=\"width: 10rem\">Número</th>
+                                    <th>Descripción</th>
+                                    <th>Observación</th>
+                                    <th style=\"width: 6rem\" class=\"text-end\">Subtotal</th>
+                                    <th style=\"width: 3rem\"></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan=\"9\">
+                                        <button type=\"button\" class=\"btn btn-sm btn-outline-primary btn-agregar-fila\"><i class=\"fas fa-plus me-1\"></i>Agregar fila</button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+                bloquesContainer.appendChild(bloque);
+                initBloqueEvents(bloque);
+            });
+        })();
+    </script>
+
+    <script>
+        function confirmDeleteImage(button) {
+            const idVenta = button.getAttribute('data-id');
+            // Proceder directamente con la eliminación sin notificación inicial
+            eliminarImagenAjax(idVenta);
+        }
+
+        function eliminarImagenAjax(idVenta) {
+            console.log('Iniciando eliminación AJAX para idVenta:', idVenta);
+            fetch(`/pedidos/${idVenta}/eliminar-imagen`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    console.log('Respuesta del servidor:', response);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Datos JSON recibidos:', data);
+                    if (data.success) {
+                        // Actualizar la vista: quitar la imagen y mostrar el campo de subida
+                        document.querySelector('.imagen-container').innerHTML = `
+                <input type="file" id="imagenPedido" name="imagenPedido" class="form-control" accept="image/*">
+                <div class="form-text mt-2">Sube una nueva imagen si lo deseas.</div>
+            `;
+                        // Mostrar notificación de éxito
+                        window.showNotification('success', 'Imagen eliminada correctamente');
+                    } else {
+                        // Mostrar notificación de error
+                        window.showNotification('error', 'Error al eliminar la imagen: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error en AJAX:', error);
+                    alert('Error al eliminar la imagen: ' + error.message);
+                });
+        }
+    </script>
+    @endpush
 </div>
 @endsection
-
-@push('scripts')
-
-@endpush

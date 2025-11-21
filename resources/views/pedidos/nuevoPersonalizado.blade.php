@@ -110,10 +110,10 @@
                                         <tbody id="tbodyItems">
                                             <tr class="item-row">
                                                 <td>
-                                                    <select name="idTalla[]" class="form-select form-select-sm sel-talla" required>
+                                                    <select name="idTallas[]" class="form-select form-select-sm sel-talla" required>
                                                         <option value="">Seleccionar talla</option>
                                                         @foreach($tallas as $t)
-                                                            <option value="{{ $t->idTalla }}">{{ $t->nombre }}</option>
+                                                            <option value="{{ $t->idTallas }}">{{ $t->nombre }}</option>
                                                         @endforeach
                                                     </select>
                                                 </td>
@@ -262,7 +262,7 @@
                                     <div class="small text-muted mb-1">Tallas</div>
                                     <div class="d-flex flex-wrap gap-2" id="pillsTallas">
                                         @foreach($tallas as $t)
-                                            <button type="button" class="btn btn-outline-secondary pill-talla" data-id="{{ $t->idTalla }}" data-nombre="{{ $t->nombre }}">{{ $t->nombre }}</button>
+                                            <button type="button" class="btn btn-outline-secondary pill-talla" data-id="{{ $t->idTallas }}" data-nombre="{{ $t->nombre }}">{{ $t->nombre }}</button>
                                         @endforeach
                                     </div>
                                     <input type="hidden" id="tallaSeleccionadaNombre">
@@ -399,7 +399,7 @@
   const tbody = EL('tbodyItems');
 
   // Opciones de tallas (para addRow)
-  const TALLA_OPTIONS = `{!! collect($tallas)->map(fn($t) => '<option value="'.$t->idTalla.'">'.e($t->nombre).'</option>')->implode('') !!}`;
+  const TALLA_OPTIONS = `{!! collect($tallas)->map(fn($t) => '<option value="'.$t->idTallas.'">'.e($t->nombre).'</option>')->implode('') !!}`;
 
   // ===== API helper =====
   async function fetchJSON(url) {
@@ -450,7 +450,7 @@
     try {
       const data = await fetchJSON(`{{ url('api/producto') }}/${idProducto}/tallas-precios`);
       (data.precios || []).forEach(p => {
-        tallaPriceMap.set(String(p.idTalla), Number(p.precioUnitario || 0));
+        tallaPriceMap.set(String(p.idTallas), Number(p.precioUnitario || 0));
       });
     } catch (e) {
       console.error('[loadTallaPrecios]', e);
@@ -575,7 +575,7 @@
     tr.className = 'item-row';
     tr.innerHTML = `
       <td>
-        <select name="idTalla[]" class="form-select form-select-sm sel-talla" required>
+        <select name="idTallas[]" class="form-select form-select-sm sel-talla" required>
           <option value="">Seleccionar talla</option>
           ${TALLA_OPTIONS}
         </select>
@@ -686,8 +686,8 @@
     const p = parseFloat(sel.options[sel.selectedIndex]?.dataset?.precio || '0');
     return isNaN(p) ? 0 : p;
   }
-  function precioUnitarioPorTalla(idTalla) {
-    const key = String(idTalla || '');
+  function precioUnitarioPorTalla(idTallas) {
+    const key = String(idTallas || '');
     if (key && tallaPriceMap.has(key)) {
       const v = Number(tallaPriceMap.get(key));
       if (!isNaN(v) && v > 0) return v;

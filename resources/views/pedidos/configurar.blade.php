@@ -497,7 +497,7 @@
             const nombreBase    = inputNombre?.value.trim() || '';
             const productoLabel = getProductoLabelActual();
 
-            const idTalla   = btnTalla.getAttribute('data-id');
+            const idTallas   = btnTalla.getAttribute('data-id');
             const nombreTal = btnTalla.getAttribute('data-nombre');
 
             contadorFilas++;

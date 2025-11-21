@@ -392,11 +392,11 @@ CREATE TABLE `detalle_ventas` (
   `idVenta` int(10) unsigned NOT NULL,
   `idEmpleado` int(10) unsigned NOT NULL,
   PRIMARY KEY (`iddetalleVenta`),
-  KEY `detalle_ventas_idtalla_foreign` (`idTallas`),
+  KEY `detalle_ventas_idtallas_foreign` (`idTallas`),
   KEY `detalle_ventas_idventa_foreign` (`idVenta`),
   KEY `detalle_ventas_idempleado_foreign` (`idEmpleado`),
   CONSTRAINT `detalle_ventas_idempleado_foreign` FOREIGN KEY (`idEmpleado`) REFERENCES `empleados` (`idEmpleado`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `detalle_ventas_idtalla_foreign` FOREIGN KEY (`idTallas`) REFERENCES `tallas` (`idTallas`) ON DELETE CASCADE,
+  CONSTRAINT `detalle_ventas_idtallas_foreign` FOREIGN KEY (`idTallas`) REFERENCES `tallas` (`idTallas`) ON DELETE CASCADE,
   CONSTRAINT `detalle_ventas_idventa_foreign` FOREIGN KEY (`idVenta`) REFERENCES `ventas` (`idVenta`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

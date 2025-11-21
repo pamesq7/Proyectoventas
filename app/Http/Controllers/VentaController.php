@@ -204,7 +204,7 @@ class VentaController extends Controller
         ])->findOrFail($idVenta);
 
         // Tallas activas para el formulario de agregar detalle
-        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTalla', 'nombre']);
+        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get(['idTallas', 'nombre']);
 
         // Lista fija de métodos de pago (no depende de tabla)
         $metodosPago = collect([

@@ -138,7 +138,7 @@
             </tr>
             @if($pedido->descuento > 0)
             <tr>
-                <th colspan="3" class="text-right">Descuento:</th>
+                <th colspan="3" c  lass="text-right">Descuento:</th>
                 <th class="text-right">- Bs. {{ number_format($pedido->descuento, 2) }}</th>
             </tr>
             @endif
@@ -147,7 +147,7 @@
                 <th class="text-right">Bs. {{ number_format($pedido->total, 2) }}</th>
             </tr>
             <tr>
-                <th colspan="3" class="text-right">Pagado:</th>
+                <th colspan="3" class="text-right">Adelanto:</th>
                 <th class="text-right">Bs. {{ number_format(($pedido->total - $pedido->saldo), 2) }}</th>
             </tr>
             @if($pedido->saldo > 0)
