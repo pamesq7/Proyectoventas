@@ -2,312 +2,251 @@
 
 @section('content')
 <div class="container-fluid px-4">
-    <h1 class="mt-4">Detalles del Pedido #{{ $pedido->idVenta }}</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ route('pedidos.index') }}">Pedidos</a></li>
-        <li class="breadcrumb-item active">Pedido #{{ $pedido->idVenta }}</li>
-    </ol>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mt-4">Detalle del Pedido</h1>
+        <a href="{{ route('pedidos.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Volver
+        </a>
+    </div>
 
     <div class="row">
-        <div class="col-lg-8">
+        <!-- Información del Pedido -->
+        <div class="col-md-8">
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-shopping-cart me-2"></i>
-                        Información del Pedido
-                    </h5>
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información del Pedido #{{ $pedido->idVenta }}</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">Cliente:</label>
-                                <p class="mb-0">
-                                    @php
-                                    $nombreCliente = 'Cliente no especificado';
-                                    if ($pedido->clienteNatural && $pedido->clienteNatural->user) {
-                                    $nombreCliente = trim($pedido->clienteNatural->user->name . ' ' .
-                                    $pedido->clienteNatural->user->primerApellido . ' ' .
-                                    ($pedido->clienteNatural->user->segundApellido ?? ''));
-                                    } elseif ($pedido->clienteEstablecimiento) {
-                                    $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ?? 'Establecimiento';
-                                    }
-                                    @endphp
-                                    {{ $nombreCliente }}
-                                </p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted">Fecha de creación:</label>
-                                <p class="mb-0">{{ \Carbon\Carbon::parse($pedido->created_at)->format('d/m/Y H:i') }}</p>
-                            </div>
+                            <p><strong>Fecha de Pedido:</strong> {{ $pedido->created_at->format('d/m/Y H:i') }}</p>
+                            <p><strong>Fecha de Entrega:</strong> 
+                                {{ $pedido->fechaEntrega ? \Carbon\Carbon::parse($pedido->fechaEntrega)->format('d/m/Y') : 'Pendiente' }}
+                            </p>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted">Estado:</label>
-                                <p class="mb-0">
-                                    @php
-                                    $estadoClases = [
-                                    'pendiente' => 'warning',
-                                    'procesando' => 'info',
-                                    'completado' => 'success',
-                                    'cancelado' => 'danger'
-                                    ][$pedido->estado] ?? 'secondary';
-                                    @endphp
-                                    <span class="badge bg-{{ $estadoClases }}">
-                                        {{ ucfirst($pedido->estado) }}
-                                    </span>
-                                </p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted">Total:</label>
-                                <p class="mb-0 fw-bold">${{ number_format($pedido->total, 2) }}</p>
-                            </div>
+                            @php
+                                $estados = [
+                                    '0' => ['nombre' => 'En Diseño', 'clase' => 'bg-info'],
+                                    '1' => ['nombre' => 'Producción', 'clase' => 'bg-warning'],
+                                    '2' => ['nombre' => 'Terminado', 'clase' => 'bg-success'],
+                                    '3' => ['nombre' => 'Entregado', 'clase' => 'bg-primary'],
+                                    '4' => ['nombre' => 'Cancelado', 'clase' => 'bg-danger']
+                                ];
+                                $estado = $estados[$pedido->estadoPedido ?? '0'];
+                            @endphp
+                            <p><strong>Estado:</strong> 
+                                <span class="badge {{ $estado['clase'] }}">{{ $estado['nombre'] }}</span>
+                            </p>
+                            <p><strong>Total:</strong> Bs. {{ number_format($pedido->total, 2) }}</p>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    @if($pedido->notas)
-                    <div class="mt-3">
-                        <label class="form-label text-muted">Notas:</label>
-                        <p class="mb-0">{{ $pedido->notas }}</p>
+            <!-- Productos del Pedido -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Productos</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio Unitario</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($pedido->detalleVentas as $detalle)
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if($detalle->producto && $detalle->producto->foto)
+                                            <img src="{{ asset('storage/' . $detalle->producto->foto) }}" 
+                                                 class="img-thumbnail me-3" 
+                                                 style="width: 60px; height: 60px; object-fit: cover;">
+                                            @else
+                                            <div class="bg-light d-flex align-items-center justify-content-center me-3"
+                                                 style="width: 60px; height: 60px;">
+                                                <i class="fas fa-box-open text-muted"></i>
+                                            </div>
+                                            @endif
+                                            <div>
+                                                <h6 class="mb-1">{{ $detalle->producto->nombre ?? 'Producto no especificado' }}</h6>
+                                                @if($detalle->detalleTallas->isNotEmpty())
+                                                <div class="mt-1">
+                                                    @foreach($detalle->detalleTallas as $dt)
+                                                    <span class="badge bg-primary me-1">
+                                                        {{ $dt->talla->nombre }}: {{ $dt->cantidad }}
+                                                    </span>
+                                                    @endforeach
+                                                </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">{{ $detalle->cantidad }}</td>
+                                    <td class="text-end">Bs. {{ number_format($detalle->precioUnitario, 2) }}</td>
+                                    <td class="text-end">Bs. {{ number_format($detalle->subtotal, 2) }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Cliente y Resumen -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Cliente</h5>
+                </div>
+                <div class="card-body">
+                    @php
+                        $nombreCliente = 'Cliente no especificado';
+                        $telefono = 'N/A';
+                        $tipoCliente = 'Natural';
+                        
+                        if ($pedido->clienteNatural && $pedido->clienteNatural->user) {
+                            $user = $pedido->clienteNatural->user;
+                            $nombreCliente = trim($user->name . ' ' . ($user->primerApellido ?? ''));
+                            $telefono = $user->telefono ?? 'N/A';
+                        } elseif ($pedido->clienteEstablecimiento) {
+                            $tipoCliente = 'Establecimiento';
+                            $nombreCliente = $pedido->clienteEstablecimiento->razonSocial;
+                            $telefono = $pedido->clienteEstablecimiento->telefono ?? 'N/A';
+                        }
+                    @endphp
+                    
+                    <h6 class="mb-3">{{ $nombreCliente }}</h6>
+                    <p class="mb-1"><i class="fas fa-user-tag me-2 text-muted"></i> {{ $tipoCliente }}</p>
+                    <p class="mb-1"><i class="fas fa-phone me-2 text-muted"></i> {{ $telefono }}</p>
+                    @if($pedido->lugarEntrega)
+                    <p class="mb-0"><i class="fas fa-map-marker-alt me-2 text-muted"></i> {{ $pedido->lugarEntrega }}</p>
                     @endif
                 </div>
             </div>
 
-            @if ($pedido->disenos && $pedido->disenos->first() && $pedido->disenos->first()->archivo)
+            <!-- Estado de Pago -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-image me-2"></i>
-                        Imagen del Pedido
-                    </h5>
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Estado de Pago</h5>
+                    @php
+                        $estadoPago = 'Pendiente';
+                        $claseBadge = 'bg-warning';
+                        if ($pedido->estadoPago === 'pagado') {
+                            $estadoPago = 'Pagado';
+                            $claseBadge = 'bg-success';
+                        } elseif ($pedido->estadoPago === 'parcial') {
+                            $estadoPago = 'Parcial';
+                            $claseBadge = 'bg-info';
+                        }
+                    @endphp
+                    <span class="badge {{ $claseBadge }}">{{ $estadoPago }}</span>
                 </div>
                 <div class="card-body">
-                    <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}"
-                        alt="Imagen del pedido"
-                        class="img-fluid"
-                        style="max-width: 30%; height: auto;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total:</span>
+                        <strong>Bs. {{ number_format($pedido->total, 2) }}</strong>
+                    </div>
+                    @if($pedido->estadoPago === 'parcial')
+                        @php
+                            $montoPagado = $pedido->transacciones->sum('monto');
+                            $saldoPendiente = $pedido->total - $montoPagado;
+                        @endphp
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Pagado:</span>
+                            <strong>Bs. {{ number_format($montoPagado, 2) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Saldo Pendiente:</span>
+                            <strong class="text-danger">Bs. {{ number_format($saldoPendiente, 2) }}</strong>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Diseños -->
+            @if(isset($pedido->disenos) && $pedido->disenos->count() > 0)
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Diseños</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        @foreach($pedido->disenos as $diseno)
+                        @if($diseno->archivo)
+                        <div class="col-6">
+                            <a href="{{ asset('storage/' . $diseno->archivo) }}" 
+                               data-lightbox="disenos-{{ $pedido->idVenta }}"
+                               data-title="Diseño para pedido #{{ $pedido->idVenta }}">
+                                <img src="{{ asset('storage/' . $diseno->archivo) }}" 
+                                     class="img-thumbnail w-100" 
+                                     style="height: 120px; object-fit: cover;">
+                            </a>
+                            <div class="text-center small mt-1">
+                                @if($diseno->empleado && $diseno->empleado->user)
+                                <div class="text-muted">Por: {{ $diseno->empleado->user->name }}</div>
+                                @endif
+                                <div class="text-muted">{{ $diseno->created_at->format('d/m/Y') }}</div>
+                            </div>
+                        </div>
+                        @endif
+                        @endforeach
+                    </div>
                 </div>
             </div>
             @endif
-
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-boxes me-2"></i>
-                        Productos del Pedido
-                    </h5>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Talla</th>
-                                <th>Cantidad</th>
-                                <th>Precio Unit.</th>
-                                <th>Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($pedido->detalleVentas as $detalle)
-                            <tr>
-                                <td>{{ $detalle->descripcion ?? 'Producto personalizado' }}</td>
-                                <td>{{ $detalle->talla->nombre ?? '-' }}</td>
-                                <td>{{ $detalle->cantidad }}</td>
-                                <td>Bs. {{ number_format($detalle->precioUnitario, 2) }}</td>
-                                <td>Bs. {{ number_format($detalle->cantidad * $detalle->precioUnitario, 2) }}</td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="text-center">No hay detalles disponibles</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot>
-                            @if(($pedido->descuento ?? 0) > 0)
-                            <tr>
-                                <td colspan="3" class="text-end fw-bold">Descuento:</td>
-                                <td colspan="2" class="text-end text-danger">- Bs. {{ number_format($pedido->descuento, 2) }}</td>
-                            </tr>
-                            @endif
-                            <tr>
-                                <td colspan="3" class="text-end fw-bold">Total:</td>
-                                <td colspan="2" class="text-end fw-bold">Bs. {{ number_format($pedido->total, 2) }}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-cog me-2"></i>
-                        Acciones
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        @if($pedido->estado === 'pendiente')
-                        <button type="button" class="btn btn-success mb-2" data-bs-toggle="modal" data-bs-target="#marcarComoCompletadoModal">
-                            <i class="fas fa-check-circle me-1"></i> Marcar como Completado
-                        </button>
-                        <a href="{{ route('pedidos.edit', $pedido->idVenta) }}" class="btn btn-primary mb-2">
-                            <i class="fas fa-edit me-1"></i> Editar Pedido
-                        </a>
-                        <button type="button" class="btn btn-danger mb-2" data-bs-toggle="modal" data-bs-target="#cancelarPedidoModal">
-                            <i class="fas fa-times-circle me-1"></i> Cancelar Pedido
-                        </button>
-                        @elseif($pedido->estado === 'completado')
-                        <a href="#" class="btn btn-success mb-2" disabled>
-                            <i class="fas fa-check-double me-1"></i> Pedido Completado
-                        </a>
-                        <a href="{{ route('pedidos.edit', $pedido->idVenta) }}" class="btn btn-outline-primary mb-2">
-                            <i class="fas fa-eye me-1"></i> Ver Detalles
-                        </a>
-                        @elseif($pedido->estado === 'cancelado')
-                        <button type="button" class="btn btn-secondary mb-2" disabled>
-                            <i class="fas fa-ban me-1"></i> Pedido Cancelado
-                        </button>
-                        @endif
-
-                        <a href="{{ route('pedidos.index') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-1"></i> Volver a la lista
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-user me-2"></i>
-                        Información del Cliente
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if($pedido->clienteNatural || $pedido->clienteEstablecimiento)
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                                style="width: 50px; height: 50px; font-size: 1.25rem;">
-                                {{ substr($nombreCliente, 0, 1) }}
-                            </div>
-                        </div>
-                        <div class="ms-3">
-                            <h6 class="mb-0">{{ $nombreCliente }}</h6>
-                            <small class="text-muted">
-                                @if($pedido->clienteNatural)
-                                Cliente Natural
-                                @elseif($pedido->clienteEstablecimiento)
-                                Cliente Empresarial
-                                @endif
-                            </small>
-                        </div>
-                    </div>
-
-                    <ul class="list-unstyled">
-                        @php
-                        $email = null;
-                        $telefono = null;
-                        $direccion = null;
-                        if ($pedido->clienteNatural && $pedido->clienteNatural->user) {
-                        $email = $pedido->clienteNatural->user->email ?? null;
-                        $telefono = $pedido->clienteNatural->user->telefono ?? null;
-                        $direccion = $pedido->clienteNatural->user->direccion ?? null;
-                        } elseif ($pedido->clienteEstablecimiento) {
-                        $email = $pedido->clienteEstablecimiento->email ?? null;
-                        $telefono = $pedido->clienteEstablecimiento->telefono ?? null;
-                        $direccion = $pedido->clienteEstablecimiento->direccion ?? null;
-                        }
-                        @endphp
-
-                        @if($email)
-                        <li class="mb-2">
-                            <i class="fas fa-envelope me-2 text-muted"></i>
-                            <a href="mailto:{{ $email }}" class="text-decoration-none">
-                                {{ $email }}
-                            </a>
-                        </li>
-                        @endif
-
-                        @if($telefono)
-                        <li class="mb-2">
-                            <i class="fas fa-phone me-2 text-muted"></i>
-                            <a href="tel:{{ $telefono }}" class="text-decoration-none">
-                                {{ $telefono }}
-                            </a>
-                        </li>
-                        @endif
-
-                        @if($direccion)
-                        <li class="mb-2">
-                            <i class="fas fa-map-marker-alt me-2 text-muted"></i>
-                            {{ $direccion }}
-                        </li>
-                        @endif
-                    </ul>
-                    @else
-                    <div class="text-center py-3">
-                        <i class="fas fa-user-slash fa-2x text-muted mb-2"></i>
-                        <p class="mb-0">Cliente no especificado</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-history me-2"></i>
-                        Historial del Pedido
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        @php
-                        $estados = [
-                        'pendiente' => ['icon' => 'clock', 'color' => 'warning', 'label' => 'Pendiente'],
-                        'procesando' => ['icon' => 'cog', 'color' => 'info', 'label' => 'En Proceso'],
-                        'completado' => ['icon' => 'check-circle', 'color' => 'success', 'label' => 'Completado'],
-                        'cancelado' => ['icon' => 'times-circle', 'color' => 'danger', 'label' => 'Cancelado']
-                        ];
-
-                        $currentState = $pedido->estado;
-                        $currentStateIndex = array_search($currentState, array_keys($estados));
-                        @endphp
-
-                        @foreach($estados as $key => $estado)
-                        @php
-                        $isActive = $key === $currentState;
-                        $isCompleted = array_search($key, array_keys($estados)) < $currentStateIndex;
-                            $isFuture=array_search($key, array_keys($estados))> $currentStateIndex;
-                            @endphp
-
-                            <div class="timeline-item {{ $isActive ? 'active' : '' }} {{ $isCompleted ? 'completed' : '' }} {{ $isFuture ? 'future' : '' }}">
-                                <div class="timeline-icon bg-{{ $estado['color'] }}">
-                                    <i class="fas fa-{{ $estado['icon'] }}"></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <h6 class="mb-1">{{ $estado['label'] }}</h6>
-                                    @if($isActive || $isCompleted)
-                                    <small class="text-muted">
-                                        {{ $pedido->updated_at->format('d/m/Y H:i') }}
-                                    </small>
-                                    @else
-                                    <small class="text-muted">Pendiente</small>
-                                    @endif
-                                </div>
-                            </div>
-                            @endforeach
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        margin-bottom: 1.5rem;
+    }
+    .card-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        font-weight: 600;
+    }
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+    .img-thumbnail {
+        border-radius: 0.5rem;
+        transition: transform 0.2s;
+    }
+    .img-thumbnail:hover {
+        transform: scale(1.05);
+    }
+</style>
+@endpush
+
+@push('scripts')
+<!-- Lightbox2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+<!-- Lightbox2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<script>
+    // Inicializar lightbox
+    lightbox.option({
+        'resizeDuration': 200,
+        'wrapAround': true,
+        'showImageNumberLabel': false
+    });
+</script>
+@endpush
 @endsection

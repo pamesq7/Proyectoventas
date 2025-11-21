@@ -92,6 +92,7 @@
                     @if($venta->transacciones->isEmpty())
                     <div class="alert alert-info mb-0">Aún no hay pagos registrados.</div>
                     @else
+<<<<<<< HEAD
                     <div class="card mb-4">
                         <div class="card-header bg-light">
                             <h5 class="mb-0">Pagos Registrados</h5>
@@ -137,6 +138,33 @@
                             </div>
                             @endif
                         </div>
+=======
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th class="text-end">Monto</th>
+                                    <th>Método</th>
+                                    <th>Estado</th>
+                                    <th>Obs.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($venta->transacciones->sortByDesc('created_at') as $trx)
+                                @if($trx->tipoTransaccion === 'pago')
+                                <tr>
+                                    <td>{{ optional($trx->created_at)->format('d/m/Y H:i') }}</td>
+                                    <td class="text-end">${{ number_format($trx->monto, 2) }}</td>
+                                    <td>{{ $trx->metodoPago }}</td>
+                                    <td><span class="badge bg-{{ $trx->estado == 1 ? 'success' : 'secondary' }}">{{ $trx->estado_texto }}</span></td>
+                                    <td class="text-truncate" style="max-width: 240px;" title="{{ $trx->observaciones }}">{{ $trx->observaciones }}</td>
+                                </tr>
+                                @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+>>>>>>> d9efd487ff27120184056bc1a24c027d79dd0f61
                     </div>
                     @endif
                 </div>

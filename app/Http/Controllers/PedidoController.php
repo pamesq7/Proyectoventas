@@ -1764,11 +1764,25 @@ class PedidoController extends Controller
     {
         $pedido = Venta::with([
             'detalleVentas' => function ($query) {
+<<<<<<< HEAD
                 $query->with(['tallas', 'diseno', 'producto', 'detalleTallas']);
             },
             'clienteNatural.user',
             'clienteEstablecimiento',
             'empleado.user'
+=======
+                $query->with([
+                    'producto',
+                    'detalleTallas' => function ($q) {
+                        $q->with('talla');
+                    }
+                ]);
+            },
+            'clienteNatural.user',
+            'clienteEstablecimiento',
+            'empleado.user',
+            'disenos'  // Cargar la relación disenos (en plural)
+>>>>>>> d9efd487ff27120184056bc1a24c027d79dd0f61
         ])->findOrFail($pedido);
 
         return view('pedidos.show', compact('pedido'));
@@ -2319,13 +2333,18 @@ class PedidoController extends Controller
         try {
             DB::beginTransaction();
 
+<<<<<<< HEAD
             // Crear transacción
+=======
+            // Crear la transacción
+>>>>>>> d9efd487ff27120184056bc1a24c027d79dd0f61
             $transaccion = new Transaccion([
                 'idVenta' => $venta->idVenta,
                 'monto' => $validated['monto'],
                 'fecha' => now(),
                 'metodoPago' => $validated['metodoPago'],
                 'observaciones' => $validated['observaciones'] ?? null,
+<<<<<<< HEAD
                 'estado' => 1,
             ]);
             $transaccion->save();
@@ -2338,6 +2357,20 @@ class PedidoController extends Controller
                 $venta->estadoPedido = 4; // Pagado
             } else {
                 $venta->estadoPedido = 5; // Pago parcial
+=======
+                'estado' => 1, // 1 = Activo
+            ]);
+            $transaccion->save();
+
+            // Actualizar el saldo de la venta
+            $venta->saldo = max(0, $venta->saldo - $validated['monto']);
+
+            // Si el saldo llega a cero, marcar como pagado
+            if ($venta->saldo <= 0) {
+                $venta->estadoPago = 'pagado';
+            } else {
+                $venta->estadoPago = 'parcial';
+>>>>>>> d9efd487ff27120184056bc1a24c027d79dd0f61
             }
 
             $venta->save();
