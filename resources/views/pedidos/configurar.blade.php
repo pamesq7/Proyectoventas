@@ -500,14 +500,16 @@
             const idTallas   = btnTalla.getAttribute('data-id');
             const nombreTal = btnTalla.getAttribute('data-nombre');
 
+
             contadorFilas++;
             const tr = document.createElement('tr');
             tr.dataset.index = contadorFilas;
 
+
             tr.innerHTML = `
                 <td>
                     <strong>${nombreTal}</strong>
-                    <input type="hidden" name="items[${contadorFilas}][idTallas]" value="${idTalla}">
+                    <input type="hidden" name="items[${contadorFilas}][idTallas]" value="${idTallas}">
                 </td>
                 <td>${productoLabel}</td>
                 <td>
@@ -612,8 +614,7 @@
         });
     });
 </script>
-
-    });
+    
 </script>
 
 {{-- SweetAlert2 (opcional) --}}

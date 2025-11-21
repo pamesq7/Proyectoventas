@@ -288,14 +288,6 @@ class PedidoController extends Controller
         }
     }
 
-
-    /**
-     * API: Precios por talla para un producto
-     */
-    // PedidoController.php  (reemplaza el método entero)
-
-    // En PedidoController.php
-
     // Método para la API de precios por talla
     public function apiTallasPreciosPorProducto($idProducto)
     {
