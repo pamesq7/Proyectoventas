@@ -24,7 +24,7 @@ class VentaController extends Controller
             'empleado.user',
             'clienteNatural.user',
             'clienteEstablecimiento',
-            'detalleVentas.talla',
+            'detalleVentas.tallas', // Esta está bien así
             'transacciones'
         ])
             ->where('ventas.estado', 1) // Solo mostrar ventas en estado 1
@@ -122,11 +122,12 @@ class VentaController extends Controller
     public function show($id)
     {
         $venta = Venta::with([
-            'detalleVentas.detalleTallas.talla', // <-- así
+            'detalleVentas.detalleTallas.talla', // Opción 1: Acceder a la talla a través de detalleTallas
+            // O
+            'detalleVentas.tallas', // Opción 2: Usar la relación directa con tallas
             'empleado.user',
             'clienteNatural.user',
             'clienteEstablecimiento',
-            'detalleVentas.talla',
             'transacciones.user'
         ])->findOrFail($id);
 

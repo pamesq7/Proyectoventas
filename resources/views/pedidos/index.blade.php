@@ -56,110 +56,105 @@
         <div class="card-body">
             @if(isset($pedidos) && $pedidos->count() > 0)
             <div class="table-responsive">
-                <table class="table table-striped table-hover" id="pedidosTable">
-                    <thead class="table-dark">
+                <table class="table table-hover">
+                    <thead>
                         <tr>
-                            <th>#</th> <!-- Columna para el número consecutivo -->
+                            <th>#</th>
                             <th>Cliente</th>
-                            <th>Imagen</th> <!-- Nueva columna para la imagen del diseño -->
-                            <th>Diseñador</th> <!-- Columna para el diseñador asignado -->
+                            <th>Producto/Diseño</th>
                             <th>Total</th>
-                            <th>Pago</th>
+                            <th>Estado Pago</th>
                             <th>Fecha Entrega</th>
                             <th>Estado</th>
-                            <th>Creado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($pedidos as $pedido)
+                        @foreach($pedidos as $venta)
                         <tr>
-                            <td>{{ $pedido->contador }}</td>
+                            <td>{{ $venta->idVenta }}</td>
                             <td>
                                 @php
-                                if ($pedido->clienteNatural && $pedido->clienteNatural->user) {
-                                $nombreCliente = trim($pedido->clienteNatural->user->name . ' ' .
-                                $pedido->clienteNatural->user->primerApellido . ' ' .
-                                ($pedido->clienteNatural->user->segundApellido ?? ''));
-                                } elseif ($pedido->clienteEstablecimiento) {
-                                $nombreCliente = $pedido->clienteEstablecimiento->razonSocial ?? '—';
-                                } else {
-                                $nombreCliente = '—';
+                                $nombreCliente = 'Cliente no especificado';
+                                if ($venta->clienteNatural && $venta->clienteNatural->user) {
+                                $user = $venta->clienteNatural->user;
+                                $nombreCliente = trim($user->name . ' ' . ($user->primerApellido ?? ''));
+                                } elseif ($venta->clienteEstablecimiento) {
+                                $nombreCliente = $venta->clienteEstablecimiento->razonSocial;
                                 }
                                 @endphp
                                 {{ $nombreCliente }}
                             </td>
                             <td>
-                                {{-- Mostrar imagen del diseño si existe --}}
-                                @if($pedido->disenos && $pedido->disenos->first() && $pedido->disenos->first()->archivo)
-                                <img src="{{ asset('storage/' . $pedido->disenos->first()->archivo) }}" alt="Diseño del pedido" style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 4px;">
-                                @else
-                                <span class="text-muted">Sin imagen</span>
-                                @endif
+                                @foreach($venta->detalleVentas as $detalle)
+                                <div class="d-flex align-items-center mb-2">
+                                    @if($detalle->diseno && $detalle->diseno->isNotEmpty() && $detalle->diseno->first()->archivo)
+                                    <img src="{{ asset('storage/' . $detalle->diseno->first()->archivo) }}"
+                                        alt="Diseño"
+                                        class="img-thumbnail"
+                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                    <span class="ms-2">Diseño personalizado</span>
+                                    @elseif($detalle->producto && $detalle->producto->foto)
+                                    <img src="{{ asset('storage/' . $detalle->producto->foto) }}"
+                                        alt="{{ $detalle->producto->nombre }}"
+                                        class="img-thumbnail"
+                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                    <span class="ms-2">{{ $detalle->producto->nombre }}</span>
+                                    @else
+                                    <div class="bg-light d-flex align-items-center justify-content-center"
+                                        style="width: 50px; height: 50px;">
+                                        <i class="fas fa-box-open text-muted"></i>
+                                    </div>
+                                    <span class="ms-2">Sin imagen</span>
+                                    @endif
+                                </div>
+                                @endforeach
                             </td>
-                            <td>
-                                {{-- Mostrar diseñador asignado --}}
-                                @php
-                                $diseno = $pedido->disenos->first();
-                                $nombreDiseñador = $diseno && $diseno->empleado && $diseno->empleado->user
-                                ? trim($diseno->empleado->user->name . ' ' . $diseno->empleado->user->primerApellido . ' ' . ($diseno->empleado->user->segundApellido ?? ''))
-                                : 'No asignado';
-                                @endphp
-                                {{ $nombreDiseñador }}
-                            </td>
-
-
-
-                            <td>
-                                <span class="fw-bold text-success"> Bs. {{ number_format($pedido->total, 0) }}</span>
-                            </td>
-                            <td>
-                                @php $pagado = (float)($pedido->saldo ?? 0) <= 0; @endphp
-                                    <span class="badge bg-{{ $pagado ? 'success' : 'danger' }}">{{ $pagado ? 'Pago completado' : 'Debe' }}</span>
-                            </td>
-                            <td>{{ $pedido->fechaEntrega ? \Carbon\Carbon::parse($pedido->fechaEntrega)->format('d/m/Y') : '—' }}</td>
+                            <td>Bs. {{ number_format($venta->total, 2) }}</td>
                             <td>
                                 @php
+                                $pagado = (float)($venta->saldo ?? 0) <= 0;
+                                    @endphp
+                                    <span class="badge bg-{{ $pagado ? 'success' : 'danger' }}">
+                                    {{ $pagado ? 'Pago completado' : 'Pendiente de pago' }}
+                                    </span>
+                                    @if(!$pagado && $venta->saldo < $venta->total)
+                                        <small class="d-block text-muted">Saldo: Bs. {{ number_format($venta->saldo, 2) }}</small>
+                                        @endif
+                            </td>
+                            <td>{{ $venta->fechaEntrega ? \Carbon\Carbon::parse($venta->fechaEntrega)->format('d/m/Y') : 'Pendiente' }}</td>
+                            <td>
+                                @php
+                                // Definir los estados posibles
                                 $estados = [
-                                '0' => ['nombre' => 'En Diseño', 'badge' => 'info', 'icon' => '🎨'],
-                                '1' => ['nombre' => 'Producción', 'badge' => 'warning', 'icon' => '⚙️'],
-                                '2' => ['nombre' => 'Terminado', 'badge' => 'success', 'icon' => '✅'],
-                                '3' => ['nombre' => 'Entregado', 'badge' => 'primary', 'icon' => '📦'],
-                                '4' => ['nombre' => 'Cancelado', 'badge' => 'danger', 'icon' => '❌']
+                                0 => ['nombre' => 'Pendiente', 'clase' => 'bg-warning'],
+                                1 => ['nombre' => 'En Proceso', 'clase' => 'bg-primary'],
+                                2 => ['nombre' => 'Listo', 'clase' => 'bg-info'],
+                                3 => ['nombre' => 'Entregado', 'clase' => 'bg-success'],
+                                4 => ['nombre' => 'Pagado', 'clase' => 'bg-success'],
+                                5 => ['nombre' => 'Pago Parcial', 'clase' => 'bg-info']
                                 ];
-                                $estadoKey = (string)($pedido->estadoPedido ?? '0');
-                                $estadoActual = $estados[$estadoKey] ?? $estados['0'];
+
+                                // Obtener el estado actual o usar 'Pendiente' como predeterminado
+                                $estadoActual = $venta->estadoPedido ?? 0;
+                                $estado = $estados[$estadoActual] ?? $estados[0];
+                                $estadoPedido = $estado['nombre'];
+                                $claseBadge = $estado['clase'];
                                 @endphp
-                                <span class="badge bg-{{ $estadoActual['badge'] }}">
-                                    {{ $estadoActual['icon'] }} {{ $estadoActual['nombre'] }}
-                                </span>
+
+                                <span class="badge {{ $claseBadge }}">{{ $estadoPedido }}</span>
                             </td>
-                            <td>{{ $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '—' }}</td>
                             <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ route('pedidos.show', $pedido->idVenta) }}"
-                                        class="btn btn-info btn-sm"
-                                        title="Ver detalles">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ route('pedidos.show', $venta->idVenta) }}"
+                                        class="btn btn-info"
+                                        title="Ver detalle">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('pedidos.edit', $pedido->idVenta) }}"
-                                        class="btn btn-warning btn-sm"
-                                        title="Editar pedido">
+                                    <a href="{{ route('pedidos.edit', $venta->idVenta) }}"
+                                        class="btn btn-warning"
+                                        title="Editar">
                                         <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form action="{{ route('pedidos.destroy', $pedido->idVenta) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('¿Seguro que deseas eliminar el pedido #{{ $pedido->idVenta }}? Esta acción no se puede deshacer.');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm" title="Eliminar pedido">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                    <!-- Nuevo botón de recibo -->
-                                    <a href="{{ route('pedidos.recibo.ver', $pedido->idVenta) }}"
-                                        class="btn btn-success btn-sm"
-                                        title="Ver recibo"
-                                        target="_blank">
-                                        <i class="fas fa-receipt"></i> Ver Recibo
                                     </a>
                                 </div>
                             </td>

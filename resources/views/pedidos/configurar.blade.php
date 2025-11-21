@@ -135,39 +135,6 @@
                     </div>
                 @endif
 
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-4">
-                            <div class="d-flex align-items-center">
-                                @if(isset($producto->imagen) && !empty($producto->imagen))
-                                    <img src="{{ asset('storage/' . $producto->imagen) }}"
-                                         alt="{{ $producto->nombre }}"
-                                         class="img-fluid me-3"
-                                         style="max-height: 80px;">
-                                @else
-                                    <div class="bg-light d-flex align-items-center justify-content-center me-3"
-                                         style="width: 80px; height: 80px;">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                @endif
-                                <div>
-                                    <h6 class="mb-1">{{ $producto->nombre }}</h6>
-                                    <small class="text-muted">{{ $producto->categoria->nombre ?? '' }}</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <span class="badge bg-primary fs-6">
-                                {{ $varianteNombre ?? ('Variante ' . ($varianteId ?? 'por defecto')) }}
-                            </span>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <span class="h5 text-success">
-                                {{ number_format($producto->precioVenta ?? 0, 2) }} Bs
-                            </span>
-                        </div>
-                    </div>
-                </div>
 
                 {{-- PACK --}}
                 @if($esPack && !empty($variantesPack) && count($variantesPack))

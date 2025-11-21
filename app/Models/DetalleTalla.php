@@ -37,6 +37,7 @@ class DetalleTalla extends Model
         return $this->belongsTo(DetalleVenta::class, 'idDetalleVenta', 'idDetalleVenta');
     }
 
+
     // Accesor opcional para mostrar el estado como texto
     public function getEstadoTextoAttribute()
     {

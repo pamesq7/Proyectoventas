@@ -303,7 +303,7 @@ class ExportController extends Controller
     {
         // Obtener filtros de la request
         $estadoPedido = $request->get('estadoPedido');
-        $estadoPago = $request->get('estadoPago');
+        $estadoPedido = $request->get('estadoPedido');
         $fechaInicio = $request->get('fechaInicio');
         $fechaFin = $request->get('fechaFin');
         $idEmpleado = $request->get('idEmpleado');
@@ -321,10 +321,10 @@ class ExportController extends Controller
             $query->where('estadoPedido', $estadoPedido);
         }
 
-        if ($estadoPago) {
-            if ($estadoPago === 'pagado') {
+        if ($estadoPedido) {
+            if ($estadoPedido === 'pagado') {
                 $query->where('saldo', 0);
-            } elseif ($estadoPago === 'pendiente') {
+            } elseif ($estadoPedido === 'pendiente') {
                 $query->where('saldo', '>', 0);
             }
         }

@@ -103,9 +103,7 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
 
 
     // Gestión de pagos
-    Route::get('pagos', [PagoController::class, 'index'])->name('pagos.index');
-    Route::get('pagos/{id}/edit', [PagoController::class, 'editPago'])->name('pagos.edit');
-    Route::put('pagos/{id}', [PagoController::class, 'updatePago'])->name('pagos.update');
+    Route::resource('pagos', \App\Http\Controllers\TransaccionController::class);
 
     /*
      |--------------------------------------------------------------------------
@@ -279,7 +277,9 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
         Route::post('guardar-configuracion', [PedidoController::class, 'guardarConfiguracion'])->name('pedidos.guardar-configuracion');
         Route::get('limpiar-configuracion', [PedidoController::class, 'limpiarConfiguracion'])->name('pedidos.limpiar-configuracion');
 
-
+        Route::patch('/pedidos/{pedido}/estado', [PedidoController::class, 'updateEstado'])
+            ->name('pedidos.updateEstado')
+            ->middleware('auth');
         Route::get('pedidos/nuevo', [PedidoController::class, 'nuevoPedido'])->name('pedidos.nuevo');
         // ✅ CORRECCIÓN: Esta es la ruta que falta
         Route::post('guardar-nuevo', [PedidoController::class, 'guardarNuevoPedido'])->name('pedidos.guardar-nuevo');

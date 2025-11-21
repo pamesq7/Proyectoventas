@@ -10,19 +10,19 @@
     </ol>
 
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+    <div class="alert alert-success">{{ session('success') }}</div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
+    <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
     @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
     @endif
 
     <div class="row">
@@ -41,11 +41,11 @@
                         <div class="col-md-6">
                             <div class="mb-2"><strong>Cliente:</strong>
                                 @if($venta->clienteNatural)
-                                    {{ $venta->clienteNatural->nombres }} {{ $venta->clienteNatural->apellidos }}
+                                {{ $venta->clienteNatural->nombres }} {{ $venta->clienteNatural->apellidos }}
                                 @elseif($venta->clienteEstablecimiento)
-                                    {{ $venta->clienteEstablecimiento->razonSocial }}
+                                {{ $venta->clienteEstablecimiento->razonSocial }}
                                 @else
-                                    -
+                                -
                                 @endif
                             </div>
                             <div class="mb-2"><strong>Estado:</strong> {{ $venta->estadoTexto }}</div>
@@ -69,13 +69,13 @@
                             </thead>
                             <tbody>
                                 @foreach($venta->detalleVentas as $det)
-                                    <tr>
-                                        <td>{{ $det->descripcion ?? 'Producto' }}</td>
-                                        <td class="text-center">{{ $det->talla->nombre ?? '-' }}</td>
-                                        <td class="text-center">{{ $det->cantidad }}</td>
-                                        <td class="text-end">${{ number_format($det->precioUnitario, 2) }}</td>
-                                        <td class="text-end">${{ number_format((float)$det->cantidad * (float)$det->precioUnitario, 2) }}</td>
-                                    </tr>
+                                <tr>
+                                    <td>{{ $det->descripcion ?? 'Producto' }}</td>
+                                    <td class="text-center">{{ $det->talla->nombre ?? '-' }}</td>
+                                    <td class="text-center">{{ $det->cantidad }}</td>
+                                    <td class="text-end">${{ number_format($det->precioUnitario, 2) }}</td>
+                                    <td class="text-end">${{ number_format((float)$det->cantidad * (float)$det->precioUnitario, 2) }}</td>
+                                </tr>
                                 @endforeach
                             </tbody>
                         </table>
@@ -90,34 +90,54 @@
                 </div>
                 <div class="card-body">
                     @if($venta->transacciones->isEmpty())
-                        <div class="alert alert-info mb-0">Aún no hay pagos registrados.</div>
+                    <div class="alert alert-info mb-0">Aún no hay pagos registrados.</div>
                     @else
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th class="text-end">Monto</th>
-                                        <th>Método</th>
-                                        <th>Estado</th>
-                                        <th>Obs.</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($venta->transacciones->sortByDesc('created_at') as $trx)
-                                        @if($trx->tipoTransaccion === 'pago')
-                                        <tr>
-                                            <td>{{ optional($trx->created_at)->format('d/m/Y H:i') }}</td>
-                                            <td class="text-end">${{ number_format($trx->monto, 2) }}</td>
-                                            <td>{{ $trx->metodoPago }}</td>
-                                            <td><span class="badge bg-{{ $trx->estado == 1 ? 'success' : 'secondary' }}">{{ $trx->estado_texto }}</span></td>
-                                            <td class="text-truncate" style="max-width: 240px;" title="{{ $trx->observaciones }}">{{ $trx->observaciones }}</td>
-                                        </tr>
-                                        @endif
-                                    @endforeach
-                                </tbody>
-                            </table>
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Pagos Registrados</h5>
                         </div>
+                        <div class="card-body p-0">
+                            @if($venta->transacciones->count() > 0)
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Monto</th>
+                                            <th>Método</th>
+                                            <th>Estado</th>
+                                            <th>Observaciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($venta->transacciones as $transaccion)
+                                        <tr>
+                                            <td>{{ $transaccion->created_at->format('d/m/Y H:i') }}</td>
+                                            <td>${{ number_format($transaccion->monto, 2) }}</td>
+                                            <td>
+                                                <span class="badge bg-info">{{ strtoupper($transaccion->metodoPago) }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">Confirmada</span>
+                                            </td>
+                                            <td>{{ $transaccion->observaciones ?? 'Ninguna' }}</td>
+                                        </tr>
+                                        @endforeach
+                                        <tr class="table-light">
+                                            <td colspan="5" class="text-end fw-bold">
+                                                Total pagado: ${{ number_format($venta->transacciones->sum('monto'), 2) }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            @else
+                            <div class="text-center p-4">
+                                <div class="text-muted">No hay pagos registrados</div>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -135,17 +155,59 @@
                             <label class="form-label">Monto</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" name="monto" class="form-control" step="0.01" min="0.01" max="{{ max(0, (float)$venta->saldo) }}" value="{{ number_format((float)min(max(0, (float)$venta->saldo), (float)$venta->total), 2, '.', '') }}" required>
+                                @php
+                                $saldo = (float)$venta->saldo;
+                                $montoMaximo = max(0.01, $saldo); // Asegura que el mínimo sea 0.01
+                                $valorInicial = min($montoMaximo, $saldo > 0 ? $saldo : 0.01);
+                                @endphp
+                                <input
+                                    type="number"
+                                    name="monto"
+                                    class="form-control"
+                                    step="0.01"
+                                    min="0.01"
+                                    max="{{ number_format($montoMaximo, 2, '.', '') }}"
+                                    value="{{ number_format($valorInicial, 2, '.', '') }}"
+                                    required
+                                    oninput="validarMonto(this)">
+                                <input type="hidden" id="saldo-disponible" value="{{ $saldo }}">
                             </div>
-                            <small class="text-muted">Saldo pendiente: ${{ number_format($venta->saldo, 2) }}</small>
+                            <small class="text-muted">Saldo pendiente: ${{ number_format($saldo, 2) }}</small>
+                            <div id="monto-error" class="text-danger small d-none">El monto no puede ser mayor al saldo pendiente</div>
                         </div>
+
+                        @push('scripts')
+                        <script>
+                            function validarMonto(input) {
+                                const monto = parseFloat(input.value) || 0;
+                                const saldo = parseFloat(document.getElementById('saldo-disponible').value) || 0;
+                                const errorElement = document.getElementById('monto-error');
+
+                                if (monto > saldo) {
+                                    errorElement.classList.remove('d-none');
+                                    input.setCustomValidity('El monto no puede ser mayor al saldo pendiente');
+                                } else {
+                                    errorElement.classList.add('d-none');
+                                    input.setCustomValidity('');
+                                }
+                            }
+
+                            // Validar al cargar la página
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const inputMonto = document.querySelector('input[name="monto"]');
+                                if (inputMonto) {
+                                    validarMonto(inputMonto);
+                                }
+                            });
+                        </script>
+                        @endpush
 
                         <div class="mb-3">
                             <label class="form-label">Método de pago</label>
                             <input list="metodos" name="metodoPago" class="form-control" placeholder="Efectivo, Qr, Transferencia, ..." required>
                             <datalist id="metodos">
                                 @foreach($metodosPago as $mp)
-                                    <option value="{{ $mp['nombre'] }}">{{ $mp['nombre'] }}</option>
+                                <option value="{{ $mp['nombre'] }}">{{ $mp['nombre'] }}</option>
                                 @endforeach
                             </datalist>
                             <small class="text-muted">Puedes elegir de la lista o escribir uno personalizado.</small>

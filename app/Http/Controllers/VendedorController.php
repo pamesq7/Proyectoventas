@@ -16,7 +16,7 @@ class VendedorController extends Controller
 
         $estadisticas = [
             'totalVentas' => Venta::where('idEmpleado', auth()->user()->empleado->id)->count(),
-            'ventasPendientes' => Venta::where('idEmpleado', auth()->user()->empleado->id)->where('estadoPago', 'pendiente')->count(),
+            'ventasPendientes' => Venta::where('idEmpleado', auth()->user()->empleado->id)->where('estadoPedido', 'pendiente')->count(),
             'totalIngresos' => Venta::where('idEmpleado', auth()->user()->empleado->id)->sum('total'),
             'ventasRecientes' => Venta::where('idEmpleado', auth()->user()->empleado->id)
                 ->with(['clienteNatural.user', 'clienteEstablecimiento'])
