@@ -13,11 +13,13 @@
                 Elige un producto del catálogo o crea el tuyo desde cero con tu propio diseño.
             </p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{{ route('pedidos.personalizar') }}" class="btn btn-success">
-                <i class="fas fa-wand-magic-sparkles me-2"></i>Hacer mi pedido personalizado
-            </a>
-        </div>
+        <!-- 
+<div class="d-flex gap-2">
+    <a href="{{ route('pedidos.personalizar') }}" class="btn btn-success">
+        <i class="fas fa-wand-magic-sparkles me-2"></i>Hacer mi pedido personalizado
+    </a>
+</div>
+-->
     </div>
 
     <ol class="breadcrumb mb-4 mt-3">
@@ -37,8 +39,9 @@
 
 
 
-    // Catálogo estático de 6 productos (mock)
-    $quickProducts = [
+    // Catálogo estático de 6 productos (mock) - Comentado para ocultar modelos rápidos
+    $quickProducts = [];
+    /*
     [
     'key' => 'polera',
     'title' => 'Polera',
@@ -49,16 +52,6 @@
     'img' => asset('img/mock/polera.png'),
     'url' => route('pedidos.nuevoPersonalizado', ['tipo' => 'polera'])
     ],
-    /*[
-    'key' => 'corto',
-    'title' => 'Corto',
-    'subtitle' => 'Deportivo / tiro medio',
-    'price' => 75,
-    'cost' => 58,
-    'badge' => 'Bottom',
-    'img' => asset('img/mock/corto.png'),
-    'url' => route('pedidos.nuevoPersonalizado', ['tipo' => 'corto'])
-    ],*/
     [
     'key' => 'conjunto_pyc',
     'title' => 'Conjunto (Polera + Corto)',
@@ -79,16 +72,6 @@
     'img' => asset('img/mock/chamarra.png'),
     'url' => route('pedidos.nuevoPersonalizado', ['tipo' => 'chamarra'])
     ],
-    /*[
-    'key' => 'buzo',
-    'title' => 'Buzo',
-    'subtitle' => 'Entrenamiento / Urban',
-    'price' => 110,
-    'cost' => 88,
-    'badge' => 'Warm',
-    'img' => asset('img/mock/buzo.png'),
-    'url' => route('pedidos.nuevoPersonalizado', ['tipo' => 'buzo'])
-    ],*/
     [
     'key' => 'conjunto_cb',
     'title' => 'Conjunto (Chamarra + Buzo)',
@@ -100,6 +83,7 @@
     'url' => route('pedidos.nuevoPersonalizado', ['tipo' => 'conjunto_cb'])
     ]
     ];
+    */
 
     // Unificamos TODO en $items para un solo grid
     $items = [];
@@ -171,12 +155,13 @@
                         <button type="button" class="btn btn-sm btn-outline-primary active rounded-pill" data-filter-categoria="all">
                             Todas
                         </button>
-                        {{-- Botón especial para “Modelos rápidos” si existe --}}
+                        {{-- Botón especial para "Modelos rápidos" - Ocultado
                         @if(collect($items)->contains(fn($i) => $i->categoria_key === 'quick'))
                         <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-filter-categoria="quick">
                             Modelos rápidos
                         </button>
                         @endif
+                        --}}
                         {{-- Resto de categorías BD --}}
                         @foreach($filtros as [$ckey, $clabel])
                         @if($ckey !== 'quick' && $ckey !== '')
