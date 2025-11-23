@@ -49,9 +49,7 @@
                     <button type="button" class="btn btn-success btn-sm" id="btnAgregarCarrito">
                         <i class="fas fa-cart-plus me-1"></i> Agregar al carrito
                     </button>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fas fa-save me-1"></i> Guardar Pedido
-                    </button>
+
                     <a href="{{ route('pedidos.catalogo') }}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-arrow-left me-1"></i> Volver al Catálogo
                     </a>
@@ -138,57 +136,72 @@
 
                 {{-- PACK --}}
                 @if($esPack && !empty($variantesPack) && count($variantesPack))
-                    <div class="card-body">
-                        @foreach($variantesPack as $var)
-                            <div class="border rounded p-3 mb-3">
-                                <span class="badge bg-primary mb-2">
-                                    Variante del pack: {{ strtoupper($var['nombreVariante'] ?? '—') }}
-                                </span>
-                                <input type="hidden" name="idVariante[]" value="{{ $var['idVariante'] }}">
-
-                                @forelse($var['opciones'] as $opcion)
-                                    <div class="mb-3">
-                                        <label for="opcion_{{ $var['idVariante'] }}_{{ $opcion['idOpcion'] }}"
-                                            class="form-label">
-                                            <strong>{{ $opcion['nombre'] }}</strong>
-                                            @if(!empty($opcion['descripcion']))
-                                                <small class="text-muted">({{ $opcion['descripcion'] }})</small>
+                    <div class="row">
+    @foreach($variantesPack as $var)
+        <div class="col-md-6"> <!-- Cambia a col-md-6 para dos columnas -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tshirt me-2"></i>
+                        {{ strtoupper($var['nombreVariante'] ?? 'Variante') }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @forelse($var['opciones'] as $opcion)
+                        <div class="mb-3">
+                            <label class="form-label d-flex align-items-center">
+                                <span class="fw-medium">{{ $opcion['nombre'] }}</span>
+                                @if(!empty($opcion['descripcion']))
+                                    <i class="fas fa-info-circle ms-2 text-muted" 
+                                       data-bs-toggle="tooltip" 
+                                       title="{{ $opcion['descripcion'] }}"></i>
+                                @endif
+                            </label>
+                            
+                            @if(!empty($opcion['caracteristicas']))
+                                <select class="form-select" 
+                                        name="opciones[{{ $var['idVariante'] }}][{{ $opcion['idOpcion'] }}]"
+                                        required>
+                                    <option value="">Seleccione una opción</option>
+                                    @foreach($opcion['caracteristicas'] as $caracteristica)
+                                        <option value="{{ $caracteristica['idCaracteristica'] }}"
+                                                data-precio-extra="{{ $caracteristica['precioAdicional'] ?? 0 }}">
+                                            {{ $caracteristica['nombre'] }}
+                                            @if(($caracteristica['precioAdicional'] ?? 0) > 0)
+                                                (+{{ number_format($caracteristica['precioAdicional'], 2) }} Bs)
                                             @endif
-                                        </label>
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <div class="alert alert-warning py-2 small mb-0">
+                                    No hay opciones disponibles
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="alert alert-info py-2 small mb-0">
+                            No hay opciones configuradas para esta variante
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    @endforeach
+</div>
 
-                                        @if(!empty($opcion['caracteristicas']))
-                                            <select
-                                                class="form-select opcion-select"
-                                                id="opcion_{{ $var['idVariante'] }}_{{ $opcion['idOpcion'] }}"
-                                                name="opciones[{{ $var['idVariante'] }}][{{ $opcion['idOpcion'] }}]"
-                                                data-variante-id="{{ $var['idVariante'] }}"
-                                                data-opcion-id="{{ $opcion['idOpcion'] }}"
-                                                required>
-                                                <option value="">Seleccione una opción</option>
-                                                @foreach($opcion['caracteristicas'] as $car)
-                                                    <option value="{{ $car['idCaracteristica'] }}"
-                                                        data-precio-extra="{{ $car['precioAdicional'] ?? 0 }}">
-                                                        {{ $car['nombre'] }}
-                                                        @if(($car['precioAdicional'] ?? 0) > 0)
-                                                            (+{{ number_format($car['precioAdicional'], 2) }} Bs)
-                                                        @endif
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        @else
-                                            <div class="alert alert-warning">
-                                                No hay características disponibles para esta opción.
-                                            </div>
-                                        @endif
-                                    </div>
-                                @empty
-                                    <div class="alert alert-info">
-                                        Esta variante no tiene opciones configuradas.
-                                    </div>
-                                @endforelse
-                            </div>
-                        @endforeach
-                    </div>
+<!-- Agrega este script al final para los tooltips -->
+@push('scripts')
+<script>
+    // Inicializar tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+@endpush
                 @endif
 
                 {{-- NO PACK --}}
@@ -497,17 +510,19 @@
             const nombreBase    = inputNombre?.value.trim() || '';
             const productoLabel = getProductoLabelActual();
 
-            const idTalla   = btnTalla.getAttribute('data-id');
+            const idTallas   = btnTalla.getAttribute('data-id');
             const nombreTal = btnTalla.getAttribute('data-nombre');
+
 
             contadorFilas++;
             const tr = document.createElement('tr');
             tr.dataset.index = contadorFilas;
 
+
             tr.innerHTML = `
                 <td>
                     <strong>${nombreTal}</strong>
-                    <input type="hidden" name="items[${contadorFilas}][idTallas]" value="${idTalla}">
+                    <input type="hidden" name="items[${contadorFilas}][idTallas]" value="${idTallas}">
                 </td>
                 <td>${productoLabel}</td>
                 <td>
@@ -612,8 +627,7 @@
         });
     });
 </script>
-
-    });
+    
 </script>
 
 {{-- SweetAlert2 (opcional) --}}

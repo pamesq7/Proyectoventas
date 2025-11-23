@@ -53,7 +53,6 @@
                 </div>
             </div>
         </div>
-        
         <div class="card-body">
             @if(isset($pedidos) && $pedidos->count() > 0)
             <div class="table-responsive">
@@ -112,24 +111,6 @@
                                 @endforeach
                             </td>
                             <td>Bs. {{ number_format($venta->total, 2) }}</td>
-<<<<<<< HEAD
-=======
-                            <td>
-                                @php
-                                $estadoPago = 'Pendiente';
-                                $claseBadge = 'bg-warning';
-                                if ($venta->estadoPago === 'pagado') {
-                                $estadoPago = 'Pagado';
-                                $claseBadge = 'bg-success';
-                                } elseif ($venta->estadoPago === 'parcial') {
-                                $estadoPago = 'Parcial';
-                                $claseBadge = 'bg-info';
-                                }
-                                @endphp
-                                <span class="badge {{ $claseBadge }}">{{ $estadoPago }}</span>
-                            </td>
-                            <td>{{ $venta->fechaEntrega ? \Carbon\Carbon::parse($venta->fechaEntrega)->format('d/m/Y') : 'Pendiente' }}</td>
->>>>>>> d9efd487ff27120184056bc1a24c027d79dd0f61
                             <td>
                                 @php
                                 $pagado = (float)($venta->saldo ?? 0) <= 0;
@@ -146,7 +127,6 @@
                                 @php
                                 // Definir los estados posibles
                                 $estados = [
-<<<<<<< HEAD
                                 0 => ['nombre' => 'Pendiente', 'clase' => 'bg-warning'],
                                 1 => ['nombre' => 'En Proceso', 'clase' => 'bg-primary'],
                                 2 => ['nombre' => 'Listo', 'clase' => 'bg-info'],
@@ -163,17 +143,6 @@
                                 @endphp
 
                                 <span class="badge {{ $claseBadge }}">{{ $estadoPedido }}</span>
-=======
-                                '0' => ['nombre' => 'En Diseño', 'clase' => 'bg-info'],
-                                '1' => ['nombre' => 'Producción', 'clase' => 'bg-warning'],
-                                '2' => ['nombre' => 'Terminado', 'clase' => 'bg-success'],
-                                '3' => ['nombre' => 'Entregado', 'clase' => 'bg-primary'],
-                                '4' => ['nombre' => 'Cancelado', 'clase' => 'bg-danger']
-                                ];
-                                $estado = $estados[$venta->estadoPedido ?? '0'];
-                                @endphp
-                                <span class="badge {{ $estado['clase'] }}">{{ $estado['nombre'] }}</span>
->>>>>>> d9efd487ff27120184056bc1a24c027d79dd0f61
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
@@ -187,6 +156,16 @@
                                         title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    <form action="{{ route('pedidos.destroy', $venta->idVenta) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('¿Está seguro de eliminar este pedido?')"
+                                        class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

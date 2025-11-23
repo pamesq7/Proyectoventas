@@ -39,7 +39,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row mt-4">
                         <div class="col-md-6">
                             <div class="card">
@@ -59,18 +59,59 @@
                                             </thead>
                                             <tbody>
                                                 @forelse (App\Models\Venta::latest()->take(5)->get() as $venta)
-                                                    <tr>
-                                                        <td>{{ $loop->iteration }}</td>
-                                                        <td>{{ $venta->fechaEntrega->format('d/m/Y') }}</td>
-                                                        <td>{{ number_format($venta->total, 2) }} Bs.</td>
-                                                        <td><span class="badge bg-{{ $venta->estado == 'completado' ? 'success' : 'warning' }}">{{ ucfirst($venta->estado) }}</span></td>
-                                                    </tr>
+                                                <tr>
+                                                    {{-- Número correlativo --}}
+                                                    <td>{{ $loop->iteration }}</td>
+
+                                                    {{-- Fecha de entrega segura --}}
+                                                    <td>
+                                                        <i class="fas fa-calendar-day text-primary me-1"></i>
+                                                        {{ $venta->fechaEntrega
+                    ? \Carbon\Carbon::parse($venta->fechaEntrega)->format('d/m/Y')
+                    : 'Sin fecha'
+                }}
+                                                    </td>
+
+                                                    {{-- Total --}}
+                                                    <td>
+                                                        <i class="fas fa-dollar-sign text-success me-1"></i>
+                                                        <strong>{{ number_format($venta->total, 2) }} Bs.</strong>
+                                                    </td>
+
+                                                    {{-- Estado visual --}}
+                                                    @php
+                                                    $estados = [
+                                                    0 => ['label' => 'Solicitado', 'badge' => 'secondary', 'icon' => 'fas fa-clipboard'],
+                                                    1 => ['label' => 'En Diseño', 'badge' => 'info', 'icon' => 'fas fa-paint-brush'],
+                                                    2 => ['label' => 'Confección', 'badge' => 'warning', 'icon' => 'fas fa-tshirt'],
+                                                    3 => ['label' => 'Entregado', 'badge' => 'success', 'icon' => 'fas fa-check-circle'],
+                                                    ];
+
+                                                    $estado = $estados[$venta->estado] ?? [
+                                                    'label' => 'Desconocido',
+                                                    'badge' => 'dark',
+                                                    'icon' => 'fas fa-question-circle'
+                                                    ];
+                                                    @endphp
+
+                                                    <td>
+                                                        <span class="badge bg-{{ $estado['badge'] }} px-3 py-2">
+                                                            <i class="{{ $estado['icon'] }} me-1"></i>
+                                                            {{ $estado['label'] }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+
                                                 @empty
-                                                    <tr>
-                                                        <td colspan="4" class="text-center">No hay ventas recientes</td>
-                                                    </tr>
+                                                <tr>
+                                                    <td colspan="4" class="text-center py-3 text-muted">
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        No hay ventas recientes
+                                                    </td>
+                                                </tr>
                                                 @endforelse
                                             </tbody>
+
                                         </table>
                                     </div>
                                 </div>

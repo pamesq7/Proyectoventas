@@ -70,9 +70,42 @@
                             <tbody>
                                 @foreach($venta->detalleVentas as $det)
                                 <tr>
-                                    <td>{{ $det->descripcion ?? 'Producto' }}</td>
-                                    <td class="text-center">{{ $det->talla->nombre ?? '-' }}</td>
-                                    <td class="text-center">{{ $det->cantidad }}</td>
+                                    <td>{{ $det->descripcion }}</td>
+                                    <td class="align-middle">
+                                        <div class="d-flex flex-column">
+                                            @if($det->talla)
+                                                <div class="text-center">
+                                                    <span class="badge bg-primary">{{ $det->talla->nombre }}</span>
+                                                </div>
+                                            @endif
+                                            @if($det->detalleTallas->isNotEmpty())
+                                                <div class="mt-1">
+                                                    @foreach($det->detalleTallas->groupBy('talla.nombre') as $tallaNombre => $detallesTalla)
+                                                        @php
+                                                            $totalTalla = $detallesTalla->sum('cantidad');
+                                                            $esTallaPrincipal = $det->talla && $tallaNombre === $det->talla->nombre;
+                                                        @endphp
+                                                        @if(!$esTallaPrincipal)
+                                                            <div class="d-flex justify-content-between small">
+                                                                <span>{{ $tallaNombre }}:</span>
+                                                                <span class="fw-medium ms-2">{{ $totalTalla }} und</span>
+                                                            </div>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <div class="d-flex flex-column">
+                                            <span>{{ $det->cantidad }}</span>
+                                            @if($det->detalleTallas->isNotEmpty())
+                                                <span class="small text-muted">
+                                                    Total: {{ $det->detalleTallas->sum('cantidad') }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </td>
                                     <td class="text-end">${{ number_format($det->precioUnitario, 2) }}</td>
                                     <td class="text-end">${{ number_format((float)$det->cantidad * (float)$det->precioUnitario, 2) }}</td>
                                 </tr>
@@ -92,7 +125,6 @@
                     @if($venta->transacciones->isEmpty())
                     <div class="alert alert-info mb-0">Aún no hay pagos registrados.</div>
                     @else
-<<<<<<< HEAD
                     <div class="card mb-4">
                         <div class="card-header bg-light">
                             <h5 class="mb-0">Pagos Registrados</h5>
@@ -138,33 +170,6 @@
                             </div>
                             @endif
                         </div>
-=======
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th class="text-end">Monto</th>
-                                    <th>Método</th>
-                                    <th>Estado</th>
-                                    <th>Obs.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($venta->transacciones->sortByDesc('created_at') as $trx)
-                                @if($trx->tipoTransaccion === 'pago')
-                                <tr>
-                                    <td>{{ optional($trx->created_at)->format('d/m/Y H:i') }}</td>
-                                    <td class="text-end">${{ number_format($trx->monto, 2) }}</td>
-                                    <td>{{ $trx->metodoPago }}</td>
-                                    <td><span class="badge bg-{{ $trx->estado == 1 ? 'success' : 'secondary' }}">{{ $trx->estado_texto }}</span></td>
-                                    <td class="text-truncate" style="max-width: 240px;" title="{{ $trx->observaciones }}">{{ $trx->observaciones }}</td>
-                                </tr>
-                                @endif
-                                @endforeach
-                            </tbody>
-                        </table>
->>>>>>> d9efd487ff27120184056bc1a24c027d79dd0f61
                     </div>
                     @endif
                 </div>

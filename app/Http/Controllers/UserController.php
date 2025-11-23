@@ -267,6 +267,5 @@ class UserController extends Controller
         }
         return 'Usuario Base';
     }
-} // <-- Cierra la clase
-
+}
 

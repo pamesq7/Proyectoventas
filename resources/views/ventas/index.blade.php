@@ -100,11 +100,9 @@
                             <thead class="thead-dark">
                                 <tr>
                                     <th>N°</th>
-                                    <th>Fecha</th>
                                     <th>Cliente</th>
                                     <th>Total</th>
                                     <th>Estado Pago</th>
-                                    <th>Vendedor</th>
                                     <th>Fecha Creación</th>
                                     <th>Fecha Actualización</th>
                                     <th>Acciones</th>
@@ -115,7 +113,7 @@
                                 @forelse($ventas as $venta)
                                     <tr>
                                         <td>{{ $contador++ }}</td>
-                                        <td>{{ $venta->created_at->format('d/m/Y') }}</td>
+                                        {{-- <td>{{ $venta->created_at->format('d/m/Y') }}</td> --}}
                                         <td>
                                             <strong>{{ $venta->nombre_cliente }}</strong>
                                             <br><small class="text-muted">{{ $venta->tipo_cliente }}</small>
@@ -140,9 +138,9 @@
                                                 @endif
                                             @endif
                                         </td>
-                                        <td>
+                                        {{-- <td>
                                             <strong>{{ $venta->nombre_empleado }}</strong>
-                                        </td>
+                                        </td> --}}
                                         <td>{{ $venta->created_at->format('d/m/Y H:i') }}</td>
                                         <td>{{ $venta->updated_at->format('d/m/Y H:i') }}</td>
                                         <td>
