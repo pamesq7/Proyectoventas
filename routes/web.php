@@ -396,3 +396,19 @@ Route::middleware(['auth', 'role:cliente'])->group(function () {
 Route::get('/about', function () {
     return view('about');
 })->name('about');
+
+// Rutas de autenticación
+Route::get('login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('login', [AuthController::class, 'login']);
+Route::get('register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('register', [AuthController::class, 'register']);
+
+// Rutas de restablecimiento de contraseña
+Route::get('password/reset', [AuthController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('password/email', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('password/reset/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+Route::post('password/reset', [AuthController::class, 'reset'])->name('password.update');
+
+// Ruta para el cambio de contraseña forzado
+Route::get('password/change', [AuthController::class, 'showChangePasswordForm'])->name('password.change');
+Route::post('password/change', [AuthController::class, 'changePassword'])->name('password.update.forced');

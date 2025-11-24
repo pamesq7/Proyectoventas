@@ -57,7 +57,7 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 @php
                                 $empleadoId = auth()->user()->empleado ? auth()->user()->empleado->idEmpleado : null;
-                                $terminadosCount = $empleadoId ? App\Models\Diseno::where('idEmpleado', $empleadoId)->where('estadoDiseño', 'terminado')->count() : 0;
+                                $terminadosCount = $empleadoId ? App\Models\Diseno::where('idEmpleado', $empleadoId)->where('estadoDiseno', 'terminado')->count() : 0;
                                 @endphp
                                 {{ $terminadosCount }}
                             </div>

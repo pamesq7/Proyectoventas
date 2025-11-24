@@ -8,30 +8,31 @@
         <li class="breadcrumb-item active">Usuarios</li>
     </ol>
 
-    {{-- Mensajes de éxito o error --}}
-    @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle me-2"></i>
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    @endif
-
-    {{-- Mensaje específico para eliminación exitosa --}}
-    @if(session('successdelete'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-trash me-2"></i>
-        {{ session('successdelete') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    @endif
-
-    @if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    {{-- Notificaciones --}}
+    @if(session('notification'))
+        @php
+            $notification = session('notification');
+        @endphp
+        <div class="alert alert-{{ $notification['alert-type'] ?? 'success' }} alert-dismissible fade show" role="alert" style="position: fixed; top: 70px; right: 20px; z-index: 9999; min-width: 300px;">
+            <i class="fas fa-{{ $notification['icon'] ?? 'check-circle' }} me-2"></i>
+            {{ $notification['message'] ?? 'Operación exitosa' }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        
+        @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Cerrar automáticamente después de 5 segundos
+                setTimeout(() => {
+                    const alert = document.querySelector('.alert-dismissible');
+                    if (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            });
+        </script>
+        @endpush
     @endif
 
     {{-- Estadísticas rápidas --}}

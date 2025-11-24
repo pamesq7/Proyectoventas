@@ -133,8 +133,19 @@ class UserController extends Controller
 
         DB::commit();
 
-        return redirect()->route('users.index')
-            ->with('success', 'Usuario creado exitosamente. Se le envió un correo para configurar su contraseña.');
+        // Crear notificación personalizada
+        $notification = [
+            'message' => 'Usuario creado exitosamente. Se le envió un correo para configurar su contraseña.',
+            'alert-type' => 'success',
+            'icon' => 'check-circle',
+            'timeout' => 5000
+        ];
+
+        // Guardar notificación en la sesión flash
+        session()->flash('notification', $notification);
+
+        // Redirigir a la lista de usuarios
+        return redirect()->route('users.index');
 
     } catch (\Exception $e) {
         DB::rollBack();

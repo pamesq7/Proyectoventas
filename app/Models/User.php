@@ -57,6 +57,22 @@ class User extends Authenticatable
         return $this->hasOne(Empleado::class, 'idEmpleado', 'idUser');
     }
 
+    // 🔹 Relación: un usuario (cliente) puede tener muchas ventas/pedidos
+    public function pedidos()
+    {
+        // Si es cliente natural
+        if ($this->clienteNatural) {
+            return $this->hasMany(Venta::class, 'idCliente', 'idUser');
+        }
+        
+        // Si es representante de establecimiento
+        if ($this->clienteEstablecimiento) {
+            return $this->hasMany(Venta::class, 'idEstablecimiento', 'idUser');
+        }
+        
+        // Retornar relación vacía por defecto
+        return $this->hasMany(Venta::class, 'idCliente', 'idUser')->whereRaw('1=0');
+    }
 
     // 🔸 Método helper: obtener tipo de usuario
     public function getTipoUsuarioAttribute()

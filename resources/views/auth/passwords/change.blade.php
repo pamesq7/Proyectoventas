@@ -5,29 +5,33 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">{{ __('Restablecer Contraseña') }}</div>
+                <div class="card-header">{{ __('Cambio de Contraseña Requerido') }}</div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('password.update') }}">
+                    @if (session('success'))
+                        <div class="alert alert-success" role="alert">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
+                    <p class="mb-4">Por razones de seguridad, debe cambiar su contraseña antes de continuar.</p>
+
+                    <form method="POST" action="{{ route('password.update.forced') }}">
                         @csrf
 
-                        <input type="hidden" name="token" value="{{ $token }}">
-
                         <div class="form-group row mb-3">
-                            <label for="email" class="col-md-4 col-form-label text-md-right">
-                                {{ __('Correo Electrónico') }}
+                            <label for="current_password" class="col-md-4 col-form-label text-md-right">
+                                {{ __('Contraseña Actual') }}
                             </label>
 
                             <div class="col-md-6">
-                                <input id="email" type="email" 
-                                       class="form-control @error('email') is-invalid @enderror" 
-                                       name="email" 
-                                       value="{{ $email ?? old('email') }}" 
+                                <input id="current_password" type="password" 
+                                       class="form-control @error('current_password') is-invalid @enderror" 
+                                       name="current_password" 
                                        required 
-                                       autocomplete="email" 
-                                       autofocus>
+                                       autocomplete="current-password">
 
-                                @error('email')
+                                @error('current_password')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
@@ -57,7 +61,7 @@
 
                         <div class="form-group row mb-3">
                             <label for="password-confirm" class="col-md-4 col-form-label text-md-right">
-                                {{ __('Confirmar Contraseña') }}
+                                {{ __('Confirmar Nueva Contraseña') }}
                             </label>
 
                             <div class="col-md-6">
@@ -72,7 +76,7 @@
                         <div class="form-group row mb-0">
                             <div class="col-md-6 offset-md-4">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ __('Restablecer Contraseña') }}
+                                    {{ __('Cambiar Contraseña') }}
                                 </button>
                             </div>
                         </div>
@@ -83,3 +87,4 @@
     </div>
 </div>
 @endsection
+```__
