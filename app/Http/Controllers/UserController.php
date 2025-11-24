@@ -39,114 +39,117 @@ class UserController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        // Debug: Log de datos recibidos
-        Log::info('UserController::store - Datos recibidos:', [
-            'tipo_usuario' => $request->tipo_usuario,
-            'all_data' => $request->except(['password', 'password_confirmation'])
+{
+    Log::info('UserController::store - Datos recibidos:', [
+        'tipo_usuario' => $request->tipo_usuario,
+        'all_data' => $request->except(['password', 'password_confirmation'])
+    ]);
+
+    // Validación base SIN contraseña obligatoria
+    $validator = Validator::make($request->all(), [
+        'tipo_usuario' => 'required|in:cliente_natural,cliente_establecimiento,empleado',
+        'ci' => 'required|string|max:20|unique:users,ci',
+        'name' => 'required|string|max:255',
+        'primerApellido' => 'required|string|max:255',
+        'segundApellido' => 'nullable|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'telefono' => 'nullable|string|max:20',
+        // Ya NO se valida password
+    ]);
+
+    // Validaciones específicas según tipo de usuario
+    if ($request->tipo_usuario === 'cliente_natural') {
+        $validator->addRules([
+            'nit_cliente' => 'nullable|string|max:20',
         ]);
-        
-        // Validación base para todos los usuarios
-        $validator = Validator::make($request->all(), [
-            'tipo_usuario' => 'required|in:cliente_natural,cliente_establecimiento,empleado',
-            'ci' => 'required|string|max:20|unique:users,ci',
-            'name' => 'required|string|max:255',
-            'primerApellido' => 'required|string|max:255',
-            'segundApellido' => 'nullable|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'telefono' => 'nullable|string|max:20',
-            'password' => 'required|string|min:6|confirmed',
+    } elseif ($request->tipo_usuario === 'cliente_establecimiento') {
+        $validator->addRules([
+            'nit_establecimiento' => 'required|string|max:20|unique:cliente_establecimientos,nit',
+            'razonSocial' => 'required|string|max:255',
+            'tipoEstablecimiento' => 'required|string',
+            'domicilioFiscal' => 'required|string|max:500',
         ]);
-
-        // Validaciones específicas según tipo de usuario
-        if ($request->tipo_usuario === 'cliente_natural') {
-            $validator->addRules([
-                'nit_cliente' => 'nullable|string|max:20',
-            ]);
-        } elseif ($request->tipo_usuario === 'cliente_establecimiento') {
-            $validator->addRules([
-                'nit_establecimiento' => 'required|string|max:20|unique:cliente_establecimientos,nit',
-                'razonSocial' => 'required|string|max:255',
-                'tipoEstablecimiento' => 'required|string|in:Empresa Privada,Institución Pública,ONG,Cooperativa,Otro',
-                'domicilioFiscal' => 'required|string|max:500',
-            ]);
-        } elseif ($request->tipo_usuario === 'empleado') {
-            $validator->addRules([
-                'cargo' => 'required|string|max:45',
-                'rol' => 'required|string|in:administrador,diseñador,operador,cliente,vendedor',
-            ]);
-        }
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Crear usuario base
-            $user = User::create([
-                'ci' => $request->ci,
-                'name' => $request->name,
-                'primerApellido' => $request->primerApellido,
-                'segundApellido' => $request->segundApellido,
-                'email' => $request->email,
-                'telefono' => $request->telefono,
-                'password' => Hash::make($request->password),   // Contraseña encri    
-                'estado' => 1,
-            ]);
-
-            // Crear registro específico según tipo
-            switch ($request->tipo_usuario) {
-                case 'cliente_natural':
-                    ClienteNatural::create([
-                        'idCliente' => $user->idUser,
-                        'nit' => $request->nit_cliente,
-                        'estado' => 1,
-                    ]);
-                    break;
-
-                case 'cliente_establecimiento':
-                    ClienteEstablecimiento::create([
-                        'nit' => $request->nit_establecimiento,
-                        'razonSocial' => $request->razonSocial,
-                        'tipoEstablecimiento' => $request->tipoEstablecimiento,
-                        'domicilioFiscal' => $request->domicilioFiscal,
-                        'idRepresentante' => $user->idUser, // Usando idUser como clave foránea
-                        'estado' => 1,
-                    ]);
-                    break;
-
-                case 'empleado':
-                    Empleado::create([
-                        'idEmpleado' => $user->idUser,
-                        'cargo' => $request->cargo,
-                        'rol' => $request->rol,
-                        'estado' => 1,
-                    ]);
-                    break;
-            }
-
-            DB::commit();
-
-            return redirect()->route('users.index')
-                ->with('success', 'Usuario creado exitosamente como ' . str_replace('_', ' ', $request->tipo_usuario) . '.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error al crear usuario:', [
-                'tipo_usuario' => $request->tipo_usuario,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->except(['password', 'password_confirmation'])
-            ]);
-            
-            return redirect()->back()
-                ->with('error', 'Error al crear el usuario: ' . $e->getMessage())
-                ->withInput();
-        }
+    } elseif ($request->tipo_usuario === 'empleado') {
+        $validator->addRules([
+            'cargo' => 'required|string|max:45',
+            'rol' => 'required|string|in:administrador,diseñador,operador,cliente,vendedor',
+        ]);
     }
+
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput();
+    }
+
+    try {
+        DB::beginTransaction();
+
+        // Crear usuario con contraseña por defecto
+        $user = User::create([
+            'ci' => $request->ci,
+            'name' => $request->name,
+            'primerApellido' => $request->primerApellido,
+            'segundApellido' => $request->segundApellido,
+            'email' => $request->email,
+            'telefono' => $request->telefono,
+            'password' => Hash::make('admin'), // <--- Contraseña por defecto
+            'estado' => 1,
+        ]);
+
+        // Enviar email para que el usuario cambie su contraseña
+        \Illuminate\Support\Facades\Password::sendResetLink(['email' => $user->email]);
+
+        // Crear registro asociado según tipo
+        switch ($request->tipo_usuario) {
+            case 'cliente_natural':
+                ClienteNatural::create([
+                    'idCliente' => $user->idUser,
+                    'nit' => $request->nit_cliente,
+                    'estado' => 1,
+                ]);
+                break;
+
+            case 'cliente_establecimiento':
+                ClienteEstablecimiento::create([
+                    'nit' => $request->nit_establecimiento,
+                    'razonSocial' => $request->razonSocial,
+                    'tipoEstablecimiento' => $request->tipoEstablecimiento,
+                    'domicilioFiscal' => $request->domicilioFiscal,
+                    'idRepresentante' => $user->idUser,
+                    'estado' => 1,
+                ]);
+                break;
+
+            case 'empleado':
+                Empleado::create([
+                    'idEmpleado' => $user->idUser,
+                    'cargo' => $request->cargo,
+                    'rol' => $request->rol,
+                    'estado' => 1,
+                ]);
+                break;
+        }
+
+        DB::commit();
+
+        return redirect()->route('users.index')
+            ->with('success', 'Usuario creado exitosamente. Se le envió un correo para configurar su contraseña.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        Log::error('Error al crear usuario:', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'request_data' => $request->except(['password', 'password_confirmation'])
+        ]);
+
+        return redirect()->back()
+            ->with('error', 'Error al crear el usuario: ' . $e->getMessage())
+            ->withInput();
+    }
+}
 
     /**
      * Display the specified resource.
@@ -170,88 +173,87 @@ class UserController extends Controller
      * Update the specified resource in storage.
      */
 
-        public function update(Request $request, User $user)
-    {
-        // Validación básica
-        $validator = Validator::make($request->all(), [
-            'ci' => 'required|string|max:20|unique:users,ci,' . $user->idUser . ',idUser',
-            'name' => 'required|string|max:255',
-            'primerApellido' => 'required|string|max:255',
-            'segundApellido' => 'nullable|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->idUser . ',idUser',
-            'telefono' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:6|confirmed',
-            'estado' => 'required|boolean',
-            'rol' => 'required_if:tipo_usuario,empleado',
+    public function update(Request $request, User $user)
+{
+    // Validación SIN contraseña
+    $validator = Validator::make($request->all(), [
+        'ci' => 'required|string|max:20|unique:users,ci,' . $user->idUser . ',idUser',
+        'name' => 'required|string|max:255',
+        'primerApellido' => 'required|string|max:255',
+        'segundApellido' => 'nullable|string|max:255',
+        'email' => 'required|email|unique:users,email,' . $user->idUser . ',idUser',
+        'telefono' => 'nullable|string|max:20',
+        'estado' => 'required|boolean',
+        // ❌ ya NO validamos password aquí
+    ]);
+
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput();
+    }
+
+    try {
+        DB::beginTransaction();
+
+        // 🔥 No tocamos el password, se mantiene el que tenga
+        $user->update([
+            'ci' => $request->ci,
+            'name' => $request->name,
+            'primerApellido' => $request->primerApellido,
+            'segundApellido' => $request->segundApellido,
+            'email' => $request->email,
+            'telefono' => $request->telefono,
+            'estado' => $request->estado,
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+        // Actualizar según tipo
+        switch ($request->tipo_usuario) {
+            case 'cliente_natural':
+                if ($user->clienteNatural) {
+                    $user->clienteNatural->update([
+                        'nit' => $request->nit_cliente,
+                        'estado' => $request->estado_cliente
+                    ]);
+                }
+                break;
+
+            case 'cliente_establecimiento':
+                if ($user->clienteEstablecimiento) {
+                    $user->clienteEstablecimiento->update([
+                        'nit' => $request->nit_establecimiento,
+                        'razonSocial' => $request->razonSocial,
+                        'tipoEstablecimiento' => $request->tipoEstablecimiento,
+                        'domicilioFiscal' => $request->domicilioFiscal,
+                        'estado' => $request->estado_establecimiento
+                    ]);
+                }
+                break;
+
+            case 'empleado':
+                if ($user->empleado) {
+                    $user->empleado->update([
+                        'cargo' => $request->cargo,
+                        'rol' => $request->rol,
+                        'estado' => $request->estado_empleado
+                    ]);
+                }
+                break;
         }
 
-        try {
-            DB::beginTransaction();
+        DB::commit();
 
-            // Actualizar datos del usuario
-            $userData = [
-                'ci' => $request->ci,
-                'name' => $request->name,
-                'primerApellido' => $request->primerApellido,
-                'segundApellido' => $request->segundApellido,
-                'email' => $request->email,
-                'telefono' => $request->telefono,
-                'estado' => $request->estado,
-            ];
+        return redirect()->route('users.index')
+            ->with('success', 'Usuario actualizado exitosamente.');
 
-            if ($request->filled('password')) {
-                $userData['password'] = Hash::make($request->password);
-            }
+    } catch (\Exception $e) {
+        DB::rollBack();
 
-            $user->update($userData);
-
-            // Actualizar según el tipo de usuario
-            switch ($request->tipo_usuario) {
-                case 'cliente_natural':
-                    if ($user->clienteNatural) {
-                        $user->clienteNatural->update([
-                            'nit' => $request->nit_cliente,
-                        ]);
-                    }
-                    break;
-
-                case 'cliente_establecimiento':
-                    if ($user->clienteEstablecimiento) {
-                        $user->clienteEstablecimiento->update([
-                            'nit' => $request->nit_establecimiento,
-                            'razonSocial' => $request->razonSocial,
-                            'tipoEstablecimiento' => $request->tipoEstablecimiento,
-                            'domicilioFiscal' => $request->domicilioFiscal,
-                        ]);
-                    }
-                    break;
-
-                case 'empleado':
-                    if ($user->empleado) {
-                        $user->empleado->update([
-                            'cargo' => $request->cargo,
-                            'rol' => $request->rol,
-                        ]);
-                    }
-                    break;
-            }
-
-            DB::commit();
-            return redirect()->route('users.index')
-                ->with('success', 'Usuario actualizado exitosamente.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()
-                ->with('error', 'Error al actualizar el usuario: ' . $e->getMessage())
-                ->withInput();
-        } // <-- Cierra catch
-    } // <-- Cierra update
+        return redirect()->back()
+            ->with('error', 'Error al actualizar el usuario: ' . $e->getMessage())
+            ->withInput();
+    }
+}
 
     /**
      * Obtener el tipo de usuario

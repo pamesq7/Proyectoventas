@@ -207,43 +207,7 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            {{-- Contraseña --}}
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Contraseña <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="password"
-                                        class="form-control @error('password') is-invalid @enderror"
-                                        id="password"
-                                        name="password"
-                                        placeholder="Mínimo 6 caracteres"
-                                        required>
-                                    @error('password')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            {{-- Confirmar Contraseña --}}
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password_confirmation" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>
-                                        Confirmar Contraseña <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="password"
-                                        class="form-control"
-                                        id="password_confirmation"
-                                        name="password_confirmation"
-                                        placeholder="Repetir contraseña"
-                                        required>
-                                </div>
-                            </div>
-                        </div>
-
+                        
                         {{-- Campos específicos por tipo de usuario --}}
 
                         {{-- Cliente Natural --}}
