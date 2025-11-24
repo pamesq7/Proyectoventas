@@ -2527,7 +2527,7 @@ class Style
         return $computed;
     }
 
-    /*==============================*/
+    /*==*/
 
     /**
      * Parse a property value into its components.
@@ -2873,7 +2873,7 @@ class Style
         return array_combine(self::$_props_shorthand[$prop], $values);
     }
 
-    /*======================*/
+    /*=*/
 
     /**
      * @link https://www.w3.org/TR/CSS21/visuren.html#display-prop

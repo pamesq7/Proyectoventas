@@ -166,8 +166,8 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-<<<<<<< HEAD
-=======
+
+
 
                                     <!-- Nuevo botón de recibo -->
                                     <!-- Botón de recibo corregido -->
@@ -177,7 +177,7 @@
                                         target="_blank">
                                         <i class="fas fa-receipt"></i> Ver Recibo
                                     </a>
->>>>>>> 9742351cb551888ff5b5eb3ad660b8fe984f1680
+
                                 </div>
                             </td>
                         </tr>

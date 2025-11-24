@@ -2,14 +2,34 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Venta; // Assuming your main orders table is called 'ventas'
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Venta;
+use App\Models\DetalleVenta;
+use App\Models\Producto;
+use App\Models\Categoria;
+use App\Models\Talla;
+use App\Models\Variante;
+use App\Models\Caracteristica;
+use App\Models\ClienteNatural;
+use App\Models\ClienteEstablecimiento;
+use App\Models\Transaccion;
+use App\Models\Empleado;
+use App\Models\Diseno;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Arr;
+use App\Models\Pack;
+use App\Models\Departamento;
+use App\Models\Provincia;
+use App\Models\Municipio;
+use App\Models\DetalleTalla;
+use App\Models\Direccion;
 
-class PedidoPdfController extends Controller
+
+class PedidoController extends Controller
 {
-<<<<<<< HEAD
-    public function generarRecibo($id)
-=======
     /**
      * Mostrar catálogo de productos para clientes
      */
@@ -267,6 +287,14 @@ class PedidoPdfController extends Controller
                 ->withInput();
         }
     }
+
+
+    /**
+     * API: Precios por talla para un producto
+     */
+    // PedidoController.php  (reemplaza el método entero)
+
+    // En PedidoController.php
 
     // Método para la API de precios por talla
     public function apiTallasPreciosPorProducto($idProducto)
@@ -1357,51 +1385,32 @@ class PedidoPdfController extends Controller
     }
 
     public function confirmacion($idVenta)
->>>>>>> 9742351cb551888ff5b5eb3ad660b8fe984f1680
     {
         $venta = Venta::with([
-            'detalleVentas.detalleTallas.talla',
+            'detalleVentas.detalleTallas.talla', // <-- así
             'clienteNatural.user',
-            'clienteEstablecimiento.user',
-            'disenos.empleado.user',
-            'detalleVentas.producto',
-            'direccion.municipio.provincia.departamento' // Cargar relación de dirección completa
-        ])->findOrFail($id);
+            'clienteEstablecimiento.representante',
+            'transacciones',
+            'empleado.user'
+        ])->findOrFail($idVenta);
 
-        $pdf = PDF::loadView('pdf.recibo-pedido', ['pedido' => $venta]);
-        return $pdf->download("recibo-venta-{$venta->idVenta}.pdf");
+        $tallas = Talla::where('estado', 1)
+            ->orderBy('nombre')
+            ->get(['idTallas as idTallas', 'nombre']);
+
+
+        $metodosPago = collect([
+            ['id' => null, 'nombre' => 'Efectivo', 'codigo' => 'efectivo'],
+            ['id' => null, 'nombre' => 'QR', 'codigo' => 'qr'],
+            ['id' => null, 'nombre' => 'Cheque', 'codigo' => 'cheque'],
+            ['id' => null, 'nombre' => 'Transferencia bancaria', 'codigo' => 'transferencia'],
+        ]);
+
+        return view('pedidos.confirmacion', compact('venta', 'metodosPago', 'tallas'));
     }
 
-    public function verRecibo($id)
+    public function getProvincias($idDepartamento)
     {
-<<<<<<< HEAD
-        $venta = Venta::with([
-            'detalleVentas.detalleTallas.talla',
-            'detalleVentas.producto.variante.varianteCaracteristicas.caracteristica.opcion',
-            'clienteNatural.user',
-            'clienteEstablecimiento.user',
-            'disenos.empleado.user',
-            'direccion.municipio.provincia.departamento'
-        ])->findOrFail($id);
-
-        // Procesar características de la variante
-        foreach ($venta->detalleVentas as $detalle) {
-            $caracteristicas = [];
-
-            if ($detalle->producto && $detalle->producto->variante) {
-                foreach ($detalle->producto->variante->varianteCaracteristicas as $vc) {
-                    if ($vc->caracteristica && $vc->caracteristica->opcion) {
-                        $caracteristicas[] = [
-                            'opcion' => $vc->caracteristica->opcion->nombre,
-                            'valor' => $vc->caracteristica->nombre,
-                            'precio_extra' => $vc->precioAdicional ?? 0
-                        ];
-                    }
-                }
-            }
-
-            $detalle->caracteristicasSeleccionadas = $caracteristicas;
-=======
         $provincias = Provincia::where('idDepartamento', $idDepartamento)
             ->where('estado', '1')
             ->orderBy('nombreProvincia')
@@ -1790,100 +1799,62 @@ class PedidoPdfController extends Controller
         return view('pedidos.show', compact('pedido', 'disenoUrl', 'totalPagado', 'saldoPendiente'));
     }
 
-    /**
-     * Editar pedido (datos básicos)
-     */
-    public function edit($idVenta)
-    {
-        $pedido = Venta::with([
-            'clienteNatural.user',
-            'clienteEstablecimiento.representante',
-            'detalleVentas.tallas',  // Cambiado de 'talla' a 'tallas'
-            'detalleVentas.producto',
-            'detalleVentas.detalleTallas', // Agregado para obtener datos del detalle de tallas
-            'disenos',
-            'empleado.user'
-        ])
-            ->findOrFail($idVenta);
+    
+public function edit($id)
+{
+    // Obtener el pedido con sus relaciones
+    $pedido = Venta::with([
+        'detalleVentas.producto',
+        'detalleVentas.detalleTallas.talla',
+        'clienteNatural.user',
+        'clienteEstablecimiento.user',
+        'disenos.empleado.user'
+    ])->findOrFail($id);
 
-        // Estados del pedido
-        $estados = [
-            '0' => 'Pendiente',
-            '1' => 'En Proceso',
-            '2' => 'Listo',
-            '3' => 'Entregado',
-            '4' => 'Pagado',
-            '5' => 'Pago Parcial'
-        ];
+    // Obtener el primer producto del pedido (si existe)
+    $producto = $pedido->detalleVentas->first()?->producto;
 
-        // Tallas activas
-        $tallas = Talla::where('estado', 1)
-            ->orderBy('nombre')
-            ->get(['idTallas', 'nombre']);
+    // Inicializar variables para packs
+    $esPack = false;
+    $pack = null;
+    $variantesPack = collect();
 
-        // Productos activos
-        $productos = Producto::where('estado', 1)
-            ->orderBy('nombre')
-            ->get(['idProducto', 'nombre', 'precioVenta as precio']);
+    // Obtener datos para los selects
+    $diseñadores = Empleado::with('user')
+        ->where('rol', 'diseñador')
+        ->where('estado', 1)
+        ->get();
 
-        // Métodos de pago
-        $metodosPago = [
-            ['codigo' => 'efectivo', 'nombre' => 'Efectivo'],
-            ['codigo' => 'qr', 'nombre' => 'QR'],
-            ['codigo' => 'transferencia', 'nombre' => 'Transferencia'],
-            ['codigo' => 'tarjeta', 'nombre' => 'Tarjeta de Crédito/Débito']
-        ];
+    $productos = Producto::where('estado', 1)->get();
+    $tallas = Talla::where('estado', 1)->get();
+    $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+    $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
 
-        // Obtener clientes activos
-        $clientesNaturales = ClienteNatural::with('user')
-            ->where('estado', 1)
-            ->get()
-            ->map(function ($cliente) {
-                return [
-                    'id' => $cliente->idClienteNatural,
-                    'nombre' => $cliente->user->name . ' ' .
-                        $cliente->user->primerApellido . ' ' .
-                        ($cliente->user->segundoApellido ?? '')
-                ];
-            });
+    // Modos de producto
+    $modosProducto = [
+        ['key' => 'normal', 'label' => 'Normal', 'icon' => 'tshirt'],
+        ['key' => 'estandar', 'label' => 'Estándar', 'icon' => 'tshirt'],
+        ['key' => 'personalizado', 'label' => 'Personalizado', 'icon' => 'paint-brush'],
+    ];
 
-        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')
-            ->where('estado', 1)
-            ->get()
-            ->map(function ($cliente) {
-                return [
-                    'id' => $cliente->idClienteEstablecimiento,
-                    'nombre' => $cliente->razonSocial .
-                        ($cliente->nombreComercial ? " ({$cliente->nombreComercial})" : '')
-                ];
-            });
+    // Establecer modo seleccionado (puedes ajustar según necesites)
+    $modoSeleccionado = 'normal';
 
-        // Obtener diseñadores (empleados con rol de diseñador)
-        $diseñadores = Empleado::with('user')
-            ->where('estado', 1)
-            ->where('rol', 'diseñador')  // Cambiado de whereHas('cargo') a where('rol', 'diseñador')
-            ->get()
-            ->map(function ($empleado) {
-                return [
-                    'id' => $empleado->idEmpleado,
-                    'nombre' => $empleado->user->name . ' ' .
-                        $empleado->user->primerApellido . ' ' .
-                        ($empleado->user->segundoApellido ?? '')
-                ];
-            });
-
-        return view('pedidos.edit', compact(
-            'pedido',
-            'estados',
-            'tallas',
-            'productos',
-            'metodosPago',
-            'clientesNaturales',
-            'clientesEstablecimientos',
-            'diseñadores'
-        ));
-    }
-
+    return view('pedidos.edit', compact(
+        'pedido',
+        'producto',
+        'productos',
+        'tallas',
+        'clientesNaturales',
+        'clientesEstablecimientos',
+        'diseñadores',
+        'esPack',
+        'pack',
+        'variantesPack',
+        'modosProducto',
+        'modoSeleccionado'
+    ));
+}
     /**
      * Actualizar pedido
      */
@@ -2519,10 +2490,55 @@ class PedidoPdfController extends Controller
 
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
->>>>>>> 9742351cb551888ff5b5eb3ad660b8fe984f1680
         }
 
-        $pdf = PDF::loadView('pdf.recibo-pedido', ['pedido' => $venta]);
-        return $pdf->stream("recibo-venta-{$venta->idVenta}.pdf");
+        $pedidos = $query->latest()->paginate(10);
+
+        return view('pedidos.asignados', compact('pedidos'));
+    }
+
+    /**
+     * Crear nuevo pedido
+     */
+    public function create()
+    {
+        $diseñadores = Empleado::with('user')
+            ->where('rol', 'diseñador')
+            ->where('estado', 1)
+            ->get();
+
+        $productos = Producto::where('estado', 1)->get();
+        $tallas = Talla::where('estado', 1)->get();
+        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
+
+        return view('pedidos.nuevo', compact(
+            'productos',
+            'tallas',
+            'clientesNaturales',
+            'clientesEstablecimientos',
+            'diseñadores'
+        ));
+    }
+
+    /**
+     * Mostrar el carrito de compras
+     */
+    public function verCarrito()
+    {
+        $carrito = session()->get('carrito', []);
+        $total = collect($carrito)->sum('subtotal');
+
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'carrito' => $carrito,
+                'total' => $total,
+                'count' => count($carrito),
+                'html' => view('pedidos.carrito-lateral-contenido', compact('carrito', 'total'))->render()
+            ]);
+        }
+
+        return view('pedidos.carrito', compact('carrito', 'total'));
     }
 }

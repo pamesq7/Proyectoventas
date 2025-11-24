@@ -42,9 +42,9 @@ use App\Http\Controllers\CarritoController;
 |
 */
 
-// =========================================================================
+// ===
 // RUTAS PÚBLICAS
-// =========================================================================
+// ===
 
 // Ruta de inicio (única definición)
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -55,9 +55,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 
-// =========================================================================
+// ===
 // RUTAS PROTEGIDAS (REQUIEREN AUTENTICACIÓN)
-// =========================================================================
+// ===
 Route::middleware('auth')->group(function () {
     // Logout disponible para TODOS los usuarios autenticados
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -70,9 +70,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/cliente/dashboard', [HomeController::class, 'clienteDashboard'])->name('dashboard.cliente');
 });
 
-// =========================================================================
+// ===
 // ROL ADMINISTRADOR + VENDEDOR - GESTIÓN COMPLETA
-// =========================================================================
+// ===
 Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
 
     // Dashboard principal
@@ -267,9 +267,9 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('/carrito/ver', [CarritoController::class, 'ver'])->name('carrito.ver');
     Route::delete('/carrito/vaciar', [CarritoController::class, 'vaciar'])->name('carrito.vaciar');
     Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
-    // =========================================================================
+    // ===
     // GESTIÓN DE PEDIDOS
-    // =========================================================================
+    // ===
     Route::prefix('pedidos')->group(function () {
         // Configuración de pedidos
         Route::get('catalogo', [PedidoController::class, 'catalogo'])->name('pedidos.catalogo');
@@ -339,9 +339,9 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
     Route::get('/rolVendedor/dashboard', [VendedorController::class, 'dashboard'])->name('rolVendedor.dashboard');
 });
 
-// =========================================================================
+// ===
 // ROL DISEÑADOR - FLUJO SIMPLIFICADO
-// =========================================================================
+// ===
 Route::middleware(['auth', 'role:diseñador'])->group(function () {
     // Trabajar en un diseño específico
     Route::get('/diseñador/trabajar/{idDiseno}', [DisenadorController::class, 'trabajar'])->name('diseñador.trabajar');
@@ -353,9 +353,9 @@ Route::middleware(['auth', 'role:diseñador'])->group(function () {
     Route::post('/diseñador/{idDiseno}/subir', [DisenadorController::class, 'subirDisenoTerminado'])->name('diseñador.subir');
 });
 
-// =========================================================================
+// ===
 // ROL OPERADOR - FLUJO SIMPLIFICADO
-// =========================================================================
+// ===
 Route::middleware(['auth', 'role:operador'])->group(function () {
     // Gestión de Pedidos para Operador
     Route::get('/rolOperador/index', [OperadorController::class, 'index'])->name('rolOperador.index');
@@ -370,9 +370,9 @@ Route::middleware(['auth', 'role:operador'])->group(function () {
     Route::get('/rolOperador/{pedido}/show', [OperadorController::class, 'show'])->name('rolOperador.show');
 });
 
-// =========================================================================
+// ===
 // ROL CLIENTE - FLUJO SIMPLIFICADO
-// =========================================================================
+// ===
 Route::middleware(['auth', 'role:cliente'])->group(function () {
     // Historial de pedidos del cliente
     Route::get('/rolCliente/historial', [ClienteDashboardController::class, 'historial'])->name('rolCliente.historial');
@@ -390,9 +390,9 @@ Route::middleware(['auth', 'role:cliente'])->group(function () {
     Route::get('/rolCliente/perfil', [ClienteDashboardController::class, 'perfil'])->name('rolCliente.perfil');
 });
 
-// =========================================================================
+// ===
 // RUTAS PÚBLICAS ADICIONALES
-// =========================================================================
+// ===
 Route::get('/about', function () {
     return view('about');
 })->name('about');

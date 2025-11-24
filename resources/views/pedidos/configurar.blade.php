@@ -391,9 +391,9 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // ========================
+        // ===
         // 1) Variables globales
-        // ========================
+        // ===
         const inputModoProducto = document.getElementById('modoProducto');
         const modoTabs          = document.querySelectorAll('#modoProductoTabs [data-modokey]');
         const tallaButtons      = document.querySelectorAll('.talla-btn');
@@ -406,9 +406,9 @@
         const tbodyItems        = document.getElementById('tbodyItems');
         let contadorFilas       = tbodyItems ? tbodyItems.querySelectorAll('tr').length : 0;
 
-        // ========================
+        // ===
         // 2) Funciones de utilidad
-        // ========================
+        // ===
         function cambiarModo(modoKey, tabElement) {
             if (inputModoProducto) {
                 inputModoProducto.value = modoKey;
@@ -447,9 +447,9 @@
             return tab.textContent.trim();
         }
 
-        // ========================
+        // ===
         // 3) Manejadores de eventos
-        // ========================
+        // ===
         function inicializarEventos() {
             modoTabs.forEach(tab => {
                 tab.addEventListener('click', function(e) {
@@ -487,9 +487,9 @@
             });
         }
 
-        // ========================
+        // ===
         // 4) Lógica principal
-        // ========================
+        // ===
         function generarFilas() {
             if (!tallaButtons || !tbodyItems) return;
 
@@ -555,9 +555,9 @@
             if (inputCantidad) inputCantidad.value = '1';
         }
 
-        // ========================
+        // ===
         // 5) Inicialización
-        // ========================
+        // ===
         function inicializar() {
             if (inputModoProducto && modoTabs.length) {
                 const modoInicial = inputModoProducto.value || modoTabs[0].getAttribute('data-modokey');

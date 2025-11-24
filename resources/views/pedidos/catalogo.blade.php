@@ -27,9 +27,9 @@
         <li class="breadcrumb-item active">Catálogo</li>
     </ol>
 
-    {{-- =========================
+    {{-- ====
          1) Datos base (unificación)
-       ========================= --}}
+       ==== --}}
     @php
     use Illuminate\Support\Str;
 
@@ -143,9 +143,9 @@
     ->values();
     @endphp
 
-    {{-- =========================
+    {{-- ====
          2) Filtros + búsqueda (unificados)
-       ========================= --}}
+       ==== --}}
     <div class="card mb-4">
         <div class="card-body">
             <div class="row g-3 align-items-center">
@@ -182,9 +182,9 @@
         </div>
     </div>
 
-    {{-- =========================
+    {{-- ====
          3) Grid único (todo junto)
-       ========================= --}}
+       ==== --}}
     <div class="row g-3" id="gridUnico">
         @foreach($items as $it)
         <div class="col-12 col-sm-6 col-md-4 col-lg-3 item-card"

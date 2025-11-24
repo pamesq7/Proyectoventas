@@ -87,7 +87,7 @@
             </div>
         </div>
     </div>
-<<<<<<< HEAD
+
     <!-- Modal para registrar pago -->
     <div class="modal fade" id="modalRegistrarPago" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -117,7 +117,7 @@
                                             <span class="text-danger font-weight-bold">Bs. <span id="saldoModal"></span></span>
                                         </p>
                                     </div>
-=======
+
 <!-- Modal para registrar pago -->
 <div class="modal fade" id="modalRegistrarPago" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -219,7 +219,7 @@
                             </div>
                         </div>
                     </div>
-<<<<<<< HEAD
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="fas fa-times"></i> Cancelar
@@ -230,7 +230,7 @@
                     </div>
                 </form>
             </div>
-=======
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -247,7 +247,7 @@
 
     @endsection
 
-<<<<<<< HEAD
+
     @section('scripts')
     <script>
         $(document).ready(function() {
@@ -343,7 +343,7 @@
         });
     </script>
     @endsection
-=======
+
 @section('scripts')
 <script>
 $(document).ready(function() {

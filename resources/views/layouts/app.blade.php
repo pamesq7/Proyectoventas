@@ -157,9 +157,9 @@
     {{-- Script de notificaciones + carrito --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ==========================
+            // =====
             // 1) NOTIFICACIONES
-            // ==========================
+            // =====
             const notifications = document.querySelectorAll('.notification-alert');
             notifications.forEach(function(notification) {
                 setTimeout(function() {
@@ -301,9 +301,9 @@
                 return titles[type] || 'Mensaje';
             }
 
-            // ==========================
+            // =====
             // 2) CARRITO LATERAL (OFFCANVAS)
-            // ==========================
+            // =====
             const carritoToggle = document.getElementById('carritoLateralToggle');
             const carritoLateral = document.getElementById('carritoLateral');
             const carritoContenido = document.getElementById('carritoContenido');

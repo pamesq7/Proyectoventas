@@ -170,9 +170,9 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // ========================================
+        // =====
         // FUNCIONES DE BÚSQUEDA DE CLIENTES
-        // ========================================
+        // =====
         const clienteFilter = document.getElementById('clienteFilter');
         const clienteSelect = document.getElementById('clienteSelect');
         const btnClearSearch = document.getElementById('btnClearSearch');
@@ -254,9 +254,9 @@
         clienteFilter?.addEventListener('input', filtrarClientes);
         btnClearSearch?.addEventListener('click', limpiarBusqueda);
 
-        // ========================================
+        // =====
         // FUNCIONES DE CÁLCULO
-        // ========================================
+        // =====
         let tallaPriceMap = new Map();
         let precioBase = 0;
 

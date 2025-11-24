@@ -36,7 +36,7 @@
     </div>
     @endif
 
-<<<<<<< HEAD
+
     <form id="formNuevoPedido" action="{{ route('pedidos.guardar-desde-catalogo') }}" method="POST">
         @csrf
         <input type="hidden" name="idProducto" value="{{ $producto->idProducto }}">
@@ -51,7 +51,7 @@
                 <div class="d-flex align-items-center gap-2">
                     <button type="button" class="btn btn-success btn-sm" id="btnAgregarCarrito">
                         <i class="fas fa-cart-plus me-1"></i> Agregar al carrito
-=======
+
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Datos del pedido</h5>
@@ -163,7 +163,7 @@
                 <div class="col-12 d-flex justify-content-end mt-2">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i> Guardar cambios
->>>>>>> 9742351cb551888ff5b5eb3ad660b8fe984f1680
+
                     </button>
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="fas fa-save me-1"></i> Guardar Pedido
@@ -174,7 +174,7 @@
                 </div>
             </div>
 
-<<<<<<< HEAD
+
             {{-- Información del producto --}}
             <div class="card mb-4 mt-3">
                 <div class="card-header">
@@ -221,7 +221,7 @@
                                     <span class="badge bg-success">Disponible</span>
                                 </div>
                             </div>
-=======
+
     <!-- Edición completa de detalles -->
     <div class="card mt-4">
         <div class="card-header">
@@ -310,7 +310,7 @@
                                     </tr>
                                 </tfoot>
                             </table>
->>>>>>> 9742351cb551888ff5b5eb3ad660b8fe984f1680
+
                         </div>
                     </div>
                 </div>
@@ -348,7 +348,7 @@
                     </button>
                 </div>
 
-<<<<<<< HEAD
+
                 {{-- PACK --}}
                 @if($esPack && !empty($variantesPack) && count($variantesPack))
                 <div class="card-body">
@@ -439,7 +439,7 @@
                         @else
                         <div class="alert alert-warning">
                             No hay características disponibles para esta opción.
-=======
+
                 <div class="row g-3 mt-3">
                     <div class="col-md-4">
                         <label class="form-label">Tipo Pago</label>
@@ -455,7 +455,7 @@
                         <div class="input-group input-group-sm">
                             <span class="input-group-text">Bs</span>
                             <input type="number" step="0.01" min="0" name="montoAdelanto" class="form-control" placeholder="0.00">
->>>>>>> 9742351cb551888ff5b5eb3ad660b8fe984f1680
+
                         </div>
                         @endif
                     </div>
@@ -511,7 +511,7 @@
                 </div>
             </div>
 
-<<<<<<< HEAD
+
             {{-- Configurador rápido de tallas --}}
             <div class="card mb-4">
                 <div class="card-header">
@@ -609,9 +609,9 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // ========================
+        // ===
         // 1) Variables globales
-        // ========================
+        // ===
         const inputModoProducto = document.getElementById('modoProducto');
         const modoTabs = document.querySelectorAll('#modoProductoTabs [data-modokey]');
         const tallaButtons = document.querySelectorAll('.talla-btn');
@@ -624,9 +624,9 @@
         const tbodyItems = document.getElementById('tbodyItems');
         let contadorFilas = tbodyItems ? tbodyItems.querySelectorAll('tr').length : 0;
 
-        // ========================
+        // ===
         // 2) Funciones de utilidad
-        // ========================
+        // ===
         function cambiarModo(modoKey, tabElement) {
             if (inputModoProducto) {
                 inputModoProducto.value = modoKey;
@@ -668,9 +668,9 @@
             return tab.textContent.trim();
         }
 
-        // ========================
+        // ===
         // 3) Manejadores de eventos
-        // ========================
+        // ===
         function inicializarEventos() {
             modoTabs.forEach(tab => {
                 tab.addEventListener('click', function(e) {
@@ -708,9 +708,9 @@
             });
         }
 
-        // ========================
+        // ===
         // 4) Lógica principal
-        // ========================
+        // ===
         function generarFilas() {
             if (!tallaButtons || !tbodyItems) return;
 
@@ -774,9 +774,9 @@
             if (inputCantidad) inputCantidad.value = '1';
         }
 
-        // ========================
+        // ===
         // 5) Inicialización
-        // ========================
+        // ===
         function inicializar() {
             if (inputModoProducto && modoTabs.length) {
                 const modoInicial = inputModoProducto.value || modoTabs[0].getAttribute('data-modokey');
@@ -871,7 +871,7 @@
 </script>
 @endif
 @endpush
-=======
+
                 <input type="hidden" name="delete_ids" id="delete_ids_holder">
                 <div class="d-flex justify-content-end mt-3">
                     <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Guardar detalles</button>
@@ -1107,4 +1107,4 @@
     @endpush
 </div>
 @endsection
->>>>>>> 9742351cb551888ff5b5eb3ad660b8fe984f1680
+

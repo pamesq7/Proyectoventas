@@ -25,7 +25,7 @@ $db = $capsule->getConnection();
 $schema = $capsule->schema();
 
 echo "🔍 VALIDANDO ESTRUCTURA DE BASE DE DATOS\n";
-echo "========================================\n\n";
+echo "=====\n\n";
 
 $errors = [];
 $warnings = [];
@@ -228,7 +228,7 @@ try {
 }
 
 echo "\n5. RESUMEN DE VALIDACIÓN\n";
-echo "========================\n";
+echo "===\n";
 
 echo "✅ ÉXITOS (" . count($success) . "):\n";
 foreach ($success as $msg) {
