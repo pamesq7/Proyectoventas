@@ -30,6 +30,145 @@ use App\Models\Direccion;
 
 class PedidoController extends Controller
 {
+    
+        public function create()
+    {
+        $diseñadores = Empleado::with('user')
+            ->where('rol', 'diseñador')
+            ->where('estado', 1)
+            ->get();
+
+        $productos = Producto::where('estado', 1)->get();
+        $tallas = Talla::where('estado', 1)->get();
+        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+        $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
+
+        return view('pedidos.nuevo', compact(
+            'productos',
+            'tallas',
+            'clientesNaturales',
+            'clientesEstablecimientos',
+            'diseñadores'
+        ));
+    }
+
+        
+public function edit($id)
+{
+    // Obtener el pedido con sus relaciones
+    $pedido = Venta::with([
+        'detalleVentas.producto',
+        'detalleVentas.detalleTallas.talla',
+        'clienteNatural.user',
+        'clienteEstablecimiento.user',
+        'disenos.empleado.user'
+    ])->findOrFail($id);
+
+    // Obtener el primer producto del pedido (si existe)
+    $producto = $pedido->detalleVentas->first()?->producto;
+
+    // Inicializar variables para packs
+    $esPack = false;
+    $pack = null;
+    $variantesPack = collect();
+
+    // Obtener datos para los selects
+    $diseñadores = Empleado::with('user')
+        ->where('rol', 'diseñador')
+        ->where('estado', 1)
+        ->get();
+
+    $productos = Producto::where('estado', 1)->get();
+    $tallas = Talla::where('estado', 1)->get();
+    $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+    $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
+
+    // Modos de producto
+    $modosProducto = [
+        ['key' => 'normal', 'label' => 'Normal', 'icon' => 'tshirt'],
+        ['key' => 'estandar', 'label' => 'Estándar', 'icon' => 'tshirt'],
+        ['key' => 'personalizado', 'label' => 'Personalizado', 'icon' => 'paint-brush'],
+    ];
+
+    // Establecer modo seleccionado (puedes ajustar según necesites)
+    $modoSeleccionado = 'normal';
+
+    return view('pedidos.edit', compact(
+        'pedido',
+        'producto',
+        'productos',
+        'tallas',
+        'clientesNaturales',
+        'clientesEstablecimientos',
+        'diseñadores',
+        'esPack',
+        'pack',
+        'variantesPack',
+        'modosProducto',
+        'modoSeleccionado'
+    ));
+}
+    /**
+     * Actualizar pedido
+     */
+    public function update(Request $request, $idVenta)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Validación de los campos del pedido
+            $validated = $request->validate([
+                'fechaEntrega' => 'required|date|after_or_equal:today',
+                'lugarEntrega' => 'required|string|max:200',
+                'estadoPedido' => 'required|in:0,1,2,3,4',
+                'imagenPedido' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+                'tipoCliente' => 'required|string',
+                'idEmpleado' => 'required|exists:empleados,idEmpleado',
+                'observaciones' => 'nullable|string|max:500',
+            ]);
+
+            // Buscar el pedido con relaciones necesarias
+            $pedido = Venta::with('disenos', 'detalleVentas.diseno')->findOrFail($idVenta);
+
+            // Actualizar datos básicos
+            $pedido->fill([
+                'fechaEntrega' => $validated['fechaEntrega'],
+                'lugarEntrega' => $validated['lugarEntrega'],
+                'estadoPedido' => (string) $validated['estadoPedido'],
+                'observaciones' => $validated['observaciones'] ?? null,
+            ]);
+
+            // Actualizar relación con cliente
+            $this->actualizarCliente($pedido, $validated['tipoCliente']);
+
+            // Asignar empleado (diseñador)
+            $pedido->idEmpleado = $validated['idEmpleado'];
+
+            // Manejar la imagen del pedido
+            $this->manejarImagenPedido($pedido, $request);
+
+            // Guardar cambios
+            $pedido->save();
+
+            DB::commit();
+
+            return redirect()
+                ->route('pedidos.index')
+                ->with('success', 'Pedido actualizado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al actualizar pedido: ' . $e->getMessage(), [
+                'exception' => $e,
+                'pedido_id' => $idVenta,
+                'request' => $request->all()
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Error al actualizar el pedido: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Mostrar catálogo de productos para clientes
      */
@@ -1799,122 +1938,7 @@ class PedidoController extends Controller
         return view('pedidos.show', compact('pedido', 'disenoUrl', 'totalPagado', 'saldoPendiente'));
     }
 
-    
-public function edit($id)
-{
-    // Obtener el pedido con sus relaciones
-    $pedido = Venta::with([
-        'detalleVentas.producto',
-        'detalleVentas.detalleTallas.talla',
-        'clienteNatural.user',
-        'clienteEstablecimiento.user',
-        'disenos.empleado.user'
-    ])->findOrFail($id);
 
-    // Obtener el primer producto del pedido (si existe)
-    $producto = $pedido->detalleVentas->first()?->producto;
-
-    // Inicializar variables para packs
-    $esPack = false;
-    $pack = null;
-    $variantesPack = collect();
-
-    // Obtener datos para los selects
-    $diseñadores = Empleado::with('user')
-        ->where('rol', 'diseñador')
-        ->where('estado', 1)
-        ->get();
-
-    $productos = Producto::where('estado', 1)->get();
-    $tallas = Talla::where('estado', 1)->get();
-    $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
-    $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
-
-    // Modos de producto
-    $modosProducto = [
-        ['key' => 'normal', 'label' => 'Normal', 'icon' => 'tshirt'],
-        ['key' => 'estandar', 'label' => 'Estándar', 'icon' => 'tshirt'],
-        ['key' => 'personalizado', 'label' => 'Personalizado', 'icon' => 'paint-brush'],
-    ];
-
-    // Establecer modo seleccionado (puedes ajustar según necesites)
-    $modoSeleccionado = 'normal';
-
-    return view('pedidos.edit', compact(
-        'pedido',
-        'producto',
-        'productos',
-        'tallas',
-        'clientesNaturales',
-        'clientesEstablecimientos',
-        'diseñadores',
-        'esPack',
-        'pack',
-        'variantesPack',
-        'modosProducto',
-        'modoSeleccionado'
-    ));
-}
-    /**
-     * Actualizar pedido
-     */
-    public function update(Request $request, $idVenta)
-    {
-        DB::beginTransaction();
-
-        try {
-            // Validación de los campos del pedido
-            $validated = $request->validate([
-                'fechaEntrega' => 'required|date|after_or_equal:today',
-                'lugarEntrega' => 'required|string|max:200',
-                'estadoPedido' => 'required|in:0,1,2,3,4',
-                'imagenPedido' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-                'tipoCliente' => 'required|string',
-                'idEmpleado' => 'required|exists:empleados,idEmpleado',
-                'observaciones' => 'nullable|string|max:500',
-            ]);
-
-            // Buscar el pedido con relaciones necesarias
-            $pedido = Venta::with('disenos', 'detalleVentas.diseno')->findOrFail($idVenta);
-
-            // Actualizar datos básicos
-            $pedido->fill([
-                'fechaEntrega' => $validated['fechaEntrega'],
-                'lugarEntrega' => $validated['lugarEntrega'],
-                'estadoPedido' => (string) $validated['estadoPedido'],
-                'observaciones' => $validated['observaciones'] ?? null,
-            ]);
-
-            // Actualizar relación con cliente
-            $this->actualizarCliente($pedido, $validated['tipoCliente']);
-
-            // Asignar empleado (diseñador)
-            $pedido->idEmpleado = $validated['idEmpleado'];
-
-            // Manejar la imagen del pedido
-            $this->manejarImagenPedido($pedido, $request);
-
-            // Guardar cambios
-            $pedido->save();
-
-            DB::commit();
-
-            return redirect()
-                ->route('pedidos.index')
-                ->with('success', 'Pedido actualizado correctamente.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error al actualizar pedido: ' . $e->getMessage(), [
-                'exception' => $e,
-                'pedido_id' => $idVenta,
-                'request' => $request->all()
-            ]);
-
-            return back()
-                ->withInput()
-                ->with('error', 'Error al actualizar el pedido: ' . $e->getMessage());
-        }
-    }
 
     /**
      * Actualiza la relación del pedido con el cliente
@@ -2500,26 +2524,6 @@ public function edit($id)
     /**
      * Crear nuevo pedido
      */
-    public function create()
-    {
-        $diseñadores = Empleado::with('user')
-            ->where('rol', 'diseñador')
-            ->where('estado', 1)
-            ->get();
-
-        $productos = Producto::where('estado', 1)->get();
-        $tallas = Talla::where('estado', 1)->get();
-        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
-        $clientesEstablecimientos = ClienteEstablecimiento::with('user')->where('estado', 1)->get();
-
-        return view('pedidos.nuevo', compact(
-            'productos',
-            'tallas',
-            'clientesNaturales',
-            'clientesEstablecimientos',
-            'diseñadores'
-        ));
-    }
 
     /**
      * Mostrar el carrito de compras
