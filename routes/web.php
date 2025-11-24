@@ -27,6 +27,7 @@ use App\Http\Controllers\ClienteDashboardController;
 use App\Http\Controllers\MorosoController;
 use App\Http\Controllers\PedidoPdfController;
 use App\Http\Controllers\CarritoController;
+use App\Http\Controllers\ClienteController;
 
 
 
@@ -296,6 +297,7 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
 
         // Administración de pedidos
         Route::get('/', [PedidoController::class, 'index'])->name('pedidos.index');
+        Route::post('/', [PedidoController::class, 'store'])->name('pedidos.store');
         Route::get('{idVenta}', [PedidoController::class, 'show'])->name('pedidos.show');
         Route::get('{idVenta}/edit', [PedidoController::class, 'edit'])->name('pedidos.edit');
         Route::put('{idVenta}', [PedidoController::class, 'update'])->name('pedidos.update');
@@ -304,6 +306,9 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
         Route::delete('{idVenta}', [PedidoController::class, 'destroy'])->name('pedidos.destroy');
         Route::delete('{idVenta}/eliminar-imagen', [PedidoController::class, 'eliminarImagen'])->name('pedidos.eliminar-imagen');
 
+
+        // En routes/api.php
+        Route::get('/buscar-clientes', [ClienteController::class, 'buscarClientes'])->name('api.buscar-clientes');
         // Ruta para guardar pedido directamente desde catálogo (sin diseño)
         Route::post('guardar-desde-catalogo', [PedidoController::class, 'guardarDesdeCatalogo'])
             ->name('pedidos.guardar-desde-catalogo');

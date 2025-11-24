@@ -56,21 +56,13 @@ class PedidoController extends Controller
 public function edit($id)
 {
     // Obtener el pedido con sus relaciones
-    $pedido = Venta::with([
-        'detalleVentas.producto',
-        'detalleVentas.detalleTallas.talla',
-        'clienteNatural.user',
-        'clienteEstablecimiento.user',
-        'disenos.empleado.user'
-    ])->findOrFail($id);
+    $pedido = Venta::with(['detalleVentas.producto', 'detalleVentas.detalleTallas.talla'])
+        ->findOrFail($id);
 
-    // Obtener el primer producto del pedido (si existe)
-    $producto = $pedido->detalleVentas->first()?->producto;
-
-    // Inicializar variables para packs
-    $esPack = false;
-    $pack = null;
-    $variantesPack = collect();
+    // Asegurarse de que fechaEntrega sea una instancia de Carbon
+    if (is_string($pedido->fechaEntrega)) {
+        $pedido->fechaEntrega = \Carbon\Carbon::parse($pedido->fechaEntrega);
+    }
 
     // Obtener datos para los selects
     $diseñadores = Empleado::with('user')
@@ -90,20 +82,36 @@ public function edit($id)
         ['key' => 'personalizado', 'label' => 'Personalizado', 'icon' => 'paint-brush'],
     ];
 
-    // Establecer modo seleccionado (puedes ajustar según necesites)
+    // Establecer modo seleccionado
     $modoSeleccionado = 'normal';
+
+    // Preparar los detalles para la vista
+    $detalles = collect();
+    foreach ($pedido->detalleVentas as $detalle) {
+        foreach ($detalle->detalleTallas as $detalleTalla) {
+            $detalles->push((object)[
+                'idDetalleVenta' => $detalle->iddetalleVenta,
+                'idProducto' => $detalle->idProducto,
+                'idTalla' => $detalleTalla->idTallas,
+                'cantidad' => $detalleTalla->cantidad,
+                'precioUnitario' => $detalle->precioUnitario,
+                'nombrePersonalizado' => $detalle->nombrePersonalizado,
+                'numeroPersonalizado' => $detalle->numeroPersonalizado,
+                'observaciones' => $detalle->observacion,
+                'talla' => $detalleTalla->talla
+            ]);
+        }
+    }
+
+    $pedido->detalles = $detalles;
 
     return view('pedidos.edit', compact(
         'pedido',
-        'producto',
         'productos',
         'tallas',
         'clientesNaturales',
         'clientesEstablecimientos',
         'diseñadores',
-        'esPack',
-        'pack',
-        'variantesPack',
         'modosProducto',
         'modoSeleccionado'
     ));
@@ -168,6 +176,97 @@ public function edit($id)
                 ->with('error', 'Error al actualizar el pedido: ' . $e->getMessage());
         }
     }
+
+public function store(Request $request)
+{
+    // Validación de datos
+    $validated = $request->validate([
+        'fechaEntrega' => 'required|date',
+        'lugarEntrega' => 'required|string|max:255',
+        'idEmpleado' => 'required|exists:empleados,idEmpleado',
+        'tipoCliente' => 'required|in:natural,establecimiento',
+        'idCliente' => 'required|integer',
+        'idProducto' => 'required|exists:productos,idProducto',
+        'idTallas' => 'required|array|min:1',
+        'idTallas.*' => 'exists:tallas,idTallas',
+        'cantidad' => 'required|array|min:1',
+        'cantidad.*' => 'required|integer|min:1',
+        'nombrePersonalizado' => 'nullable|array',
+        'nombrePersonalizado.*' => 'nullable|string|max:255',
+        'numeroPersonalizado' => 'nullable|array',
+        'numeroPersonalizado.*' => 'nullable|string|max:50',
+        'observaciones' => 'nullable|array',
+        'observaciones.*' => 'nullable|string|max:500',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        // Crear la venta/pedido
+        $venta = new Venta();
+        $venta->fecha = now();
+        $venta->fechaEntrega = $validated['fechaEntrega'];
+        $venta->lugarEntrega = $validated['lugarEntrega'];
+        $venta->estadoPedido = 'pendiente'; // Estado inicial
+        $venta->idEmpleado = $validated['idEmpleado'];
+        
+        // Asignar cliente según tipo
+        if ($validated['tipoCliente'] === 'natural') {
+            $venta->idClienteNatural = $validated['idCliente'];
+        } else {
+            $venta->idEstablecimiento = $validated['idCliente'];
+        }
+
+        $venta->save();
+
+        // Procesar cada línea del pedido
+        $totalPedido = 0;
+        foreach ($validated['idTallas'] as $index => $idTalla) {
+            // Obtener el precio del producto (puedes ajustar según tu lógica)
+            $producto = Producto::findOrFail($validated['idProducto']);
+            $precioUnitario = $producto->precioVenta;
+            
+            // Calcular subtotal
+            $cantidad = $validated['cantidad'][$index] ?? 1;
+            $subtotal = $precioUnitario * $cantidad;
+            $totalPedido += $subtotal;
+
+            // Crear detalle de venta
+            $detalle = new DetalleVenta();
+            $detalle->idVenta = $venta->idVenta;
+            $detalle->idProducto = $validated['idProducto'];
+            $detalle->cantidad = $cantidad;
+            $detalle->precioUnitario = $precioUnitario;
+            $detalle->subtotal = $subtotal;
+            $detalle->nombrePersonalizado = $validated['nombrePersonalizado'][$index] ?? null;
+            $detalle->numeroPersonalizado = $validated['numeroPersonalizado'][$index] ?? null;
+            $detalle->observaciones = $validated['observaciones'][$index] ?? null;
+            $detalle->save();
+
+            // Guardar talla del detalle
+            $detalleTalla = new DetalleTalla();
+            $detalleTalla->iddetalleVenta = $detalle->iddetalleVenta;
+            $detalleTalla->idTallas = $idTalla;
+            $detalleTalla->save();
+        }
+
+        // Actualizar el total del pedido
+        $venta->total = $totalPedido;
+        $venta->save();
+
+        DB::commit();
+
+        return redirect()
+            ->route('pedidos.edit', $venta->idVenta)
+            ->with('success', 'Pedido creado exitosamente.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error al crear pedido: ' . $e->getMessage());
+        return back()
+            ->withInput()
+            ->with('error', 'Ocurrió un error al crear el pedido. Por favor, intente nuevamente.');
+    }
+}
 
     /**
      * Mostrar catálogo de productos para clientes
