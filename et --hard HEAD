@@ -1,0 +1,111 @@
+[33me8678395[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mventas[m[33m)[m Arreglar editar pedidoController.php edit.blade.php2
+[33m9744fd2d[m Arreglar editar pedidoController.php edit.blade.php
+[33m93bd83e6[m Correcciones en autenticación y traducción de contraseñas
+[33m2a2384c9[m Quitar contraseña créate.blade userController
+[33m9c69e07d[m feat: resueltos conflictos en PedidoController y actualizada la vista de configuración
+[33mccdb5105[m[33m ([m[1;31morigin/ventas[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m feat: configuración de envío de correos con Gmail
+[33ma832cf34[m ERROR DASHBOARD
+[33mafbe8d26[m Mejorar vista de configurar.blade
+[33m9742351c[m Correcciones en la visualización de imágenes y mejoras en la generación de PDF de pedidos
+[33m8b854935[m index.php pedidos
+[33m03694edb[m Resuelto merge con cambios remotos
+[33m08a97910[m Corrección de relaciones entre DetalleVenta, DetalleTalla y Talla
+[33md9efd487[m[33m ([m[1;32mbackup-main[m[33m)[m ERROR DASHBOARD
+[33m0c3c7e3d[m Fix: Corrección en modelos y controladores para el proceso de ventas
+[33mdf15b952[m Carrito cliente
+[33m49fbcd86[m Carrito funciona sin iva
+[33m6d185b08[m Arreglar configuracion.blade
+[33m84919be2[m Arreglar configuracion.blade, variantes y detalles
+[33m64d07c46[m Arreglo de personalizacion variantes productos 2
+[33m0b6749d6[m Arreglo de personalizacion variantes productos
+[33m9e669ae7[m Arreglar usuarios
+[33m982087f1[m Modificacion de modelos
+[33m6cc26927[m Solucionar rol diseñador boton trabajar y estado terminado
+[33m819ac126[m Solucionar producto index y create variante
+[33m6bcb327e[m Correcciones
+[33m7bf63dc6[m Ventas clientes pagados y morosos
+[33m4f38c2f5[m Corregir web.php duplicados
+[33me8d53f17[m Arreglar historial de pagos ventas clientes morosos
+[33m3c521eab[m Arreglar registrar pago en ventas
+[33mfa563465[m Resolved merge conflicts from origin/main
+[33m675b8207[m Ventas ventaController mostrar tabla con estado=1
+[33mea8c1bc3[m Ventas ventaController mostrar tabla con estado=1
+[33m1e021981[m Corregir users, index y edit tipo de usuario
+[33m05403a18[m Rol cliente
+[33mca3414a3[m Rol operador
+[33maa5420fe[m Arreglar migracion producto_disenos y create.blade de productos subir imagen
+[33m14265adf[m index.blade de ventas nombre del vendedor
+[33m43d5c7b6[m Rol diseñador mis diseños
+[33m1875f678[m edi.blade pedidos
+[33m279b9d33[m Agregar asignar diseñador en pedidos
+[33m6f5b1865[m Arreglar Diseños index.php
+[33m93a70818[m Arreglar detalles de productos, cliente natural y establecimiento
+[33m7d23d67c[m Diseño login, poner imagenes a productos
+[33md7147fc4[m Corregir edit.blade de productos fecha y saldo de pedidos pedidoController.php
+[33m6c0ba504[m Agregar base de datos SQL
+[33m1eedc3e0[m Exportar con estados=1
+[33mea0471cb[m Eliminar foto y editar imagen en editar pedidos
+[33m59f9e25d[m Mostrar imagen en la lista de pedidos
+[33m76481781[m Informacion del imagen del  show.blade y pedido.Controller.php
+[33m926576aa[m Correccion ver detalle cliente natura
+[33m9f67aebd[m Cliente vista pedido1
+[33m424d3777[m Cliente view y mostrar sus pedidos
+[33m8b421c0b[m Arreglar pedidos administrador web.php
+[33mc85ea8f9[m Corregir registrar nuevo usuario
+[33m1de27bd0[m login segun rol
+[33m358b9de1[m Arreglar web.php
+[33m9c04340a[m Rol operador
+[33m9e029541[m Rol diseñador2
+[33m79f0c22f[m Rol diseñador
+[33m1a7e83d8[m Rol administrador
+[33mb9636b5a[m Solucionar crear empleado2
+[33mde40db24[m Solucionar crear empleado
+[33m2a6b5094[m Revision de ventas tabla
+[33m263c9690[m Agregar vista de clientes morosos2
+[33m5cd53aee[m Agregar vista de clientes morosos
+[33maf934a0f[m Solucionar metodo de pago de la tabla ventas
+[33m5aed65d7[m Mostrar cliente en editar pedido
+[33m4e61066b[m Mostrar cliente en editar pedido
+[33mc28a9841[m Solucionar fecha de pedido que se mantenga en editar
+[33m5fdb51e1[m Solucionar estado pedidos
+[33m9d33cb4b[m Modificar estado pedido
+[33m46def372[m Ocultar ID de las tablas
+[33m4e0aee4f[m Solucionar pedido mostrar en la lista, ordenar tallas y mostrar 4  idProdicto
+[33mb568f751[m Tallas de productos
+[33m53e46703[m Mostrar id 1 al 4 en productos create
+[33m800309ee[m Agregar diseños en productos
+[33m68beec4c[m Solucionar error de gestion diseños
+[33m7c3a6a3d[m Correccion del campo variante en producto
+[33m482b6eae[m Commit completo del proyecto al 25 de septiembre
+[33m68792225[m[33m ([m[1;32mtodos-los-commits-recuperados[m[33m)[m Eliminacion doble notificacio crear productos 2
+[33m1ec7b4ba[m[33m ([m[1;32mrecuperar-commits[m[33m)[m Eliminación e notificación doble en crear producto
+[33mee9a55b5[m[33m ([m[1;32mestado-15-septiembre[m[33m)[m Arreglar crear usuario tipo de usuario
+[33mdb4e8394[m Actualizacion
+[33m0db297d6[m Cambiar $ a Bs
+[33m0ce5e307[m Login y registro
+[33m0a22d927[m Login
+[33m702cdd8b[m Guardado completo: todos los cambios actuales exportar pdf
+[33md552127d[m Exportar reportes en pedidos
+[33md58a30e0[m Exportar pdf reportes usuarios
+[33m31c2cefd[m Gestion empleados
+[33md07a4f1c[m Gestion reportes
+[33m8717f41f[m[33m ([m[1;32mbackup-before-recovery[m[33m)[m gestion ventas, clientes morosos
+[33m617f2647[m Gestion pedidos
+[33m3768aa79[m Limpieza de codigo
+[33m7689b786[m Transaccion corregido
+[33m15e706d0[m Backup completo del proyecto Laravel
+[33mf1961628[m Limpieza de codigo
+[33m8e9b0a70[m Limpieza de codigo
+[33mdb07bd47[m chore: remove docs (.md) not needed for runtime
+[33mc6bc5487[m chore: remove debug/test/migration helper scripts
+[33med1c35a5[m Pago inicial, pago total
+[33m77ed0f6a[m Pedidos precio total cliente, saldo
+[33mc2365f2c[m Guardar pedido
+[33m054e46a7[m Pedido variantes caracteristicas y tabla de pedido
+[33m138584c2[m Personalizar diseño
+[33m68656d4a[m Agregar imagen a productos y solucionar errores editar y eliminar
+[33me09a7011[m Agregar imagen desde la tabla diseños a la gestion producto
+[33m9798af94[m Mejoras en gestión de diseños: agregar columna iddetalleVenta, corregir visualización de imágenes, actualizar estados y estilos
+[33mee67abe6[m Muestra imagen adjuntada en diseño
+[33m1949fde6[m Gestion diseño agregado
+[33mc13650e4[m Primer commit

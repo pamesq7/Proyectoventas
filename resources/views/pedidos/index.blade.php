@@ -85,31 +85,36 @@
                                 @endphp
                                 {{ $nombreCliente }}
                             </td>
-                            <td>
-                                @foreach($venta->detalleVentas as $detalle)
-                                <div class="d-flex align-items-center mb-2">
-                                    @if($detalle->diseno && $detalle->diseno->isNotEmpty() && $detalle->diseno->first()->archivo)
-                                    <img src="{{ asset('storage/' . $detalle->diseno->first()->archivo) }}"
-                                        alt="Diseño"
-                                        class="img-thumbnail"
-                                        style="width: 50px; height: 50px; object-fit: cover;">
-                                    <span class="ms-2">Diseño personalizado</span>
-                                    @elseif($detalle->producto && $detalle->producto->foto)
-                                    <img src="{{ asset('storage/' . $detalle->producto->foto) }}"
-                                        alt="{{ $detalle->producto->nombre }}"
-                                        class="img-thumbnail"
-                                        style="width: 50px; height: 50px; object-fit: cover;">
-                                    <span class="ms-2">{{ $detalle->producto->nombre }}</span>
-                                    @else
-                                    <div class="bg-light d-flex align-items-center justify-content-center"
-                                        style="width: 50px; height: 50px;">
-                                        <i class="fas fa-box-open text-muted"></i>
-                                    </div>
-                                    <span class="ms-2">Sin imagen</span>
-                                    @endif
-                                </div>
-                                @endforeach
-                            </td>
+                             <td>
+        @php
+            // Agrupar detalles por producto
+            $productosUnicos = $venta->detalleVentas->unique('idProducto');
+        @endphp
+
+        @foreach($productosUnicos as $detalle)
+            <div class="d-flex align-items-center mb-2">
+                @if($detalle->diseno && $detalle->diseno->isNotEmpty() && $detalle->diseno->first()->archivo)
+                    <img src="{{ asset('storage/' . $detalle->diseno->first()->archivo) }}"
+                        alt="Diseño"
+                        class="img-thumbnail"
+                        style="width: 50px; height: 50px; object-fit: cover;">
+                    <span class="ms-2">Diseño personalizado</span>
+                @elseif($detalle->producto && $detalle->producto->foto)
+                    <img src="{{ asset('storage/' . $detalle->producto->foto) }}"
+                        alt="{{ $detalle->producto->nombre }}"
+                        class="img-thumbnail"
+                        style="width: 50px; height: 50px; object-fit: cover;">
+                    <span class="ms-2">{{ $detalle->producto->nombre }}</span>
+                @else
+                    <div class="bg-light d-flex align-items-center justify-content-center"
+                        style="width: 50px; height: 50px;">
+                        <i class="fas fa-box-open text-muted"></i>
+                    </div>
+                    <span class="ms-2">Sin imagen</span>
+                @endif
+            </div>
+        @endforeach
+    </td>
                             <td>Bs. {{ number_format($venta->total, 2) }}</td>
                             <td>
                                 @php
