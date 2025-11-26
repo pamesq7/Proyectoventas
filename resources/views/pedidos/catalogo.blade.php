@@ -208,32 +208,29 @@
                     @endif
                 </div>
 
-                <div class="p-3 d-flex flex-column">
-                    <h6 class="mb-1 text-truncate" title="{{ $it->nombre }}">{{ $it->nombre }}</h6>
+                <div class="p-3 d-flex flex-column text-center"> <!-- Agregada clase text-center -->
+    <h6 class="mb-1" title="{{ $it->nombre }}">{{ $it->nombre }}</h6>
 
-                    @if($it->descripcion)
-                    <p class="text-muted small mb-2">{{ Str::limit($it->descripcion, 90) }}</p>
-                    @endif
+    @if($it->descripcion)
+    <p class="text-muted small mb-2">{{ Str::limit($it->descripcion, 90) }}</p>
+    @endif
 
-                    <div class="d-flex align-items-baseline gap-2 mb-3">
-                        @if(!is_null($it->precioVenta))
-                        <span class="h6 text-success mb-0">Bs{{ number_format($it->precioVenta, 0) }}</span>
-                        @endif
-                        @if(!is_null($it->precioProduccion))
-                        <small class="text-muted">Costo: Bs{{ number_format($it->precioProduccion, 0) }}</small>
-                        @endif
-                    </div>
+    <div class="mb-3">
+        @if(!is_null($it->precioVenta))
+        <span class="h6 text-success">Bs{{ number_format($it->precioVenta, 0) }}</span>
+        @endif
+    </div>
 
-                    <div class="mt-auto d-grid gap-2">
-                        <a href="{{ $it->config_url }}" class="btn btn-primary">
-                            <i class="fas fa-sliders me-2"></i>Configurar y pedir
-                        </a>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                            data-bs-toggle="modal" data-bs-target="#modal-{{ $it->key }}">
-                            <i class="fas fa-circle-info me-1"></i>Ver detalles
-                        </button>
-                    </div>
-                </div>
+    <div class="mt-auto d-grid gap-2">
+        <a href="{{ $it->config_url }}" class="btn btn-primary">
+            <i class="fas fa-sliders me-2"></i>Configurar y pedir
+        </a>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+            data-bs-toggle="modal" data-bs-target="#modal-{{ $it->key }}">
+            <i class="fas fa-circle-info me-1"></i>Ver detalles
+        </button>
+    </div>
+</div>
             </div>
         </div>
 

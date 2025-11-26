@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ConfiguracionCaracteristica;
 
 class Caracteristica extends Model
 {
@@ -38,6 +39,11 @@ class Caracteristica extends Model
     {
         return $this->belongsTo(Opcion::class, 'idOpcion', 'idOpcion');
     }
+    public function configuraciones()
+{
+    return $this->hasMany(ConfiguracionCaracteristica::class, 'idCaracteristica', 'idCaracteristica');
+}
+
 
     // Relación: una característica puede tener muchas variantes características
     public function variantesCaracteristicas()

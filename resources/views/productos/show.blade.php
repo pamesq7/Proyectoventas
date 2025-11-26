@@ -11,6 +11,30 @@
 
     <div class="row">
         {{-- Información Principal del Producto --}}
+        {{-- Agregar esto en la sección de Información Básica --}}
+@if($producto->variante)
+    <div class="mb-3">
+        <label class="form-label text-muted">Variante:</label>
+        <div>
+            <span class="badge bg-info text-dark">
+                <i class="fas fa-tag me-1"></i>
+                {{ $producto->variante->nombre }} (ID: {{ $producto->idVariante }})
+            </span>
+        </div>
+    </div>
+@endif
+@if($producto->variante && $producto->variante->caracteristicas->count() > 0)
+    <div class="mb-3">
+        <label class="form-label text-muted">Características:</label>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach($producto->variante->caracteristicas as $caracteristica)
+                <span class="badge bg-light text-dark border">
+                    {{ $caracteristica->nombre }}: {{ $caracteristica->pivot->valor }}
+                </span>
+            @endforeach
+        </div>
+    </div>
+@endif
         <div class="col-lg-8">
             <div class="card mb-4">
                 <div class="card-header">

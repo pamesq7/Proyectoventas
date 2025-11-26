@@ -24,10 +24,10 @@ class VentaController extends Controller
             'empleado.user',
             'clienteNatural.user',
             'clienteEstablecimiento',
-            'detalleVentas.tallas', // Esta está bien así
-            'transacciones'
+            'detalleVentas.tallas',
+            'transacciones' // Eliminamos el .user de aquí
         ])
-            ->where('ventas.estado', 1) // Solo mostrar ventas en estado 1
+            ->where('ventas.estado', 1)
             ->orderBy('created_at', 'desc');
 
         // Filtro por estado de pago
@@ -120,19 +120,18 @@ class VentaController extends Controller
      * Mostrar detalle de una venta específica
      */
     public function show($id)
-    {
-        $venta = Venta::with([
-            'detalleVentas.detalleTallas.talla', // Opción 1: Acceder a la talla a través de detalleTallas
-            // O
-            'detalleVentas.tallas', // Opción 2: Usar la relación directa con tallas
-            'empleado.user',
-            'clienteNatural.user',
-            'clienteEstablecimiento',
-            'transacciones.user'
-        ])->findOrFail($id);
+{
+    $venta = Venta::with([
+        'detalleVentas.detalleTallas.talla',
+        'detalleVentas.tallas',
+        'empleado.user',
+        'clienteNatural.user',
+        'clienteEstablecimiento',
+        'transacciones' // Eliminamos el .user de aquí
+    ])->findOrFail($id);
 
-        return view('ventas.show', compact('venta'));
-    }
+    return view('ventas.show', compact('venta'));
+}
 
     /**
      * Formulario para registrar nueva venta/pago
@@ -151,17 +150,18 @@ class VentaController extends Controller
      * Registrar nueva transacción/pago
      */
     public function store(Request $request)
-    {
-        Log::info('Iniciando registro de pago', ['request' => $request->all()]);
+{
+    Log::info('Iniciando registro de pago', ['request' => $request->all()]);
 
-        $request->validate([
-            'idVenta' => 'required|exists:ventas,idVenta',
-            'monto' => 'required|numeric|min:0.01',
-            'metodoPago' => 'required|string|max:50', // Usa metodoPago como el método de pago (ej. 'efectivo')
-            'observaciones' => 'nullable|string|max:500'
-        ]);
+    $request->validate([
+        'idVenta' => 'required|exists:ventas,idVenta',
+        'monto' => 'required|numeric|min:0.01',
+        'metodoPago' => 'required|string|max:50',
+        'observaciones' => 'nullable|string|max:500'
+    ]);
 
-        return DB::transaction(function () use ($request) {
+    return DB::transaction(function () use ($request) {
+        try {
             Log::info('Transacción iniciada', ['idVenta' => $request->idVenta]);
 
             $venta = Venta::lockForUpdate()->findOrFail($request->idVenta);
@@ -169,30 +169,44 @@ class VentaController extends Controller
             // Verificar que el monto no exceda el saldo pendiente
             if ($request->monto > $venta->saldo) {
                 Log::warning('Monto excede saldo', ['monto' => $request->monto, 'saldo' => $venta->saldo]);
-                return back()->withErrors(['monto' => 'El monto no puede ser mayor al saldo pendiente']);
+                return back()->withErrors(['monto' => 'El monto no puede ser mayor al saldo pendiente: Bs. ' . number_format($venta->saldo, 2)])->withInput();
             }
 
-            // Crear la transacción (usando metodoPago como el método de pago)
+            // Crear la transacción
             Transaccion::create([
-                'tipoTransaccion' => 'pago', // Tipo fijo para pagos
+                'tipoTransaccion' => 'pago',
                 'monto' => $request->monto,
-                'metodoPago' => $request->metodoPago ?? 'efectivo', // Usa metodoPago del request como el método
+                'metodoPago' => $request->metodoPago ?? 'efectivo',
                 'observaciones' => $request->observaciones,
                 'estado' => 1,
                 'idVenta' => $request->idVenta,
                 'idUser' => Auth::id()
             ]);
 
-            // Actualizar saldo de la venta (evitar negativos)
-            $venta->saldo = max(0, $venta->saldo - $request->monto);
+            // Actualizar saldo de la venta
+            $nuevoSaldo = max(0, $venta->saldo - $request->monto);
+            $venta->saldo = $nuevoSaldo;
             $venta->save();
 
-            Log::info('Pago registrado exitosamente', ['idVenta' => $request->idVenta, 'nuevoSaldo' => $venta->saldo]);
+            Log::info('Pago registrado exitosamente', [
+                'idVenta' => $request->idVenta,
+                'monto' => $request->monto,
+                'nuevoSaldo' => $nuevoSaldo
+            ]);
 
-            return redirect()->route('ventas.show', $request->idVenta)
-                ->with('success', 'Pago registrado correctamente. Saldo actualizado.');
-        });
-    }
+            return redirect()
+                ->route('ventas.show', $request->idVenta)
+                ->with('success', 'Pago registrado correctamente. Saldo actualizado: Bs. ' . number_format($nuevoSaldo, 2));
+
+        } catch (\Exception $e) {
+            Log::error('Error al registrar pago: ' . $e->getMessage(), [
+                'exception' => $e,
+                'venta_id' => $request->idVenta
+            ]);
+            return back()->with('error', 'Error al procesar el pago: ' . $e->getMessage())->withInput();
+        }
+    });
+}
 
     public function confirmacion($idVenta)
     {

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+
 class Producto extends Model
 {
     use HasFactory;
@@ -37,60 +38,122 @@ class Producto extends Model
         'updated_at' => 'datetime',
     ];
 
-    // Relación con categoría
+    /* ==============================
+       CATEGORÍA
+    ===============================*/
     public function categoria()
     {
         return $this->belongsTo(Categoria::class, 'idCategoria', 'idCategoria');
     }
-    // En app/Models/Producto.php
 
-// En app/Models/Producto.php
-public function disenos()
-{
-    return $this->belongsToMany(Diseno::class, 'producto_diseno', 'idProducto', 'idDiseno');
-}
-  // Muchos a muchos: producto tiene muchas opciones (vía producto_opcions)
-    public function productoDiseno()
-    {
-        return $this->hasMany(ProductoDiseno::class, 'idProducto', 'idProducto');
-    }
-
-    // Relación con variante
+    /* ==============================
+       VARIANTE
+    ===============================*/
     public function variante()
     {
         return $this->belongsTo(Variante::class, 'idVariante', 'idVariante');
     }
 
-    // Si el producto es parte de un pack
-    public function packPertenece()
+    /* ==============================
+       PACK → ESTE PRODUCTO PERTENECE A UN PACK
+       productos.idPackProducto -> pack.idPackProducto
+    ===============================*/
+    public function pack()
     {
         return $this->belongsTo(Pack::class, 'idPackProducto', 'idPackProducto');
     }
 
-    // Si el producto ES un pack (tiene productos asociados)
-    public function packContenido()
+
+    public function packProductos()
     {
-        return $this->hasOne(Pack::class, 'idProducto', 'idProducto');
+        return $this->belongsToMany(
+            Producto::class,
+            'pack_productos',
+            'idPackProducto',
+            'idProducto'
+        );
     }
 
-    // Método para verificar si es un pack
-    public function esPack()
+    /* ==============================
+       PACK → ESTE PRODUCTO ES UN PACK Y TIENE PRODUCTOS HIJOS
+       relación real: tabla pack (idPackProducto, idProducto)
+    ===============================*/
+    public function componentes()
     {
-        return $this->tipoProducto === 'pack' || $this->packContenido !== null;
+        return $this->belongsToMany(
+            Producto::class,
+            'pack',
+            'idPackProducto',
+            'idProducto'
+        );
     }
 
-    // Método para obtener los productos de un pack
-    public function productosDelPack()
+    /* ==============================
+       OPCIONES DEL PRODUCTO (opción + características)
+    ===============================*/
+    public function productoOpcion()
     {
-        if ($this->esPack()) {
-            return $this->hasMany(Producto::class, 'idPackProducto', 'idPackProducto');
-        }
-        return null;
+        return $this->hasMany(ProductoOpcion::class, 'idProducto', 'idProducto')
+            ->where('estado', 1)
+            ->with('opcion.caracteristicas');
     }
 
-    // Relación con detalles de venta
+    /* ==============================
+       DISEÑOS
+    ===============================*/
+    public function disenos()
+    {
+        return $this->belongsToMany(Diseno::class, 'producto_diseno', 'idProducto', 'idDiseno');
+    }
+
+    // Relación con tabla pivote producto_diseno
+    public function productoDiseno()
+    {
+        return $this->hasMany(ProductoDiseno::class, 'idProducto', 'idProducto');
+    }
+
+
+
+
+
+
+    /* ==============================
+       DETALLES DE VENTA
+    ===============================*/
     public function detalleVenta()
     {
         return $this->hasMany(DetalleVenta::class, 'idProducto', 'idProducto');
+    }
+
+    /* ==============================
+       HELPERS
+    ===============================*/
+
+    public function esPack(): bool
+    {
+        return $this->tipoProducto === 'pack';
+    }
+
+    public function esProducto(): bool
+    {
+        return $this->tipoProducto === 'producto';
+    }
+
+    public function getEstadoTextoAttribute()
+    {
+        return $this->estado ? 'Activo' : 'Inactivo';
+    }
+
+    /* ==============================
+       SCOPES
+    ===============================*/
+    public function scopePacks($q)
+    {
+        return $q->where('tipoProducto', 'pack');
+    }
+
+    public function scopeSimples($q)
+    {
+        return $q->where('tipoProducto', 'producto');
     }
 }

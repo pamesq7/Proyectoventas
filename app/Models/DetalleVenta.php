@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ConfiguracionCaracteristica;
 
 class DetalleVenta extends Model
 {
@@ -24,30 +25,36 @@ class DetalleVenta extends Model
         'idProducto',
         'idEmpleado'
     ];
-// Relación: tiene muchos detalles de talla
-public function detalleTallas()
-{
-    return $this->hasMany(DetalleTalla::class, 'idDetalleVenta', 'idDetalleVenta');
-}
+    // Relación: tiene muchos detalles de talla
+    public function detalleTallas()
+    {
+        return $this->hasMany(DetalleTalla::class, 'idDetalleVenta', 'idDetalleVenta');
+    }
 
-// Relación con Talla a través de detalleTallas
-public function tallas()
-{
-    return $this->hasManyThrough(
-        Talla::class,
-        DetalleTalla::class,
-        'idDetalleVenta',
-        'idTallas',
-        'idDetalleVenta',
-        'idTallas'
-    );
-}
+    // Relación con Talla a través de detalleTallas
+    public function tallas()
+    {
+        return $this->hasManyThrough(
+            Talla::class,
+            DetalleTalla::class,
+            'idDetalleVenta',
+            'idTallas',
+            'idDetalleVenta',
+            'idTallas'
+        );
+    }
 
     // Relación: pertenece a un empleado
     public function empleado()
     {
         return $this->belongsTo(Empleado::class, 'idEmpleado', 'idEmpleado');
     }
+    // Relación: configuraciones de características
+    public function configuraciones()
+    {
+        return $this->hasMany(ConfiguracionCaracteristica::class, 'idDetalleVenta', 'idDetalleVenta');
+    }
+
 
     // Relación: pertenece a una venta
     public function venta()

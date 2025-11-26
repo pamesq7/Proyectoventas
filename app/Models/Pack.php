@@ -30,8 +30,11 @@ class Pack extends Model
     }
 
     // Los productos que pertenecen a este pack
+
     public function productos()
-    {
-        return $this->hasMany(Producto::class, 'idPackProducto', 'idPackProducto');
-    }
+{
+    return $this->belongsToMany(Producto::class, 'pack_productos', 'idPackProducto', 'idProducto')
+                ->withPivot('cantidad');
+}
+
 }

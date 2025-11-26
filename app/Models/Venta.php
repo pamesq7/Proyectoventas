@@ -94,6 +94,6 @@ class Venta extends Model
     // Método: verificar si puede recibir pagos
     public function puedeRecibirPagos()
     {
-        return $this->saldo > 0;
+        return $this->saldo > 0 && $this->estado == 1;
     }
 }

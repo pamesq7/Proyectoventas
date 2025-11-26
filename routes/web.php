@@ -32,6 +32,7 @@ use App\Http\Controllers\ClienteController;
 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -124,6 +125,8 @@ Route::middleware(['auth', 'role:administrador,vendedor'])->group(function () {
      |--------------------------------------------------------------------------
      */
     Route::resource('users', UserController::class);
+    Route::get('/configurar/{idProducto}', [PedidoController::class, 'configurar']);
+
 
     /*
      |--------------------------------------------------------------------------

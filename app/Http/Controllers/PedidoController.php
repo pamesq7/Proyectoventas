@@ -838,168 +838,143 @@ public function store(Request $request)
         ]);
     }
 
-
     public function configurar($idProducto)
-    {
-        // 1) Producto
-        $producto = Producto::findOrFail($idProducto);
+{
+    // 1) Producto principal
+    $producto = Producto::with('variante')->findOrFail($idProducto);
 
-        // 2) Variante “fallback” (case-insensitive + trim)
-        $varianteId = $producto->idVariante
-            ?? Variante::whereRaw('TRIM(LOWER(nombre)) LIKE ?', ['polera%'])->value('idVariante');
-        $varianteNombre = Variante::where('idVariante', $varianteId)->value('nombre') ?? '—';
+    // 2) Variante “fallback” (la usamos SOLO cuando NO es pack)
+    $varianteId = $producto->idVariante
+        ?? Variante::whereRaw('TRIM(LOWER(nombre)) LIKE ?', ['polera%'])->value('idVariante');
+    $varianteNombre = Variante::where('idVariante', $varianteId)->value('nombre') ?? '—';
 
-        // 3) Opciones de la variante (NO PACK)
-        $opcionesVariante = $this->getOpcionesVariante($varianteId);
+    // 3) Opciones de la variante (para producto individual)
+    $opcionesVariante = $this->getOpcionesVariante($varianteId);
 
-        // 4) Tallas
-        $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
+    // 4) Tallas
+    $tallas = Talla::where('estado', 1)->orderBy('nombre')->get();
 
-        // 5) Empleados
-        $empleados = Empleado::with('user')->where('estado', 1)->get();
+    // 5) Empleados
+    $empleados = Empleado::with('user')->where('estado', 1)->get();
 
-        // 6) Clientes naturales/establecimientos
-        $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+    // 6) Clientes
+    $clientesNaturales = ClienteNatural::with('user')->where('estado', 1)->get();
+    $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
 
-        $clientesEstablecimientos = ClienteEstablecimiento::with('representante')->where('estado', 1)->get();
+    // 7) Detectar PACK correctamente
+    $packId = $producto->idPackProducto;
 
-        // 6) PACK — derivamos $packId aunque productos.idPackProducto sea NULL
-        $packId = $producto->idPackProducto;
-        if (is_null($packId)) {
-            $packId = DB::table('pack')->where('idProducto', $producto->idProducto)->value('idPackProducto');
-        }
-
-        $esPack        = !is_null($packId);
-        $packInfo      = null;
-        $packProductos = collect();
-        $variantesPack = collect();
-
-        if ($esPack) {
-            $packInfo = DB::table('pack')->where('idPackProducto', $packId)->first();
-
-            $idsDesdeProductos = Producto::where('idPackProducto', $packId)->pluck('idProducto');
-            $idsDesdePack      = DB::table('pack')->where('idPackProducto', $packId)->pluck('idProducto');
-
-            $ids = $idsDesdeProductos->merge($idsDesdePack)->filter()->unique()->values();
-
-            $packProductos = Producto::whereIn('idProducto', $ids)->orderBy('nombre')->get();
-
-            // 🔹 Variantes ÚNICAS del pack (p.ej. Polera + Corto + Buzo):
-            $variantesPack = $packProductos
-                ->pluck('idVariante')
-                ->filter()
-                ->unique()
-                ->map(function ($vId) {
-                    $vNombre = Variante::where('idVariante', $vId)->value('nombre') ?? '—';
-                    return [
-                        'idVariante'     => $vId,
-                        'nombreVariante' => trim($vNombre),
-                        'opciones'       => $this->getOpcionesVariante($vId),
-                    ];
-                })->values();
-        }
-
-        /*
-     * 7) MODOS DE PRODUCTO PARA LAS PESTAÑAS (nav-pills)
-     *    - pack_polera_corto / solo_polera / solo_corto
-     *    - pack_chamarra_buzo / solo_chamarra / solo_buzo
-     *    - o 'individual' si no es pack
-     */
-        $modosProducto = [];
-
-        if ($esPack && $variantesPack->isNotEmpty()) {
-
-            // Buscamos variantes por nombre, case-insensitive
-            $polera = $variantesPack->first(function ($v) {
-                return strcasecmp($v['nombreVariante'], 'polera') === 0;
-            });
-            $corto = $variantesPack->first(function ($v) {
-                return strcasecmp($v['nombreVariante'], 'corto') === 0;
-            });
-            $chamarra = $variantesPack->first(function ($v) {
-                return strcasecmp($v['nombreVariante'], 'chamarra') === 0;
-            });
-            $buzo = $variantesPack->first(function ($v) {
-                return strcasecmp($v['nombreVariante'], 'buzo') === 0;
-            });
-
-            if ($polera && $corto) {
-                // Familia Polera + Corto
-                $modosProducto = [
-                    [
-                        'key'   => 'pack_polera_corto',
-                        'label' => 'PACK: ' . $polera['nombreVariante'] . ' + ' . $corto['nombreVariante'],
-                        'icon'  => 'tshirt',
-                    ],
-                    [
-                        'key'   => 'solo_polera',
-                        'label' => $polera['nombreVariante'],
-                        'icon'  => 'tshirt',
-                    ],
-                    [
-                        'key'   => 'solo_corto',
-                        'label' => $corto['nombreVariante'],
-                        'icon'  => 'shorts',
-                    ],
-                ];
-            } elseif ($chamarra && $buzo) {
-                // Familia Chamarra + Buzo
-                $modosProducto = [
-                    [
-                        'key'   => 'pack_chamarra_buzo',
-                        'label' => 'PACK: ' . $chamarra['nombreVariante'] . ' + ' . $buzo['nombreVariante'],
-                        'icon'  => 'jacket',
-                    ],
-                    [
-                        'key'   => 'solo_chamarra',
-                        'label' => $chamarra['nombreVariante'],
-                        'icon'  => 'jacket',
-                    ],
-                    [
-                        'key'   => 'solo_buzo',
-                        'label' => $buzo['nombreVariante'],
-                        'icon'  => 'hoodie',
-                    ],
-                ];
-            } else {
-                // Pack raro con otras variantes: dejamos una sola pestaña genérica
-                $modosProducto[] = [
-                    'key'   => 'pack_generico',
-                    'label' => 'Pack: ' . $producto->nombre,
-                    'icon'  => 'tshirt',
-                ];
-            }
-        } else {
-            // Producto individual (no pack)
-            $modosProducto[] = [
-                'key'   => 'individual',
-                'label' => $producto->nombre,
-                'icon'  => 'tshirt', // Icono por defecto
-            ];
-        }
-
-        // Clave del modo seleccionado por defecto (la primera pestaña)
-        $modoSeleccionado = $modosProducto[0]['key'] ?? 'individual';
-
-        return view('pedidos.configurar', [
-            'producto'                 => $producto,
-            'tallas'                   => $tallas,
-            'opcionesVariante'         => $opcionesVariante,
-            'varianteId'               => $varianteId,
-            'varianteNombre'           => $varianteNombre,
-            'empleados'                => $empleados,
-            'clientesNaturales'        => $clientesNaturales,
-            'clientesEstablecimientos' => $clientesEstablecimientos,
-            'esPack'                   => $esPack,
-            'pack'                     => $packInfo,
-            'packProductos'            => $packProductos,
-            'variantesPack'            => $variantesPack,
-
-            // 🔹 NUEVO: para las pestañas de la UI
-            'modosProducto'            => $modosProducto,
-            'modoSeleccionado'         => $modoSeleccionado,
-        ]);
+    // Si no viene en productos, intentamos buscar en tabla pack por idProducto
+    if (is_null($packId)) {
+        $packId = DB::table('pack')
+            ->where('idProducto', $producto->idProducto)
+            ->value('idPackProducto');
     }
+
+    // Como último recurso: ver si este producto forma parte de algún pack_productos
+    if (is_null($packId)) {
+        $packId = DB::table('pack_productos')
+            ->where('idProducto', $producto->idProducto)
+            ->value('idPackProducto');
+    }
+
+    $esPack        = !is_null($packId);
+    $packInfo      = null;
+    $packProductos = collect();
+    $variantesPack = collect();
+
+    if ($esPack) {
+        // Info básica del pack (tabla pack)
+        $packInfo = DB::table('pack')
+            ->where('idPackProducto', $packId)
+            ->first();
+
+        // Productos que componen el pack (tabla pack_productos)
+        $ids = DB::table('pack_productos')
+            ->where('idPackProducto', $packId)
+            ->pluck('idProducto')
+            ->unique()
+            ->values();
+
+        // Cargar productos del pack con su variante asociada
+        $packProductos = Producto::whereIn('idProducto', $ids)
+            ->with('variante')
+            ->orderBy('nombre')
+            ->get();
+
+        // Variantes únicas del pack (polera, corto, chamarra, buzo, etc.)
+        $variantesPack = $packProductos
+            ->pluck('variante')
+            ->filter()                    // quitamos null
+            ->unique('idVariante')        // una sola fila por variante
+            ->map(function ($var) {
+                return [
+                    'idVariante'     => $var->idVariante,
+                    'nombreVariante' => trim($var->nombre),
+                    'opciones'       => $this->getOpcionesVariante($var->idVariante),
+                ];
+            })
+            ->values();
+    }
+
+/*
+ * 8) MODOS DE PRODUCTO PARA LAS PESTAÑAS (nav-pills)
+ *    - Pack completo (todas las variantes)
+ *    - Variantes individuales del pack
+ */
+$modosProducto = [];
+
+if ($esPack && $variantesPack->isNotEmpty()) {
+
+    // 🔹 LISTA DE NOMBRES DE VARIANTES EJ: ["polera", "corto", "chamarra", "buzo"]
+    $nombresVariantes = $variantesPack->pluck('nombreVariante')->filter()->values()->toArray();
+
+    // 1) PESTAÑA PACK COMPLETO -------------------------------------------------
+    $modosProducto[] = [
+        'key'   => 'pack_completo',
+        'label' => 'PACK: ' . implode(' + ', $nombresVariantes),
+        'icon'  => 'boxes',
+    ];
+
+    // 2) PESTAÑAS INDIVIDUALES -------------------------------------------------
+    foreach ($variantesPack as $var) {
+        $modosProducto[] = [
+            'key'   => 'solo_' . strtolower($var['nombreVariante']),
+            'label' => ucfirst($var['nombreVariante']),
+            'icon'  => 'tshirt',
+        ];
+    }
+
+} else {
+    // Producto individual (NO PACK)
+    $modosProducto[] = [
+        'key'   => 'individual',
+        'label' => $producto->nombre,
+        'icon'  => 'tshirt',
+    ];
+}
+
+// Clave del modo seleccionado por defecto (la primera pestaña)
+$modoSeleccionado = $modosProducto[0]['key'] ?? 'individual';
+
+    return view('pedidos.configurar', [
+        'producto'                 => $producto,
+        'tallas'                   => $tallas,
+        'opcionesVariante'         => $opcionesVariante,
+        'varianteId'               => $varianteId,
+        'varianteNombre'           => $varianteNombre,
+        'empleados'                => $empleados,
+        'clientesNaturales'        => $clientesNaturales,
+        'clientesEstablecimientos' => $clientesEstablecimientos,
+        'esPack'                   => $esPack,
+        'pack'                     => $packInfo,
+        'packProductos'            => $packProductos,
+        'variantesPack'            => $variantesPack,
+        'modosProducto'            => $modosProducto,
+        'modoSeleccionado'         => $modoSeleccionado,
+    ]);
+}
+
 
 
 
@@ -2572,32 +2547,43 @@ public function store(Request $request)
     /**
      * Eliminar un pedido
      */
+   
     public function destroy($idVenta)
-    {
-        DB::beginTransaction();
-        try {
-            $venta = Venta::findOrFail($idVenta);
+{
+    DB::beginTransaction();
+    try {
+        // Buscar la venta con sus relaciones
+        $venta = Venta::with(['transacciones', 'detalleVentas.diseno', 'detalleVentas.detalleTallas'])
+                     ->findOrFail($idVenta);
 
-            // Eliminación lógica
-            $venta->estado = 0;
-            $venta->save();
+        // Eliminación lógica de la venta (estado = 0)
+        $venta->estado = 0;
+        $venta->save();
 
-            DB::commit();
-            return redirect()
-                ->route('pedidos.index')
-                ->with('success', 'Pedido eliminado correctamente.'); // Cambié 'successdelete' a 'success' para mantener consistencia
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error al eliminar (lógico) pedido', [
-                'idVenta' => $idVenta,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()
-                ->route('pedidos.index')
-                ->with('error', 'No se pudo eliminar el pedido: ' . $e->getMessage());
+        // Si hay un pedido relacionado, también lo marcamos como inactivo
+        if ($venta->pedido) {
+            $venta->pedido->estado = 0;
+            $venta->pedido->save();
         }
+
+        DB::commit();
+        
+        return redirect()
+            ->route('pedidos.index')
+            ->with('success', 'Pedido y venta asociada han sido eliminados correctamente.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error al eliminar pedido/venta', [
+            'idVenta' => $idVenta,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return redirect()
+            ->route('pedidos.index')
+            ->with('error', 'No se pudo eliminar el pedido: ' . $e->getMessage());
     }
+}
 
     /**
      * Mostrar los pedidos asignados al diseñador actual
